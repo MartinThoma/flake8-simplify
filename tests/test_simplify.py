@@ -26,6 +26,41 @@ def test_multiple_isinstance():
     }
 
 
+def test_multiple_isinstance_multiple_lines():
+    ret = _results(
+        "isinstance(a, int) or isinstance(a, float)\n"
+        "isinstance(b, bool) or isinstance(b, str)"
+    )
+    assert ret == {
+        (
+            "1:0 SIM101 Multiple isinstance-calls which can be merged "
+            "into a single call for variable 'a'"
+        ),
+        (
+            "2:0 SIM101 Multiple isinstance-calls which can be merged "
+            "into a single call for variable 'b'"
+        ),
+    }
+
+
+def test_first_wrong_then_multiple_isinstance():
+    ret = _results(
+        "foo(a, b, c) or bar(a, b)\n"
+        "isinstance(b, bool) or isinstance(b, str)"
+    )
+    assert ret == {
+        (
+            "2:0 SIM101 Multiple isinstance-calls which can be merged "
+            "into a single call for variable 'b'"
+        ),
+    }
+
+
+def test_multiple_isinstance_and():
+    ret = _results("isinstance(b, bool) and isinstance(b, str)")
+    assert ret == set()
+
+
 def test_multiple_other_function():
     ret = _results("isfoo(a, int) or isfoo(a, float)")
     assert ret == set()

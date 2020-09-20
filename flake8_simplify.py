@@ -26,7 +26,7 @@ def _get_duplicated_isinstance_call_by_node(node: ast.BoolOp) -> List[str]:
 
     Examples
     --------
-    >>> g = _get_duplicated_isinstance_call_by_node
+    >> g = _get_duplicated_isinstance_call_by_node
     >> g("isinstance(a, int) or isinstance(a, float) or isinstance(b, int)
     ['a']
     >> g("isinstance(a, int) or isinstance(b, float) or isinstance(b, int)

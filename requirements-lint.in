@@ -1,0 +1,16 @@
+black
+flake8
+flake8-assert-msg
+flake8-bugbear
+flake8-builtins
+flake8-comprehensions
+flake8-eradicate
+flake8-executable
+flake8-isort
+flake8-pytest-style
+flake8-raise
+flake8-string-format
+flake8_implicit_str_concat
+mccabe
+mypy
+pydocstyle

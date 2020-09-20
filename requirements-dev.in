@@ -1,0 +1,9 @@
+junit2html
+mutmut
+pip-tools
+pre-commit
+pytest
+pytest-cov
+pytest-timeout
+twine
+wheel

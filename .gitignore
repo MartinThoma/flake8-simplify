@@ -127,3 +127,9 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# mutmut
+.mutmut-cache
+mutmut-results.xml
+mutmut-results.html
+tests/reports/
