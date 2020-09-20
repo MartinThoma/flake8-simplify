@@ -32,7 +32,9 @@ $ flake8 .
 
 * `SIM101`: Multiple isinstance-calls which can be merged into a single call by
   using a tuple as a second argument.
-* `SIM201`: Used 'not a == b' instead of 'a != b'
+* `SIM201`: Use 'a != b' instead of 'not a == b'
+* `SIM202`: Use 'a == b' instead of 'not a != b'
+* `SIM203`: Use 'a not in b' instead of 'not a in b'
 
 
 ## Examples
@@ -55,4 +57,24 @@ not a == b
 
 # Good
 a != b
+```
+
+### SIM202
+
+```python
+# Bad
+not a != b
+
+# Good
+a == b
+```
+
+### SIM203
+
+```python
+# Bad
+not a in b
+
+# Good
+a not in b
 ```
