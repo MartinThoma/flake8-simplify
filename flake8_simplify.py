@@ -41,7 +41,7 @@ def _get_duplicated_isinstance_call_by_node(node: ast.BoolOp) -> List[str]:
         if not isinstance(call, ast.Call) or len(call.args) != 2:
             continue
         function_name = astor.to_source(call.func).strip()
-        if not function_name == "isinstance":
+        if function_name != "isinstance":
             continue
 
         # Collect the name of the argument
@@ -50,8 +50,10 @@ def _get_duplicated_isinstance_call_by_node(node: ast.BoolOp) -> List[str]:
     return [arg0_name for arg0_name, count in counter.items() if count > 1]
 
 
-def _get_duplicated_isinstance_calls(node: ast.BoolOp) -> List[Tuple[int, int, str]]:
-    """Get a list of positions where the duplicate isinstance problem appars."""
+def _get_duplicated_isinstance_calls(
+    node: ast.BoolOp,
+) -> List[Tuple[int, int, str]]:
+    """Get a positions where the duplicate isinstance problem appears."""
     errors: List[Tuple[int, int, str]] = []
     if not isinstance(node.op, ast.Or):
         return errors
@@ -64,14 +66,19 @@ def _get_duplicated_isinstance_calls(node: ast.BoolOp) -> List[Tuple[int, int, s
 def _get_not_equal_calls(node: ast.UnaryOp) -> List[Tuple[int, int, str]]:
     """Get a list of all calls where an unary 'not' is used for an quality."""
     errors: List[Tuple[int, int, str]] = []
-    if not isinstance(node.op, ast.Not) or not isinstance(node.operand, ast.Compare):
-        return errors
-    if len(node.operand.ops) != 1 or not isinstance(node.operand.ops[0], ast.Eq):
+    if (
+        not isinstance(node.op, ast.Not)
+        or not isinstance(node.operand, ast.Compare)
+        or len(node.operand.ops) != 1
+        or not isinstance(node.operand.ops[0], ast.Eq)
+    ):
         return errors
     comparison = node.operand
     left = astor.to_source(comparison.left).strip()
     right = astor.to_source(comparison.comparators[0]).strip()
-    errors.append((node.lineno, node.col_offset, SIM201.format(left=left, right=right)))
+    errors.append(
+        (node.lineno, node.col_offset, SIM201.format(left=left, right=right))
+    )
 
     return errors
 
