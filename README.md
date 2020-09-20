@@ -31,6 +31,7 @@ $ flake8 .
 
 * `SIM101`: Multiple isinstance-calls which can be merged into a single call by
   using a tuple as a second argument.
+* `SIM201`: Used 'not a == b' instead of 'a != b'
 
 
 ## Examples
@@ -43,4 +44,14 @@ isinstance(a, int) or isinstance(a, float)
 
 # Good
 isinstance(a, (int, float))
+```
+
+### SIM201
+
+```python
+# Bad
+not a == b
+
+# Good
+a != b
 ```
