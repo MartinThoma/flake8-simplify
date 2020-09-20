@@ -19,11 +19,14 @@ SIM101 = (
     "call for variable '{var}'"
 )
 SIM201 = "SIM201 Used 'not {left} == {right}' instead of '{left} != {right}'"
+SIM202 = "SIM202 Used 'not {left} != {right}' instead of '{left} == {right}'"
 
 
 def _get_duplicated_isinstance_call_by_node(node: ast.BoolOp) -> List[str]:
     """
     Get a list of isinstance arguments which could be shortened.
+
+    This checks SIM101.
 
     Examples
     --------
@@ -64,7 +67,11 @@ def _get_duplicated_isinstance_calls(
 
 
 def _get_not_equal_calls(node: ast.UnaryOp) -> List[Tuple[int, int, str]]:
-    """Get a list of all calls where an unary 'not' is used for an quality."""
+    """
+    Get a list of all calls where an unary 'not' is used for an equality.
+
+    This checks SIM201.
+    """
     errors: List[Tuple[int, int, str]] = []
     if (
         not isinstance(node.op, ast.Not)
@@ -83,6 +90,30 @@ def _get_not_equal_calls(node: ast.UnaryOp) -> List[Tuple[int, int, str]]:
     return errors
 
 
+def _get_not_non_equal_calls(node: ast.UnaryOp) -> List[Tuple[int, int, str]]:
+    """
+    Get a list of all calls where an unary 'not' is used for an quality.
+
+    This checks SIM202.
+    """
+    errors: List[Tuple[int, int, str]] = []
+    if (
+        not isinstance(node.op, ast.Not)
+        or not isinstance(node.operand, ast.Compare)
+        or len(node.operand.ops) != 1
+        or not isinstance(node.operand.ops[0], ast.NotEq)
+    ):
+        return errors
+    comparison = node.operand
+    left = astor.to_source(comparison.left).strip()
+    right = astor.to_source(comparison.comparators[0]).strip()
+    errors.append(
+        (node.lineno, node.col_offset, SIM202.format(left=left, right=right))
+    )
+
+    return errors
+
+
 class Visitor(ast.NodeVisitor):
     def __init__(self) -> None:
         self.errors: List[Tuple[int, int, str]] = []
@@ -93,6 +124,7 @@ class Visitor(ast.NodeVisitor):
 
     def visit_UnaryOp(self, node: ast.UnaryOp) -> None:
         self.errors += _get_not_equal_calls(node)
+        self.errors += _get_not_non_equal_calls(node)
         self.generic_visit(node)
 
 

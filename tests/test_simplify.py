@@ -74,3 +74,8 @@ def test_multiple_other_function():
 def test_unary_not_equality():
     ret = _results("not a == b")
     assert ret == {("1:0 SIM201 Used 'not a == b' instead of 'a != b'")}
+
+
+def test_sim_202_base():
+    ret = _results("not a != b")
+    assert ret == {("1:0 SIM202 Used 'not a != b' instead of 'a == b'")}
