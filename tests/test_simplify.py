@@ -32,6 +32,11 @@ def test_single_isinstance():
     assert ret == set()
 
 
+def test_fine_code():
+    ret = _results("- ( a+ b)")
+    assert ret == set()
+
+
 def test_multiple_isinstance_multiple_lines():
     ret = _results(
         "isinstance(a, int) or isinstance(a, float)\n"
@@ -84,3 +89,28 @@ def test_sim_202_base():
 def test_sim_203_base():
     ret = _results("not a in b")
     assert ret == {("1:0 SIM203 Use 'a not in b' instead of 'not a in b'")}
+
+
+def test_sim_204_base():
+    ret = _results("not a < b")
+    assert ret == {("1:0 SIM204 Use 'a >= b' instead of 'not (a < b)'")}
+
+
+def test_sim_205_base():
+    ret = _results("not a <= b")
+    assert ret == {("1:0 SIM205 Use 'a > b' instead of 'not (a <= b)'")}
+
+
+def test_sim_206_base():
+    ret = _results("not a > b")
+    assert ret == {("1:0 SIM206 Use 'a <= b' instead of 'not (a > b)'")}
+
+
+def test_sim_207_base():
+    ret = _results("not a >= b")
+    assert ret == {("1:0 SIM207 Use 'a < b' instead of 'not (a >= b)'")}
+
+
+def test_sim_208_base():
+    ret = _results("not (not a)")
+    assert ret == {("1:0 SIM208 Use 'a' instead of 'not (not a)'")}

@@ -21,6 +21,11 @@ SIM101 = (
 SIM201 = "SIM201 Use '{left} != {right}' instead of 'not {left} == {right}'"
 SIM202 = "SIM202 Use '{left} == {right}' instead of 'not {left} != {right}'"
 SIM203 = "SIM203 Use '{a} not in {b}' instead of 'not {a} in {b}'"
+SIM204 = "SIM204 Use '{a} >= {b}' instead of 'not ({a} < {b})'"
+SIM205 = "SIM205 Use '{a} > {b}' instead of 'not ({a} <= {b})'"
+SIM206 = "SIM206 Use '{a} <= {b}' instead of 'not ({a} > {b})'"
+SIM207 = "SIM207 Use '{a} < {b}' instead of 'not ({a} >= {b})'"
+SIM208 = "SIM208 Use '{a}' instead of 'not (not {a})'"
 
 
 def _get_duplicated_isinstance_call_by_node(node: ast.BoolOp) -> List[str]:
@@ -139,6 +144,96 @@ def _get_not_in_calls(node: ast.UnaryOp) -> List[Tuple[int, int, str]]:
     return errors
 
 
+def _get_sim204(node: ast.UnaryOp) -> List[Tuple[int, int, str]]:
+    """Get a list of all calls of the type "not (a < b)"."""
+    errors: List[Tuple[int, int, str]] = []
+    if (
+        not isinstance(node.op, ast.Not)
+        or not isinstance(node.operand, ast.Compare)
+        or len(node.operand.ops) != 1
+        or not isinstance(node.operand.ops[0], ast.Lt)
+    ):
+        return errors
+    comparison = node.operand
+    left = astor.to_source(comparison.left).strip()
+    right = astor.to_source(comparison.comparators[0]).strip()
+    errors.append(
+        (node.lineno, node.col_offset, SIM204.format(a=left, b=right))
+    )
+    return errors
+
+
+def _get_sim205(node: ast.UnaryOp) -> List[Tuple[int, int, str]]:
+    """Get a list of all calls of the type "not (a <= b)"."""
+    errors: List[Tuple[int, int, str]] = []
+    if (
+        not isinstance(node.op, ast.Not)
+        or not isinstance(node.operand, ast.Compare)
+        or len(node.operand.ops) != 1
+        or not isinstance(node.operand.ops[0], ast.LtE)
+    ):
+        return errors
+    comparison = node.operand
+    left = astor.to_source(comparison.left).strip()
+    right = astor.to_source(comparison.comparators[0]).strip()
+    errors.append(
+        (node.lineno, node.col_offset, SIM205.format(a=left, b=right))
+    )
+    return errors
+
+
+def _get_sim206(node: ast.UnaryOp) -> List[Tuple[int, int, str]]:
+    """Get a list of all calls of the type "not (a > b)"."""
+    errors: List[Tuple[int, int, str]] = []
+    if (
+        not isinstance(node.op, ast.Not)
+        or not isinstance(node.operand, ast.Compare)
+        or len(node.operand.ops) != 1
+        or not isinstance(node.operand.ops[0], ast.Gt)
+    ):
+        return errors
+    comparison = node.operand
+    left = astor.to_source(comparison.left).strip()
+    right = astor.to_source(comparison.comparators[0]).strip()
+    errors.append(
+        (node.lineno, node.col_offset, SIM206.format(a=left, b=right))
+    )
+    return errors
+
+
+def _get_sim207(node: ast.UnaryOp) -> List[Tuple[int, int, str]]:
+    """Get a list of all calls of the type "not (a >= b)"."""
+    errors: List[Tuple[int, int, str]] = []
+    if (
+        not isinstance(node.op, ast.Not)
+        or not isinstance(node.operand, ast.Compare)
+        or len(node.operand.ops) != 1
+        or not isinstance(node.operand.ops[0], ast.GtE)
+    ):
+        return errors
+    comparison = node.operand
+    left = astor.to_source(comparison.left).strip()
+    right = astor.to_source(comparison.comparators[0]).strip()
+    errors.append(
+        (node.lineno, node.col_offset, SIM207.format(a=left, b=right))
+    )
+    return errors
+
+
+def _get_sim208(node: ast.UnaryOp) -> List[Tuple[int, int, str]]:
+    """Get a list of all calls of the type "not (not a)"."""
+    errors: List[Tuple[int, int, str]] = []
+    if (
+        not isinstance(node.op, ast.Not)
+        or not isinstance(node.operand, ast.UnaryOp)
+        or not isinstance(node.operand.op, ast.Not)
+    ):
+        return errors
+    a = astor.to_source(node.operand.operand).strip()
+    errors.append((node.lineno, node.col_offset, SIM208.format(a=a)))
+    return errors
+
+
 class Visitor(ast.NodeVisitor):
     def __init__(self) -> None:
         self.errors: List[Tuple[int, int, str]] = []
@@ -151,6 +246,11 @@ class Visitor(ast.NodeVisitor):
         self.errors += _get_not_equal_calls(node)
         self.errors += _get_not_non_equal_calls(node)
         self.errors += _get_not_in_calls(node)
+        self.errors += _get_sim204(node)
+        self.errors += _get_sim205(node)
+        self.errors += _get_sim206(node)
+        self.errors += _get_sim207(node)
+        self.errors += _get_sim208(node)
         self.generic_visit(node)
 
 

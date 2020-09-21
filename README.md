@@ -11,7 +11,7 @@ A [flake8](https://flake8.pycqa.org/en/latest/index.html) plugin that helps you 
 
 Install with `pip`:
 
-```
+```bash
 pip install flake8-simplify
 ```
 
@@ -34,7 +34,20 @@ $ flake8 .
   using a tuple as a second argument.
 * `SIM201`: Use 'a != b' instead of 'not a == b'
 * `SIM202`: Use 'a == b' instead of 'not a != b'
-* `SIM203`: Use 'a not in b' instead of 'not a in b'
+* `SIM203`: Use 'a not in b' instead of 'not (a in b)'
+* `SIM204`: Use 'a >= b' instead of 'not (a < b)'
+* `SIM205`: Use 'a > b' instead of 'not (a <= b)'
+* `SIM206`: Use 'a <= b' instead of 'not (a > b)'
+* `SIM207`: Use 'a < b' instead of 'not (a <= b)'
+* `SIM208`: Use 'a' instead of 'not (not a)'
+
+The `SIM2` rules have one good reason to be ignored: When you are checking an
+error condition:
+
+```python
+if not correct_condition:
+    handle_error()  # e.g. raise Exception
+```
 
 
 ## Examples
@@ -77,4 +90,54 @@ not a in b
 
 # Good
 a not in b
+```
+
+### SIM204
+
+```python
+# Bad
+not a < b
+
+# Good
+a >= b
+```
+
+### SIM205
+
+```python
+# Bad
+not a <= b
+
+# Good
+a > b
+```
+
+### SIM206
+
+```python
+# Bad
+not a > b
+
+# Good
+a <= b
+```
+
+### SIM207
+
+```python
+# Bad
+not a >= b
+
+# Good
+a < b
+```
+
+### SIM208
+
+```python
+# Bad
+not (not a)
+
+# Good
+a
 ```
