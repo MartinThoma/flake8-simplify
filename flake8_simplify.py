@@ -429,7 +429,10 @@ def _get_sim105(node: ast.Try) -> List[Tuple[int, int, str]]:
         or node.orelse != []
     ):
         return errors
-    exception = astor.to_source(node.handlers[0].type).strip()
+    if node.handlers[0].type is None:
+        exception = "Exception"
+    else:
+        exception = astor.to_source(node.handlers[0].type).strip()
     errors.append(
         (node.lineno, node.col_offset, SIM105.format(exception=exception))
     )

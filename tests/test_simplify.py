@@ -139,6 +139,16 @@ except ValueError:
     assert ret == {"1:0 SIM105 Use 'contextlib.suppress(ValueError)'"}
 
 
+def test_sim_105_pokemon():
+    ret = _results(
+        """try:
+    foo()
+except:
+    pass"""
+    )
+    assert ret == {"1:0 SIM105 Use 'contextlib.suppress(Exception)'"}
+
+
 def test_unary_not_equality():
     ret = _results("not a == b")
     assert ret == {"1:0 SIM201 Use 'a != b' instead of 'not a == b'"}
