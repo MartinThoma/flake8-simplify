@@ -27,6 +27,8 @@ SIM205 = "SIM205 Use '{a} > {b}' instead of 'not ({a} <= {b})'"
 SIM206 = "SIM206 Use '{a} <= {b}' instead of 'not ({a} > {b})'"
 SIM207 = "SIM207 Use '{a} < {b}' instead of 'not ({a} >= {b})'"
 SIM208 = "SIM208 Use '{a}' instead of 'not (not {a})'"
+SIM210 = "SIM210 Use 'bool({cond})' instead of 'True if {cond} else False'"
+SIM211 = "SIM211 Use 'not {cond}' instead of 'False if {cond} else True'"
 
 
 def _get_duplicated_isinstance_call_by_node(node: ast.BoolOp) -> List[str]:
@@ -249,6 +251,36 @@ def _get_sim208(node: ast.UnaryOp) -> List[Tuple[int, int, str]]:
     return errors
 
 
+def _get_sim210(node: ast.IfExp) -> List[Tuple[int, int, str]]:
+    """Get a list of all calls of the type "True if a else False"."""
+    errors: List[Tuple[int, int, str]] = []
+    if (
+        not isinstance(node.body, ast.Constant)
+        or node.body.value is not True
+        or not isinstance(node.orelse, ast.Constant)
+        or node.orelse.value is not False
+    ):
+        return errors
+    cond = astor.to_source(node.test).strip()
+    errors.append((node.lineno, node.col_offset, SIM210.format(cond=cond)))
+    return errors
+
+
+def _get_sim211(node: ast.IfExp) -> List[Tuple[int, int, str]]:
+    """Get a list of all calls of the type "False if a else True"."""
+    errors: List[Tuple[int, int, str]] = []
+    if (
+        not isinstance(node.body, ast.Constant)
+        or node.body.value is not False
+        or not isinstance(node.orelse, ast.Constant)
+        or node.orelse.value is not True
+    ):
+        return errors
+    cond = astor.to_source(node.test).strip()
+    errors.append((node.lineno, node.col_offset, SIM211.format(cond=cond)))
+    return errors
+
+
 class Visitor(ast.NodeVisitor):
     def __init__(self) -> None:
         self.errors: List[Tuple[int, int, str]] = []
@@ -270,6 +302,11 @@ class Visitor(ast.NodeVisitor):
         self.errors += _get_sim206(node)
         self.errors += _get_sim207(node)
         self.errors += _get_sim208(node)
+        self.generic_visit(node)
+
+    def visit_IfExp(self, node: ast.IfExp) -> None:
+        self.errors += _get_sim210(node)
+        self.errors += _get_sim211(node)
         self.generic_visit(node)
 
 

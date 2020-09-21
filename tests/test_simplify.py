@@ -149,3 +149,20 @@ def test_sim_207_base():
 def test_sim_208_base():
     ret = _results("not (not a)")
     assert ret == {("1:0 SIM208 Use 'a' instead of 'not (not a)'")}
+
+
+def test_sim_210_base():
+    ret = _results("True if True else False")
+    assert ret == {
+        (
+            "1:0 SIM210 Use 'bool((True))' instead of "
+            "'True if (True) else False'"
+        )
+    }
+
+
+def test_sim_211_base():
+    ret = _results("False if True else True")
+    assert ret == {
+        ("1:0 SIM211 Use 'not (True)' instead of 'False if (True) else True'")
+    }

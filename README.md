@@ -41,6 +41,8 @@ $ flake8 .
 * `SIM206`: Use 'a <= b' instead of 'not (a > b)'
 * `SIM207`: Use 'a < b' instead of 'not (a <= b)'
 * `SIM208`: Use 'a' instead of 'not (not a)'
+* `SIM210`: Use 'bool(a)' instead of 'True if a else False'
+* `SIM211`: Use 'not a' instead of 'False if a else True'
 
 The `SIM2` rules have one good reason to be ignored: When you are checking an
 error condition:
