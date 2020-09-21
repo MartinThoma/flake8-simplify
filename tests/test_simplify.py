@@ -84,7 +84,7 @@ def test_sim_102_base():
     )
     assert ret == {
         (
-            "1:0 SIM102: Use a single if-statement instead of "
+            "1:0 SIM102 Use a single if-statement instead of "
             "nested if-statements"
         )
     }
@@ -111,9 +111,19 @@ def test_sim_102_not_active2():
     assert ret == set()
 
 
+def test_sim_103_true_false():
+    ret = _results(
+        """if a:
+    return True
+else:
+    return False"""
+    )
+    assert ret == {"1:0 SIM103 Return the condition a directly"}
+
+
 def test_unary_not_equality():
     ret = _results("not a == b")
-    assert ret == {("1:0 SIM201 Use 'a != b' instead of 'not a == b'")}
+    assert ret == {"1:0 SIM201 Use 'a != b' instead of 'not a == b'"}
 
 
 def test_sim_202_base():

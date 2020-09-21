@@ -33,6 +33,7 @@ $ flake8 .
 * `SIM101`: Multiple isinstance-calls which can be merged into a single call by
   using a tuple as a second argument.
 * `SIM102`: Use a single if-statement instead of nested if-statements
+* `SIM103`: Return the boolean condition directly
 * `SIM201`: Use 'a != b' instead of 'not a == b'
 * `SIM202`: Use 'a == b' instead of 'not a != b'
 * `SIM203`: Use 'a not in b' instead of 'not (a in b)'
@@ -44,8 +45,8 @@ $ flake8 .
 * `SIM210`: Use 'bool(a)' instead of 'True if a else False'
 * `SIM211`: Use 'not a' instead of 'False if a else True'
 
-The `SIM2` rules have one good reason to be ignored: When you are checking an
-error condition:
+The `SIM201` - `SIM208` rules have one good reason to be ignored: When you are
+checking an error condition:
 
 ```python
 if not correct_condition:
