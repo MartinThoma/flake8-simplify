@@ -34,6 +34,7 @@ $ flake8 .
   using a tuple as a second argument.
 * `SIM102`: Use a single if-statement instead of nested if-statements
 * `SIM103`: Return the boolean condition directly
+* `SIM104`: Use 'yield from iterable' (introduced in Python 3.3, see [PEP 380](https://docs.python.org/3/whatsnew/3.3.html#pep-380))
 * `SIM201`: Use 'a != b' instead of 'not a == b'
 * `SIM202`: Use 'a == b' instead of 'not a != b'
 * `SIM203`: Use 'a not in b' instead of 'not (a in b)'

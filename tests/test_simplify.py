@@ -121,6 +121,14 @@ else:
     assert ret == {"1:0 SIM103 Return the condition a directly"}
 
 
+def test_sim_104():
+    ret = _results(
+        """for item in iterable:
+    yield item"""
+    )
+    assert ret == {"1:0 SIM104 Use 'yield from iterable'"}
+
+
 def test_unary_not_equality():
     ret = _results("not a == b")
     assert ret == {"1:0 SIM201 Use 'a != b' instead of 'not a == b'"}
