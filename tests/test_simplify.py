@@ -76,6 +76,41 @@ def test_multiple_other_function():
     assert ret == set()
 
 
+def test_sim_102_base():
+    ret = _results(
+        """if a:
+    if b:
+        c"""
+    )
+    assert ret == {
+        (
+            "1:0 SIM102: Use a single if-statement instead of "
+            "nested if-statements"
+        )
+    }
+
+
+def test_sim_102_not_active1():
+    ret = _results(
+        """if a:
+    if b:
+        c
+    else:
+        d"""
+    )
+    assert ret == set()
+
+
+def test_sim_102_not_active2():
+    ret = _results(
+        """if a:
+    d
+    if b:
+        c"""
+    )
+    assert ret == set()
+
+
 def test_unary_not_equality():
     ret = _results("not a == b")
     assert ret == {("1:0 SIM201 Use 'a != b' instead of 'not a == b'")}

@@ -32,6 +32,7 @@ $ flake8 .
 
 * `SIM101`: Multiple isinstance-calls which can be merged into a single call by
   using a tuple as a second argument.
+* `SIM102`: Use a single if-statement instead of nested if-statements
 * `SIM201`: Use 'a != b' instead of 'not a == b'
 * `SIM202`: Use 'a == b' instead of 'not a != b'
 * `SIM203`: Use 'a not in b' instead of 'not (a in b)'
@@ -60,6 +61,19 @@ isinstance(a, int) or isinstance(a, float)
 
 # Good
 isinstance(a, (int, float))
+```
+
+### SIM102
+
+```python
+# Bad
+if a:
+    if b:
+        c
+
+# Good
+if a and b:
+    c
 ```
 
 ### SIM201

@@ -18,6 +18,7 @@ SIM101 = (
     "SIM101 Multiple isinstance-calls which can be merged into a single "
     "call for variable '{var}'"
 )
+SIM102 = "SIM102: Use a single if-statement instead of nested if-statements"
 SIM201 = "SIM201 Use '{left} != {right}' instead of 'not {left} == {right}'"
 SIM202 = "SIM202 Use '{left} == {right}' instead of 'not {left} != {right}'"
 SIM203 = "SIM203 Use '{a} not in {b}' instead of 'not {a} in {b}'"
@@ -69,6 +70,20 @@ def _get_duplicated_isinstance_calls(
 
     for var in _get_duplicated_isinstance_call_by_node(node):
         errors.append((node.lineno, node.col_offset, SIM101.format(var=var)))
+    return errors
+
+
+def _get_sim102(node: ast.If) -> List[Tuple[int, int, str]]:
+    """Get a list of all nested if-statements without else-blocks."""
+    errors: List[Tuple[int, int, str]] = []
+    if (
+        node.orelse != []
+        or len(node.body) != 1
+        or not isinstance(node.body[0], ast.If)
+        or node.body[0].orelse != []
+    ):
+        return errors
+    errors.append((node.lineno, node.col_offset, SIM102))
     return errors
 
 
@@ -240,6 +255,10 @@ class Visitor(ast.NodeVisitor):
 
     def visit_BoolOp(self, node: ast.BoolOp) -> None:
         self.errors += _get_duplicated_isinstance_calls(node)
+        self.generic_visit(node)
+
+    def visit_If(self, node: ast.If) -> None:
+        self.errors += _get_sim102(node)
         self.generic_visit(node)
 
     def visit_UnaryOp(self, node: ast.UnaryOp) -> None:
