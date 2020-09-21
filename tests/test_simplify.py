@@ -129,6 +129,16 @@ def test_sim_104():
     assert ret == {"1:0 SIM104 Use 'yield from iterable'"}
 
 
+def test_sim_105():
+    ret = _results(
+        """try:
+    foo()
+except ValueError:
+    pass"""
+    )
+    assert ret == {"1:0 SIM105 Use 'contextlib.suppress(ValueError)'"}
+
+
 def test_unary_not_equality():
     ret = _results("not a == b")
     assert ret == {"1:0 SIM201 Use 'a != b' instead of 'not a == b'"}

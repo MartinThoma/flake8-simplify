@@ -21,6 +21,7 @@ SIM101 = (
 SIM102 = "SIM102 Use a single if-statement instead of nested if-statements"
 SIM103 = "SIM103 Return the condition {cond} directly"
 SIM104 = "SIM104 Use 'yield from {iterable}'"
+SIM105 = "SIM105 Use 'contextlib.suppress({exception})'"
 SIM201 = "SIM201 Use '{left} != {right}' instead of 'not {left} == {right}'"
 SIM202 = "SIM202 Use '{left} == {right}' instead of 'not {left} != {right}'"
 SIM203 = "SIM203 Use '{a} not in {b}' instead of 'not {a} in {b}'"
@@ -374,6 +375,57 @@ def _get_sim104(node: ast.For) -> List[Tuple[int, int, str]]:
     return errors
 
 
+def _get_sim105(node: ast.Try) -> List[Tuple[int, int, str]]:
+    """
+    Get a list of all "try-except-pass" patterns.
+
+    try:
+        foo()
+    except ValueError:
+        pass
+
+    which is
+
+        Try(
+            body=[
+                Expr(
+                    value=Call(
+                        func=Name(id='foo', ctx=Load()),
+                        args=[],
+                        keywords=[],
+                    ),
+                ),
+            ],
+            handlers=[
+                ExceptHandler(
+                    type=Name(id='ValueError', ctx=Load()),
+                    name=None,
+                    body=[Pass()],
+                ),
+            ],
+            orelse=[],
+            finalbody=[],
+        ),
+
+
+    """
+    errors: List[Tuple[int, int, str]] = []
+    if (
+        len(node.body) != 1
+        or len(node.handlers) != 1
+        or not isinstance(node.handlers[0], ast.ExceptHandler)
+        or len(node.handlers[0].body) != 1
+        or not isinstance(node.handlers[0].body[0], ast.Pass)
+        or node.orelse != []
+    ):
+        return errors
+    exception = astor.to_source(node.handlers[0].type).strip()
+    errors.append(
+        (node.lineno, node.col_offset, SIM105.format(exception=exception))
+    )
+    return errors
+
+
 class Visitor(ast.NodeVisitor):
     def __init__(self) -> None:
         self.errors: List[Tuple[int, int, str]] = []
@@ -389,6 +441,10 @@ class Visitor(ast.NodeVisitor):
 
     def visit_For(self, node: ast.For) -> None:
         self.errors += _get_sim104(node)
+        self.generic_visit(node)
+
+    def visit_Try(self, node: ast.Try) -> None:
+        self.errors += _get_sim105(node)
         self.generic_visit(node)
 
     def visit_UnaryOp(self, node: ast.UnaryOp) -> None:
