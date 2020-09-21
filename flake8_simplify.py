@@ -34,6 +34,12 @@ SIM210 = "SIM210 Use 'bool({cond})' instead of 'True if {cond} else False'"
 SIM211 = "SIM211 Use 'not {cond}' instead of 'False if {cond} else True'"
 
 
+def strip_parenthesis(string: str) -> str:
+    if string[0] == "(" and string[-1] == ")":
+        return string[1:-1]
+    return string
+
+
 def _get_duplicated_isinstance_call_by_node(node: ast.BoolOp) -> List[str]:
     """
     Get a list of isinstance arguments which could be shortened.
@@ -213,8 +219,10 @@ def _get_sim206(node: ast.UnaryOp) -> List[Tuple[int, int, str]]:
     ):
         return errors
     comparison = node.operand
-    left = astor.to_source(comparison.left).strip()
-    right = astor.to_source(comparison.comparators[0]).strip()
+    left = strip_parenthesis(astor.to_source(comparison.left).strip())
+    right = strip_parenthesis(
+        astor.to_source(comparison.comparators[0]).strip()
+    )
     errors.append(
         (node.lineno, node.col_offset, SIM206.format(a=left, b=right))
     )
@@ -258,13 +266,13 @@ def _get_sim210(node: ast.IfExp) -> List[Tuple[int, int, str]]:
     """Get a list of all calls of the type "True if a else False"."""
     errors: List[Tuple[int, int, str]] = []
     if (
-        not isinstance(node.body, ast.Constant)
+        not isinstance(node.body, (ast.Constant, ast.NameConstant))
         or node.body.value is not True
-        or not isinstance(node.orelse, ast.Constant)
+        or not isinstance(node.orelse, (ast.Constant, ast.NameConstant))
         or node.orelse.value is not False
     ):
         return errors
-    cond = astor.to_source(node.test).strip()
+    cond = strip_parenthesis(astor.to_source(node.test).strip())
     errors.append((node.lineno, node.col_offset, SIM210.format(cond=cond)))
     return errors
 
@@ -273,13 +281,13 @@ def _get_sim211(node: ast.IfExp) -> List[Tuple[int, int, str]]:
     """Get a list of all calls of the type "False if a else True"."""
     errors: List[Tuple[int, int, str]] = []
     if (
-        not isinstance(node.body, ast.Constant)
+        not isinstance(node.body, (ast.Constant, ast.NameConstant))
         or node.body.value is not False
-        or not isinstance(node.orelse, ast.Constant)
+        or not isinstance(node.orelse, (ast.Constant, ast.NameConstant))
         or node.orelse.value is not True
     ):
         return errors
-    cond = astor.to_source(node.test).strip()
+    cond = strip_parenthesis(astor.to_source(node.test).strip())
     errors.append((node.lineno, node.col_offset, SIM211.format(cond=cond)))
     return errors
 
@@ -314,14 +322,16 @@ def _get_sim103(node: ast.If) -> List[Tuple[int, int, str]]:
     if (
         len(node.body) != 1
         or not isinstance(node.body[0], ast.Return)
-        or not isinstance(node.body[0].value, ast.Constant)
+        or not isinstance(node.body[0].value, (ast.Constant, ast.NameConstant))
         or not (
             node.body[0].value.value is True
             or node.body[0].value.value is False
         )
         or len(node.orelse) != 1
         or not isinstance(node.orelse[0], ast.Return)
-        or not isinstance(node.orelse[0].value, ast.Constant)
+        or not isinstance(
+            node.orelse[0].value, (ast.Constant, ast.NameConstant)
+        )
         or not (
             node.orelse[0].value.value is True
             or node.orelse[0].value.value is False
