@@ -222,3 +222,30 @@ def test_sim_211_base():
     assert ret == {
         ("1:0 SIM211 Use 'not True' instead of 'False if True else True'")
     }
+
+
+def test_sim_212_base():
+    ret = _results("b if not a else a")
+    assert ret == {
+        ("1:0 SIM212 Use 'a if a else b' instead of 'b if not a else a'")
+    }
+
+
+def test_sim_220_base():
+    ret = _results("a and not a")
+    assert ret == {("1:0 SIM220 Use 'False' instead of 'a and not a'")}
+
+
+def test_sim_221_base():
+    ret = _results("a or not a")
+    assert ret == {("1:0 SIM221 Use 'True' instead of 'a or not a'")}
+
+
+def test_sim_222_base():
+    ret = _results("a or True")
+    assert ret == {("1:0 SIM222 Use 'True' instead of '... or True'")}
+
+
+def test_sim_223_base():
+    ret = _results("a and False")
+    assert ret == {("1:0 SIM223 Use 'False' instead of '... and False'")}

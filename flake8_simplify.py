@@ -32,6 +32,16 @@ SIM207 = "SIM207 Use '{a} < {b}' instead of 'not ({a} >= {b})'"
 SIM208 = "SIM208 Use '{a}' instead of 'not (not {a})'"
 SIM210 = "SIM210 Use 'bool({cond})' instead of 'True if {cond} else False'"
 SIM211 = "SIM211 Use 'not {cond}' instead of 'False if {cond} else True'"
+SIM212 = (
+    "SIM212 Use '{a} if {a} else {b}' instead of '{b} if not {a} else {a}'"
+)
+SIM220 = "SIM220 Use 'False' instead of '{a} and not {a}'"
+SIM221 = "SIM221 Use 'True' instead of '{a} or not {a}'"
+SIM222 = "SIM222 Use 'True' instead of '... or True'"
+SIM223 = "SIM223 Use 'False' instead of '... and False'"
+
+# ast.Constant in Python 3.8, ast.NameConstant in Python 3.6 and 3.7
+AST_CONST_TYPES = (ast.Constant, ast.NameConstant)
 
 
 def strip_parenthesis(string: str) -> str:
@@ -71,7 +81,7 @@ def _get_duplicated_isinstance_call_by_node(node: ast.BoolOp) -> List[str]:
     return [arg0_name for arg0_name, count in counter.items() if count > 1]
 
 
-def _get_duplicated_isinstance_calls(
+def _get_sim101(
     node: ast.BoolOp,
 ) -> List[Tuple[int, int, str]]:
     """Get a positions where the duplicate isinstance problem appears."""
@@ -99,9 +109,9 @@ def _get_sim102(node: ast.If) -> List[Tuple[int, int, str]]:
         and node.body[0].orelse == []
     )
     # ## Pattern 2
-    # if a:
+    # if a: < irrelvant for here
     #     pass
-    # elif b:  <---
+    # elif b:  <--- this is treated like a nested block
     #     if c: <---
     #         d
 
@@ -111,7 +121,7 @@ def _get_sim102(node: ast.If) -> List[Tuple[int, int, str]]:
     return errors
 
 
-def _get_not_equal_calls(node: ast.UnaryOp) -> List[Tuple[int, int, str]]:
+def _get_sim201(node: ast.UnaryOp) -> List[Tuple[int, int, str]]:
     """
     Get a list of all calls where an unary 'not' is used for an equality.
 
@@ -135,11 +145,9 @@ def _get_not_equal_calls(node: ast.UnaryOp) -> List[Tuple[int, int, str]]:
     return errors
 
 
-def _get_not_non_equal_calls(node: ast.UnaryOp) -> List[Tuple[int, int, str]]:
+def _get_sim202(node: ast.UnaryOp) -> List[Tuple[int, int, str]]:
     """
     Get a list of all calls where an unary 'not' is used for an quality.
-
-    This checks SIM202.
     """
     errors: List[Tuple[int, int, str]] = []
     if (
@@ -159,11 +167,9 @@ def _get_not_non_equal_calls(node: ast.UnaryOp) -> List[Tuple[int, int, str]]:
     return errors
 
 
-def _get_not_in_calls(node: ast.UnaryOp) -> List[Tuple[int, int, str]]:
+def _get_sim203(node: ast.UnaryOp) -> List[Tuple[int, int, str]]:
     """
     Get a list of all calls where an unary 'not' is used for an in-check.
-
-    This checks SIM203.
     """
     errors: List[Tuple[int, int, str]] = []
     if (
@@ -279,9 +285,9 @@ def _get_sim210(node: ast.IfExp) -> List[Tuple[int, int, str]]:
     """Get a list of all calls of the type "True if a else False"."""
     errors: List[Tuple[int, int, str]] = []
     if (
-        not isinstance(node.body, (ast.Constant, ast.NameConstant))
+        not isinstance(node.body, AST_CONST_TYPES)
         or node.body.value is not True
-        or not isinstance(node.orelse, (ast.Constant, ast.NameConstant))
+        or not isinstance(node.orelse, AST_CONST_TYPES)
         or node.orelse.value is not False
     ):
         return errors
@@ -294,14 +300,186 @@ def _get_sim211(node: ast.IfExp) -> List[Tuple[int, int, str]]:
     """Get a list of all calls of the type "False if a else True"."""
     errors: List[Tuple[int, int, str]] = []
     if (
-        not isinstance(node.body, (ast.Constant, ast.NameConstant))
+        not isinstance(node.body, AST_CONST_TYPES)
         or node.body.value is not False
-        or not isinstance(node.orelse, (ast.Constant, ast.NameConstant))
+        or not isinstance(node.orelse, AST_CONST_TYPES)
         or node.orelse.value is not True
     ):
         return errors
     cond = strip_parenthesis(astor.to_source(node.test).strip())
     errors.append((node.lineno, node.col_offset, SIM211.format(cond=cond)))
+    return errors
+
+
+def is_same_expression(a: ast.expr, b: ast.expr) -> bool:
+    """Check if two expressions are equal to each other."""
+    if isinstance(a, ast.Name) and isinstance(b, ast.Name):
+        return a.id == b.id
+    else:
+        return False
+
+
+def _get_sim212(node: ast.IfExp) -> List[Tuple[int, int, str]]:
+    """
+    Get a list of all calls of the type "b if not a else a".
+
+    IfExp(
+        test=UnaryOp(
+            op=Not(),
+            operand=Name(id='a', ctx=Load()),
+        ),
+        body=Name(id='b', ctx=Load()),
+        orelse=Name(id='a', ctx=Load()),
+    )
+    """
+    errors: List[Tuple[int, int, str]] = []
+    if not (
+        isinstance(node.test, ast.UnaryOp)
+        and isinstance(node.test.op, ast.Not)
+        and is_same_expression(node.test.operand, node.orelse)
+    ):
+        return errors
+    a = strip_parenthesis(astor.to_source(node.test.operand).strip())
+    b = strip_parenthesis(astor.to_source(node.body).strip())
+    errors.append((node.lineno, node.col_offset, SIM212.format(a=a, b=b)))
+    return errors
+
+
+def _get_sim220(node: ast.BoolOp) -> List[Tuple[int, int, str]]:
+    """
+    Get a list of all calls of the type "a and not a".
+
+    BoolOp(
+        op=And(),
+        values=[
+            Name(id='a', ctx=Load()),
+            UnaryOp(
+                op=Not(),
+                operand=Name(id='a', ctx=Load()),
+            ),
+        ],
+    )
+    """
+    errors: List[Tuple[int, int, str]] = []
+    if not (isinstance(node.op, ast.And) and len(node.values) >= 2):
+        return errors
+    # We have a boolean And. Let's make sure there is two times the same
+    # expression, but once with a "not"
+    negated_expressions = []
+    non_negated_expressions = []
+    for exp in node.values:
+        if isinstance(exp, ast.UnaryOp) and isinstance(exp.op, ast.Not):
+            negated_expressions.append(exp.operand)
+        else:
+            non_negated_expressions.append(exp)
+    if len(negated_expressions) == 0:
+        return errors
+
+    for negated_expression in negated_expressions:
+        for non_negated_expression in non_negated_expressions:
+            if is_same_expression(negated_expression, non_negated_expression):
+                a = strip_parenthesis(
+                    astor.to_source(negated_expression).strip()
+                )
+                errors.append(
+                    (node.lineno, node.col_offset, SIM220.format(a=a))
+                )
+                return errors
+    return errors
+
+
+def _get_sim221(node: ast.BoolOp) -> List[Tuple[int, int, str]]:
+    """
+    Get a list of all calls of the type "a or not a".
+
+    BoolOp(
+        op=Or(),
+        values=[
+            Name(id='a', ctx=Load()),
+            UnaryOp(
+                op=Not(),
+                operand=Name(id='a', ctx=Load()),
+            ),
+        ],
+    )
+    """
+    errors: List[Tuple[int, int, str]] = []
+    if not (isinstance(node.op, ast.Or) and len(node.values) >= 2):
+        return errors
+    # We have a boolean OR. Let's make sure there is two times the same
+    # expression, but once with a "not"
+    negated_expressions = []
+    non_negated_expressions = []
+    for exp in node.values:
+        if isinstance(exp, ast.UnaryOp) and isinstance(exp.op, ast.Not):
+            negated_expressions.append(exp.operand)
+        else:
+            non_negated_expressions.append(exp)
+    if len(negated_expressions) == 0:
+        return errors
+
+    for negated_expression in negated_expressions:
+        for non_negated_expression in non_negated_expressions:
+            if is_same_expression(negated_expression, non_negated_expression):
+                a = strip_parenthesis(
+                    astor.to_source(negated_expression).strip()
+                )
+                errors.append(
+                    (node.lineno, node.col_offset, SIM221.format(a=a))
+                )
+                return errors
+    return errors
+
+
+def _get_sim222(node: ast.BoolOp) -> List[Tuple[int, int, str]]:
+    """
+    Get a list of all calls of the type "... or True".
+
+    BoolOp(
+        op=Or(),
+        values=[
+            Name(id='a', ctx=Load()),
+            UnaryOp(
+                op=Not(),
+                operand=Name(id='a', ctx=Load()),
+            ),
+        ],
+    )
+    """
+    errors: List[Tuple[int, int, str]] = []
+    if not (isinstance(node.op, ast.Or)):
+        return errors
+
+    for exp in node.values:
+        if isinstance(exp, AST_CONST_TYPES) and exp.value is True:
+            errors.append((node.lineno, node.col_offset, SIM222))
+            return errors
+    return errors
+
+
+def _get_sim223(node: ast.BoolOp) -> List[Tuple[int, int, str]]:
+    """
+    Get a list of all calls of the type "... and False".
+
+    BoolOp(
+        op=And(),
+        values=[
+            Name(id='a', ctx=Load()),
+            UnaryOp(
+                op=Not(),
+                operand=Name(id='a', ctx=Load()),
+            ),
+        ],
+    )
+    """
+    errors: List[Tuple[int, int, str]] = []
+    if not (isinstance(node.op, ast.And)):
+        return errors
+
+    for exp in node.values:
+        if isinstance(exp, AST_CONST_TYPES) and exp.value is False:
+            errors.append((node.lineno, node.col_offset, SIM223))
+            return errors
     return errors
 
 
@@ -335,16 +513,14 @@ def _get_sim103(node: ast.If) -> List[Tuple[int, int, str]]:
     if (
         len(node.body) != 1
         or not isinstance(node.body[0], ast.Return)
-        or not isinstance(node.body[0].value, (ast.Constant, ast.NameConstant))
+        or not isinstance(node.body[0].value, AST_CONST_TYPES)
         or not (
             node.body[0].value.value is True
             or node.body[0].value.value is False
         )
         or len(node.orelse) != 1
         or not isinstance(node.orelse[0], ast.Return)
-        or not isinstance(
-            node.orelse[0].value, (ast.Constant, ast.NameConstant)
-        )
+        or not isinstance(node.orelse[0].value, AST_CONST_TYPES)
         or not (
             node.orelse[0].value.value is True
             or node.orelse[0].value.value is False
@@ -457,7 +633,11 @@ class Visitor(ast.NodeVisitor):
         self.errors: List[Tuple[int, int, str]] = []
 
     def visit_BoolOp(self, node: ast.BoolOp) -> None:
-        self.errors += _get_duplicated_isinstance_calls(node)
+        self.errors += _get_sim101(node)
+        self.errors += _get_sim220(node)
+        self.errors += _get_sim221(node)
+        self.errors += _get_sim222(node)
+        self.errors += _get_sim223(node)
         self.generic_visit(node)
 
     def visit_If(self, node: ast.If) -> None:
@@ -474,9 +654,9 @@ class Visitor(ast.NodeVisitor):
         self.generic_visit(node)
 
     def visit_UnaryOp(self, node: ast.UnaryOp) -> None:
-        self.errors += _get_not_equal_calls(node)
-        self.errors += _get_not_non_equal_calls(node)
-        self.errors += _get_not_in_calls(node)
+        self.errors += _get_sim201(node)
+        self.errors += _get_sim202(node)
+        self.errors += _get_sim203(node)
         self.errors += _get_sim204(node)
         self.errors += _get_sim205(node)
         self.errors += _get_sim206(node)
@@ -487,6 +667,7 @@ class Visitor(ast.NodeVisitor):
     def visit_IfExp(self, node: ast.IfExp) -> None:
         self.errors += _get_sim210(node)
         self.errors += _get_sim211(node)
+        self.errors += _get_sim212(node)
         self.generic_visit(node)
 
 

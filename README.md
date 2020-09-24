@@ -46,6 +46,11 @@ $ flake8 .
 * `SIM208`: Use 'a' instead of 'not (not a)'
 * `SIM210`: Use 'bool(a)' instead of 'True if a else False'
 * `SIM211`: Use 'not a' instead of 'False if a else True'
+* `SIM212`: Use 'a if a else b' instead of 'b if not a else a'
+* `SIM220`: Use 'False' instead of 'a and not a'
+* `SIM221`: Use 'True' instead of 'a or not a'
+* `SIM222`: Use 'True' instead of '... or True'
+* `SIM223`: Use 'False' instead of '... and False'
 
 The `SIM201` - `SIM208` rules have one good reason to be ignored: When you are
 checking an error condition:
@@ -159,4 +164,74 @@ not (not a)
 
 # Good
 a
+```
+
+### SIM210
+
+```python
+# Bad
+True if a else False
+
+# Good
+bool(a)
+```
+
+### SIM211
+
+```python
+# Bad
+False if a else True
+
+# Good
+not a
+```
+
+### SIM212
+
+```python
+# Bad
+b if not a else a
+
+# Good
+a if a else b
+```
+
+### SIM220
+
+```python
+# Bad
+a and not a
+
+# Good
+False
+```
+
+### SIM221
+
+```python
+# Bad
+a or not a
+
+# Good
+True
+```
+
+### SIM222
+
+```python
+# Bad
+... or True
+
+# Good
+True
+```
+
+### SIM223
+
+```python
+# Bad
+... and False
+
+# Good
+False
 ```
