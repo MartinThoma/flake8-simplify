@@ -87,12 +87,25 @@ def _get_duplicated_isinstance_calls(
 def _get_sim102(node: ast.If) -> List[Tuple[int, int, str]]:
     """Get a list of all nested if-statements without else-blocks."""
     errors: List[Tuple[int, int, str]] = []
-    if (
-        node.orelse != []
-        or len(node.body) != 1
-        or not isinstance(node.body[0], ast.If)
-        or node.body[0].orelse != []
-    ):
+
+    # ## Pattern 1
+    # if a: <---
+    #     if b: <---
+    #         c
+    is_pattern_1 = (
+        node.orelse == []
+        and len(node.body) == 1
+        and isinstance(node.body[0], ast.If)
+        and node.body[0].orelse == []
+    )
+    # ## Pattern 2
+    # if a:
+    #     pass
+    # elif b:  <---
+    #     if c: <---
+    #         d
+
+    if not is_pattern_1:
         return errors
     errors.append((node.lineno, node.col_offset, SIM102))
     return errors

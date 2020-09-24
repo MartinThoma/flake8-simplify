@@ -76,7 +76,7 @@ def test_multiple_other_function():
     assert ret == set()
 
 
-def test_sim_102_base():
+def test_sim_102_pattern1():
     ret = _results(
         """if a:
     if b:
@@ -85,6 +85,27 @@ def test_sim_102_base():
     assert ret == {
         (
             "1:0 SIM102 Use a single if-statement instead of "
+            "nested if-statements"
+        )
+    }
+
+
+def test_sim_102_pattern2():
+    ret = _results(
+        """if a:
+    pass
+elif b:
+    if c:
+        d"""
+    )
+    assert ret == {  # Python 3.7+
+        (
+            "3:0 SIM102 Use a single if-statement instead of "
+            "nested if-statements"
+        )
+    } or ret == {  # Python 3.6
+        (
+            "3:5 SIM102 Use a single if-statement instead of "
             "nested if-statements"
         )
     }
