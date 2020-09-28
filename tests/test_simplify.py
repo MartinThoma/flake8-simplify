@@ -172,6 +172,16 @@ else:
     assert ret == {"1:0 SIM106 Handle error-cases first"}
 
 
+def test_sim_106_no():
+    ret = _results(
+        """if cond:
+    raise Exception
+else:
+    raise Exception"""
+    )
+    assert ret == set()
+
+
 def test_sim_105_pokemon():
     ret = _results(
         """try:

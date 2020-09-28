@@ -666,11 +666,13 @@ def _get_sim106(node: ast.If) -> List[Tuple[int, int, str]]:
         len(node.orelse) == 1
         and len(node.orelse) >= 1
         and isinstance(node.orelse[-1], ast.Raise)
+        and not isinstance(node.body[-1], ast.Raise)
     )
     many = (
         len(node.body) > 2 * len(node.orelse)
         and len(node.orelse) >= 1
         and isinstance(node.orelse[-1], ast.Raise)
+        and not isinstance(node.body[-1], ast.Raise)
     )
     if not (just_one or many):
         return errors
