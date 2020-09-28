@@ -133,3 +133,5 @@ dmypy.json
 mutmut-results.xml
 mutmut-results.html
 tests/reports/
+
+.vscode/

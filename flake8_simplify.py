@@ -22,6 +22,7 @@ SIM102 = "SIM102 Use a single if-statement instead of nested if-statements"
 SIM103 = "SIM103 Return the condition {cond} directly"
 SIM104 = "SIM104 Use 'yield from {iterable}'"
 SIM105 = "SIM105 Use 'contextlib.suppress({exception})'"
+SIM106 = "SIM106 Handle error-cases first"
 SIM201 = "SIM201 Use '{left} != {right}' instead of 'not {left} == {right}'"
 SIM202 = "SIM202 Use '{left} == {right}' instead of 'not {left} != {right}'"
 SIM203 = "SIM203 Use '{a} not in {b}' instead of 'not {a} in {b}'"
@@ -628,6 +629,55 @@ def _get_sim105(node: ast.Try) -> List[Tuple[int, int, str]]:
     return errors
 
 
+def _get_sim106(node: ast.If) -> List[Tuple[int, int, str]]:
+    """
+    Get a list of all calls where an exception is raised in else.
+
+    if cond:
+        return True
+    else:
+        raise Exception
+
+    which is
+
+        If(
+            test=Name(id='cond', ctx=Load()),
+            body=[
+                Expr(
+                    value=Name(id='a', ctx=Load()),
+                ),
+                Expr(
+                    value=Name(id='b', ctx=Load()),
+                ),
+                Expr(
+                    value=Name(id='c', ctx=Load()),
+                ),
+            ],
+            orelse=[
+                Raise(
+                    exc=Name(id='Exception', ctx=Load()),
+                    cause=None,
+                ),
+            ],
+        )
+    """
+    errors: List[Tuple[int, int, str]] = []
+    just_one = (
+        len(node.orelse) == 1
+        and len(node.orelse) >= 1
+        and isinstance(node.orelse[-1], ast.Raise)
+    )
+    many = (
+        len(node.body) > 2 * len(node.orelse)
+        and len(node.orelse) >= 1
+        and isinstance(node.orelse[-1], ast.Raise)
+    )
+    if not (just_one or many):
+        return errors
+    errors.append((node.lineno, node.col_offset, SIM106))
+    return errors
+
+
 class Visitor(ast.NodeVisitor):
     def __init__(self) -> None:
         self.errors: List[Tuple[int, int, str]] = []
@@ -643,6 +693,7 @@ class Visitor(ast.NodeVisitor):
     def visit_If(self, node: ast.If) -> None:
         self.errors += _get_sim102(node)
         self.errors += _get_sim103(node)
+        self.errors += _get_sim106(node)
         self.generic_visit(node)
 
     def visit_For(self, node: ast.For) -> None:

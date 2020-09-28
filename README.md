@@ -36,6 +36,7 @@ $ flake8 .
 * `SIM103`: Return the boolean condition directly
 * `SIM104`: Use 'yield from iterable' (introduced in Python 3.3, see [PEP 380](https://docs.python.org/3/whatsnew/3.3.html#pep-380))
 * `SIM105`: Use ['contextlib.suppress(...)'](https://docs.python.org/3/library/contextlib.html#contextlib.suppress) instead of try-except-pass
+* `SIM106`: Handle error-cases first
 * `SIM201`: Use 'a != b' instead of 'not a == b'
 * `SIM202`: Use 'a == b' instead of 'not a != b'
 * `SIM203`: Use 'a not in b' instead of 'not (a in b)'

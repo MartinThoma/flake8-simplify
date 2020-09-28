@@ -160,6 +160,18 @@ except ValueError:
     assert ret == {"1:0 SIM105 Use 'contextlib.suppress(ValueError)'"}
 
 
+def test_sim_106():
+    ret = _results(
+        """if cond:
+    a
+    b
+    c
+else:
+    raise Exception"""
+    )
+    assert ret == {"1:0 SIM106 Handle error-cases first"}
+
+
 def test_sim_105_pokemon():
     ret = _results(
         """try:
