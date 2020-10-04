@@ -23,6 +23,7 @@ SIM103 = "SIM103 Return the condition {cond} directly"
 SIM104 = "SIM104 Use 'yield from {iterable}'"
 SIM105 = "SIM105 Use 'contextlib.suppress({exception})'"
 SIM106 = "SIM106 Handle error-cases first"
+SIM107 = "SIM107 Don't use return in try/except and finally"
 SIM201 = "SIM201 Use '{left} != {right}' instead of 'not {left} == {right}'"
 SIM202 = "SIM202 Use '{left} == {right}' instead of 'not {left} != {right}'"
 SIM203 = "SIM203 Use '{a} not in {b}' instead of 'not {a} in {b}'"
@@ -122,11 +123,239 @@ def _get_sim102(node: ast.If) -> List[Tuple[int, int, str]]:
     return errors
 
 
+def _get_sim103(node: ast.If) -> List[Tuple[int, int, str]]:
+    """
+    Get a list of all calls that wrap a condition to return a bool.
+
+    if cond:
+        return True
+    else:
+        return False
+
+    which is
+
+        If(
+            test=Name(id='cond', ctx=Load()),
+            body=[
+                Return(
+                    value=Constant(value=True, kind=None),
+                ),
+            ],
+            orelse=[
+                Return(
+                    value=Constant(value=False, kind=None),
+                ),
+            ],
+        ),
+
+    """
+    errors: List[Tuple[int, int, str]] = []
+    if (
+        len(node.body) != 1
+        or not isinstance(node.body[0], ast.Return)
+        or not isinstance(node.body[0].value, AST_CONST_TYPES)
+        or not (
+            node.body[0].value.value is True
+            or node.body[0].value.value is False
+        )
+        or len(node.orelse) != 1
+        or not isinstance(node.orelse[0], ast.Return)
+        or not isinstance(node.orelse[0].value, AST_CONST_TYPES)
+        or not (
+            node.orelse[0].value.value is True
+            or node.orelse[0].value.value is False
+        )
+    ):
+        return errors
+    cond = astor.to_source(node.test).strip()
+    errors.append((node.lineno, node.col_offset, SIM103.format(cond=cond)))
+    return errors
+
+
+def _get_sim104(node: ast.For) -> List[Tuple[int, int, str]]:
+    """
+    Get a list of all "iterate and yield" patterns.
+
+    for item in iterable:
+        yield item
+
+    which is
+
+        For(
+            target=Name(id='item', ctx=Store()),
+            iter=Name(id='iterable', ctx=Load()),
+            body=[
+                Expr(
+                    value=Yield(
+                        value=Name(id='item', ctx=Load()),
+                    ),
+                ),
+            ],
+            orelse=[],
+            type_comment=None,
+        ),
+
+    """
+    errors: List[Tuple[int, int, str]] = []
+    if (
+        len(node.body) != 1
+        or not isinstance(node.body[0], ast.Expr)
+        or not isinstance(node.body[0].value, ast.Yield)
+        or not isinstance(node.target, ast.Name)
+        or not isinstance(node.body[0].value.value, ast.Name)
+        or node.target.id != node.body[0].value.value.id
+        or node.orelse != []
+    ):
+        return errors
+    iterable = astor.to_source(node.iter).strip()
+    errors.append(
+        (node.lineno, node.col_offset, SIM104.format(iterable=iterable))
+    )
+    return errors
+
+
+def _get_sim105(node: ast.Try) -> List[Tuple[int, int, str]]:
+    """
+    Get a list of all "try-except-pass" patterns.
+
+    try:
+        foo()
+    except ValueError:
+        pass
+
+    which is
+
+        Try(
+            body=[
+                Expr(
+                    value=Call(
+                        func=Name(id='foo', ctx=Load()),
+                        args=[],
+                        keywords=[],
+                    ),
+                ),
+            ],
+            handlers=[
+                ExceptHandler(
+                    type=Name(id='ValueError', ctx=Load()),
+                    name=None,
+                    body=[Pass()],
+                ),
+            ],
+            orelse=[],
+            finalbody=[],
+        ),
+
+
+    """
+    errors: List[Tuple[int, int, str]] = []
+    if (
+        len(node.body) != 1
+        or len(node.handlers) != 1
+        or not isinstance(node.handlers[0], ast.ExceptHandler)
+        or len(node.handlers[0].body) != 1
+        or not isinstance(node.handlers[0].body[0], ast.Pass)
+        or node.orelse != []
+    ):
+        return errors
+    if node.handlers[0].type is None:
+        exception = "Exception"
+    else:
+        exception = astor.to_source(node.handlers[0].type).strip()
+    errors.append(
+        (node.lineno, node.col_offset, SIM105.format(exception=exception))
+    )
+    return errors
+
+
+def _get_sim106(node: ast.If) -> List[Tuple[int, int, str]]:
+    """
+    Get a list of all calls where an exception is raised in else.
+
+    if cond:
+        return True
+    else:
+        raise Exception
+
+    which is
+
+        If(
+            test=Name(id='cond', ctx=Load()),
+            body=[
+                Expr(
+                    value=Name(id='a', ctx=Load()),
+                ),
+                Expr(
+                    value=Name(id='b', ctx=Load()),
+                ),
+                Expr(
+                    value=Name(id='c', ctx=Load()),
+                ),
+            ],
+            orelse=[
+                Raise(
+                    exc=Name(id='Exception', ctx=Load()),
+                    cause=None,
+                ),
+            ],
+        )
+    """
+    errors: List[Tuple[int, int, str]] = []
+    just_one = (
+        len(node.orelse) == 1
+        and len(node.orelse) >= 1
+        and isinstance(node.orelse[-1], ast.Raise)
+        and not isinstance(node.body[-1], ast.Raise)
+    )
+    many = (
+        len(node.body) > 2 * len(node.orelse)
+        and len(node.orelse) >= 1
+        and isinstance(node.orelse[-1], ast.Raise)
+        and not isinstance(node.body[-1], ast.Raise)
+    )
+    if not (just_one or many):
+        return errors
+    errors.append((node.lineno, node.col_offset, SIM106))
+    return errors
+
+
+def _get_sim107(node: ast.Try) -> List[Tuple[int, int, str]]:
+    """
+    Get a list of all calls where try/except and finally have 'return'.
+    """
+    errors: List[Tuple[int, int, str]] = []
+
+    try_has_return = False
+    for stmt in node.body:
+        if isinstance(stmt, ast.Return):
+            try_has_return = True
+            break
+
+    except_has_return = False
+    for stmt2 in node.handlers:
+        if isinstance(stmt2, ast.Return):
+            except_has_return = True
+            break
+
+    finally_has_return = False
+    finally_return = None
+    for stmt in node.finalbody:
+        if isinstance(stmt, ast.Return):
+            finally_has_return = True
+            finally_return = stmt
+            break
+
+    if (try_has_return or except_has_return) and finally_has_return:
+        assert finally_return is not None, "hint for mypy"
+        errors.append(
+            (finally_return.lineno, finally_return.col_offset, SIM107)
+        )
+    return errors
+
+
 def _get_sim201(node: ast.UnaryOp) -> List[Tuple[int, int, str]]:
     """
     Get a list of all calls where an unary 'not' is used for an equality.
-
-    This checks SIM201.
     """
     errors: List[Tuple[int, int, str]] = []
     if (
@@ -484,202 +713,6 @@ def _get_sim223(node: ast.BoolOp) -> List[Tuple[int, int, str]]:
     return errors
 
 
-def _get_sim103(node: ast.If) -> List[Tuple[int, int, str]]:
-    """
-    Get a list of all calls that wrap a condition to return a bool.
-
-    if cond:
-        return True
-    else:
-        return False
-
-    which is
-
-        If(
-            test=Name(id='cond', ctx=Load()),
-            body=[
-                Return(
-                    value=Constant(value=True, kind=None),
-                ),
-            ],
-            orelse=[
-                Return(
-                    value=Constant(value=False, kind=None),
-                ),
-            ],
-        ),
-
-    """
-    errors: List[Tuple[int, int, str]] = []
-    if (
-        len(node.body) != 1
-        or not isinstance(node.body[0], ast.Return)
-        or not isinstance(node.body[0].value, AST_CONST_TYPES)
-        or not (
-            node.body[0].value.value is True
-            or node.body[0].value.value is False
-        )
-        or len(node.orelse) != 1
-        or not isinstance(node.orelse[0], ast.Return)
-        or not isinstance(node.orelse[0].value, AST_CONST_TYPES)
-        or not (
-            node.orelse[0].value.value is True
-            or node.orelse[0].value.value is False
-        )
-    ):
-        return errors
-    cond = astor.to_source(node.test).strip()
-    errors.append((node.lineno, node.col_offset, SIM103.format(cond=cond)))
-    return errors
-
-
-def _get_sim104(node: ast.For) -> List[Tuple[int, int, str]]:
-    """
-    Get a list of all "iterate and yield" patterns.
-
-    for item in iterable:
-        yield item
-
-    which is
-
-        For(
-            target=Name(id='item', ctx=Store()),
-            iter=Name(id='iterable', ctx=Load()),
-            body=[
-                Expr(
-                    value=Yield(
-                        value=Name(id='item', ctx=Load()),
-                    ),
-                ),
-            ],
-            orelse=[],
-            type_comment=None,
-        ),
-
-    """
-    errors: List[Tuple[int, int, str]] = []
-    if (
-        len(node.body) != 1
-        or not isinstance(node.body[0], ast.Expr)
-        or not isinstance(node.body[0].value, ast.Yield)
-        or not isinstance(node.target, ast.Name)
-        or not isinstance(node.body[0].value.value, ast.Name)
-        or node.target.id != node.body[0].value.value.id
-        or node.orelse != []
-    ):
-        return errors
-    iterable = astor.to_source(node.iter).strip()
-    errors.append(
-        (node.lineno, node.col_offset, SIM104.format(iterable=iterable))
-    )
-    return errors
-
-
-def _get_sim105(node: ast.Try) -> List[Tuple[int, int, str]]:
-    """
-    Get a list of all "try-except-pass" patterns.
-
-    try:
-        foo()
-    except ValueError:
-        pass
-
-    which is
-
-        Try(
-            body=[
-                Expr(
-                    value=Call(
-                        func=Name(id='foo', ctx=Load()),
-                        args=[],
-                        keywords=[],
-                    ),
-                ),
-            ],
-            handlers=[
-                ExceptHandler(
-                    type=Name(id='ValueError', ctx=Load()),
-                    name=None,
-                    body=[Pass()],
-                ),
-            ],
-            orelse=[],
-            finalbody=[],
-        ),
-
-
-    """
-    errors: List[Tuple[int, int, str]] = []
-    if (
-        len(node.body) != 1
-        or len(node.handlers) != 1
-        or not isinstance(node.handlers[0], ast.ExceptHandler)
-        or len(node.handlers[0].body) != 1
-        or not isinstance(node.handlers[0].body[0], ast.Pass)
-        or node.orelse != []
-    ):
-        return errors
-    if node.handlers[0].type is None:
-        exception = "Exception"
-    else:
-        exception = astor.to_source(node.handlers[0].type).strip()
-    errors.append(
-        (node.lineno, node.col_offset, SIM105.format(exception=exception))
-    )
-    return errors
-
-
-def _get_sim106(node: ast.If) -> List[Tuple[int, int, str]]:
-    """
-    Get a list of all calls where an exception is raised in else.
-
-    if cond:
-        return True
-    else:
-        raise Exception
-
-    which is
-
-        If(
-            test=Name(id='cond', ctx=Load()),
-            body=[
-                Expr(
-                    value=Name(id='a', ctx=Load()),
-                ),
-                Expr(
-                    value=Name(id='b', ctx=Load()),
-                ),
-                Expr(
-                    value=Name(id='c', ctx=Load()),
-                ),
-            ],
-            orelse=[
-                Raise(
-                    exc=Name(id='Exception', ctx=Load()),
-                    cause=None,
-                ),
-            ],
-        )
-    """
-    errors: List[Tuple[int, int, str]] = []
-    just_one = (
-        len(node.orelse) == 1
-        and len(node.orelse) >= 1
-        and isinstance(node.orelse[-1], ast.Raise)
-        and not isinstance(node.body[-1], ast.Raise)
-    )
-    many = (
-        len(node.body) > 2 * len(node.orelse)
-        and len(node.orelse) >= 1
-        and isinstance(node.orelse[-1], ast.Raise)
-        and not isinstance(node.body[-1], ast.Raise)
-    )
-    if not (just_one or many):
-        return errors
-    errors.append((node.lineno, node.col_offset, SIM106))
-    return errors
-
-
 class Visitor(ast.NodeVisitor):
     def __init__(self) -> None:
         self.errors: List[Tuple[int, int, str]] = []
@@ -704,6 +737,7 @@ class Visitor(ast.NodeVisitor):
 
     def visit_Try(self, node: ast.Try) -> None:
         self.errors += _get_sim105(node)
+        self.errors += _get_sim107(node)
         self.generic_visit(node)
 
     def visit_UnaryOp(self, node: ast.UnaryOp) -> None:
