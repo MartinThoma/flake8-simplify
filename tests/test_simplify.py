@@ -206,6 +206,20 @@ def test_sim_107():
     assert ret == {"8:8 SIM107 Don't use return in try/except and finally"}
 
 
+def test_sim_108():
+    ret = _results(
+        """if a:
+    b = c
+else:
+    b = d"""
+    )
+    exp = (
+        "1:0 SIM108 Use ternary operator "
+        "'b = c if a else d' instead of if-else-block"
+    )
+    assert ret == {exp}
+
+
 def test_unary_not_equality():
     ret = _results("not a == b")
     assert ret == {"1:0 SIM201 Use 'a != b' instead of 'not a == b'"}

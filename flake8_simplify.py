@@ -24,6 +24,11 @@ SIM104 = "SIM104 Use 'yield from {iterable}'"
 SIM105 = "SIM105 Use 'contextlib.suppress({exception})'"
 SIM106 = "SIM106 Handle error-cases first"
 SIM107 = "SIM107 Don't use return in try/except and finally"
+SIM108 = (
+    "SIM108 Use ternary operator "
+    "'{assign} = {body} if {cond} else {orelse}' "
+    "instead of if-else-block"
+)
 SIM201 = "SIM201 Use '{left} != {right}' instead of 'not {left} == {right}'"
 SIM202 = "SIM202 Use '{left} == {right}' instead of 'not {left} != {right}'"
 SIM203 = "SIM203 Use '{a} not in {b}' instead of 'not {a} in {b}'"
@@ -350,6 +355,61 @@ def _get_sim107(node: ast.Try) -> List[Tuple[int, int, str]]:
         errors.append(
             (finally_return.lineno, finally_return.col_offset, SIM107)
         )
+    return errors
+
+
+def _get_sim108(node: ast.If) -> List[Tuple[int, int, str]]:
+    """
+    Get a list of all if-elses which could be a ternary operator assignment.
+
+        If(
+            test=Name(id='a', ctx=Load()),
+            body=[
+                Assign(
+                    targets=[Name(id='b', ctx=Store())],
+                    value=Name(id='c', ctx=Load()),
+                    type_comment=None,
+                ),
+            ],
+            orelse=[
+                Assign(
+                    targets=[Name(id='b', ctx=Store())],
+                    value=Name(id='d', ctx=Load()),
+                    type_comment=None,
+                ),
+            ],
+        ),
+    """
+    errors: List[Tuple[int, int, str]] = []
+    if not (
+        len(node.body) == 1
+        and len(node.orelse) == 1
+        and isinstance(node.body[0], ast.Assign)
+        and isinstance(node.orelse[0], ast.Assign)
+        and len(node.body[0].targets) == 1
+        and len(node.orelse[0].targets) == 1
+        and isinstance(node.body[0].targets[0], ast.Name)
+        and isinstance(node.orelse[0].targets[0], ast.Name)
+        and node.body[0].targets[0].id == node.orelse[0].targets[0].id
+    ):
+        return errors
+    assign = astor.to_source(node.body[0].targets[0]).strip()
+    body = astor.to_source(node.body[0].value).strip()
+    cond = astor.to_source(node.test).strip()
+    orelse = astor.to_source(node.orelse[0].value).strip()
+    new_code = SIM108.format(
+        assign=assign, body=body, cond=cond, orelse=orelse
+    )
+    if len(new_code) > 79:
+        return errors
+    errors.append(
+        (
+            node.lineno,
+            node.col_offset,
+            new_code,
+        )
+    )
+
     return errors
 
 
@@ -729,6 +789,7 @@ class Visitor(ast.NodeVisitor):
         self.errors += _get_sim102(node)
         self.errors += _get_sim103(node)
         self.errors += _get_sim106(node)
+        self.errors += _get_sim108(node)
         self.generic_visit(node)
 
     def visit_For(self, node: ast.For) -> None:

@@ -38,6 +38,7 @@ $ flake8 .
 * `SIM105`: Use ['contextlib.suppress(...)'](https://docs.python.org/3/library/contextlib.html#contextlib.suppress) instead of try-except-pass
 * `SIM106`: Handle error-cases first
 * `SIM107`: Don't use `return` in try/except and finally.
+* `SIM108`: Use the ternary operator if it's reasonable.
 * `SIM201`: Use 'a != b' instead of 'not a == b'
 * `SIM202`: Use 'a == b' instead of 'not a != b'
 * `SIM203`: Use 'a not in b' instead of 'not (a in b)'
@@ -113,6 +114,19 @@ def foo():
     finally:
         return_value = "3"  # you might also want to check if "except" happened
     return return_value
+```
+
+### SIM108
+
+```python
+# Bad
+if a:
+    b = c
+else:
+    b = d
+
+# Good
+b = c if a else d
 ```
 
 ### SIM201
