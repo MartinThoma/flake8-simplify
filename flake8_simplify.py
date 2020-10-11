@@ -57,6 +57,26 @@ def strip_parenthesis(string: str) -> str:
     return string
 
 
+def strip_triple_quotes(string: str) -> str:
+    if not (
+        string.startswith('"""')
+        and string.endswith('"""')
+        and '"' not in string[3:-3]
+    ):
+        return string
+    string = string[3:-3]
+    if len(string) == 0:
+        string = '""'
+    return string
+
+
+def to_source(node: ast.expr) -> str:
+    source = astor.to_source(node).strip()
+    source = strip_parenthesis(source)
+    source = strip_triple_quotes(source)
+    return source
+
+
 def _get_duplicated_isinstance_call_by_node(node: ast.BoolOp) -> List[str]:
     """
     Get a list of isinstance arguments which could be shortened.
@@ -78,12 +98,12 @@ def _get_duplicated_isinstance_call_by_node(node: ast.BoolOp) -> List[str]:
         # "isinstance"
         if not isinstance(call, ast.Call) or len(call.args) != 2:
             continue
-        function_name = astor.to_source(call.func).strip()
+        function_name = to_source(call.func)
         if function_name != "isinstance":
             continue
 
         # Collect the name of the argument
-        isinstance_arg0_name = astor.to_source(call.args[0]).strip()
+        isinstance_arg0_name = to_source(call.args[0])
         counter[isinstance_arg0_name] += 1
     return [arg0_name for arg0_name, count in counter.items() if count > 1]
 
@@ -172,7 +192,7 @@ def _get_sim103(node: ast.If) -> List[Tuple[int, int, str]]:
         )
     ):
         return errors
-    cond = astor.to_source(node.test).strip()
+    cond = to_source(node.test)
     errors.append((node.lineno, node.col_offset, SIM103.format(cond=cond)))
     return errors
 
@@ -212,7 +232,7 @@ def _get_sim104(node: ast.For) -> List[Tuple[int, int, str]]:
         or node.orelse != []
     ):
         return errors
-    iterable = astor.to_source(node.iter).strip()
+    iterable = to_source(node.iter)
     errors.append(
         (node.lineno, node.col_offset, SIM104.format(iterable=iterable))
     )
@@ -266,7 +286,7 @@ def _get_sim105(node: ast.Try) -> List[Tuple[int, int, str]]:
     if node.handlers[0].type is None:
         exception = "Exception"
     else:
-        exception = astor.to_source(node.handlers[0].type).strip()
+        exception = to_source(node.handlers[0].type)
     errors.append(
         (node.lineno, node.col_offset, SIM105.format(exception=exception))
     )
@@ -393,22 +413,16 @@ def _get_sim108(node: ast.If) -> List[Tuple[int, int, str]]:
         and node.body[0].targets[0].id == node.orelse[0].targets[0].id
     ):
         return errors
-    assign = astor.to_source(node.body[0].targets[0]).strip()
-    body = astor.to_source(node.body[0].value).strip()
-    cond = astor.to_source(node.test).strip()
-    orelse = astor.to_source(node.orelse[0].value).strip()
+    assign = to_source(node.body[0].targets[0])
+    body = to_source(node.body[0].value)
+    cond = to_source(node.test)
+    orelse = to_source(node.orelse[0].value)
     new_code = SIM108.format(
         assign=assign, body=body, cond=cond, orelse=orelse
     )
     if len(new_code) > 79:
         return errors
-    errors.append(
-        (
-            node.lineno,
-            node.col_offset,
-            new_code,
-        )
-    )
+    errors.append((node.lineno, node.col_offset, new_code))
 
     return errors
 
@@ -426,8 +440,8 @@ def _get_sim201(node: ast.UnaryOp) -> List[Tuple[int, int, str]]:
     ):
         return errors
     comparison = node.operand
-    left = astor.to_source(comparison.left).strip()
-    right = astor.to_source(comparison.comparators[0]).strip()
+    left = to_source(comparison.left)
+    right = to_source(comparison.comparators[0])
     errors.append(
         (node.lineno, node.col_offset, SIM201.format(left=left, right=right))
     )
@@ -448,8 +462,8 @@ def _get_sim202(node: ast.UnaryOp) -> List[Tuple[int, int, str]]:
     ):
         return errors
     comparison = node.operand
-    left = astor.to_source(comparison.left).strip()
-    right = astor.to_source(comparison.comparators[0]).strip()
+    left = to_source(comparison.left)
+    right = to_source(comparison.comparators[0])
     errors.append(
         (node.lineno, node.col_offset, SIM202.format(left=left, right=right))
     )
@@ -470,8 +484,8 @@ def _get_sim203(node: ast.UnaryOp) -> List[Tuple[int, int, str]]:
     ):
         return errors
     comparison = node.operand
-    left = astor.to_source(comparison.left).strip()
-    right = astor.to_source(comparison.comparators[0]).strip()
+    left = to_source(comparison.left)
+    right = to_source(comparison.comparators[0])
     errors.append(
         (node.lineno, node.col_offset, SIM203.format(a=left, b=right))
     )
@@ -490,8 +504,8 @@ def _get_sim204(node: ast.UnaryOp) -> List[Tuple[int, int, str]]:
     ):
         return errors
     comparison = node.operand
-    left = astor.to_source(comparison.left).strip()
-    right = astor.to_source(comparison.comparators[0]).strip()
+    left = to_source(comparison.left)
+    right = to_source(comparison.comparators[0])
     errors.append(
         (node.lineno, node.col_offset, SIM204.format(a=left, b=right))
     )
@@ -509,8 +523,8 @@ def _get_sim205(node: ast.UnaryOp) -> List[Tuple[int, int, str]]:
     ):
         return errors
     comparison = node.operand
-    left = astor.to_source(comparison.left).strip()
-    right = astor.to_source(comparison.comparators[0]).strip()
+    left = to_source(comparison.left)
+    right = to_source(comparison.comparators[0])
     errors.append(
         (node.lineno, node.col_offset, SIM205.format(a=left, b=right))
     )
@@ -528,10 +542,8 @@ def _get_sim206(node: ast.UnaryOp) -> List[Tuple[int, int, str]]:
     ):
         return errors
     comparison = node.operand
-    left = strip_parenthesis(astor.to_source(comparison.left).strip())
-    right = strip_parenthesis(
-        astor.to_source(comparison.comparators[0]).strip()
-    )
+    left = to_source(comparison.left)
+    right = to_source(comparison.comparators[0])
     errors.append(
         (node.lineno, node.col_offset, SIM206.format(a=left, b=right))
     )
@@ -549,8 +561,8 @@ def _get_sim207(node: ast.UnaryOp) -> List[Tuple[int, int, str]]:
     ):
         return errors
     comparison = node.operand
-    left = astor.to_source(comparison.left).strip()
-    right = astor.to_source(comparison.comparators[0]).strip()
+    left = to_source(comparison.left)
+    right = to_source(comparison.comparators[0])
     errors.append(
         (node.lineno, node.col_offset, SIM207.format(a=left, b=right))
     )
@@ -566,7 +578,7 @@ def _get_sim208(node: ast.UnaryOp) -> List[Tuple[int, int, str]]:
         or not isinstance(node.operand.op, ast.Not)
     ):
         return errors
-    a = astor.to_source(node.operand.operand).strip()
+    a = to_source(node.operand.operand)
     errors.append((node.lineno, node.col_offset, SIM208.format(a=a)))
     return errors
 
@@ -581,7 +593,7 @@ def _get_sim210(node: ast.IfExp) -> List[Tuple[int, int, str]]:
         or node.orelse.value is not False
     ):
         return errors
-    cond = strip_parenthesis(astor.to_source(node.test).strip())
+    cond = to_source(node.test)
     errors.append((node.lineno, node.col_offset, SIM210.format(cond=cond)))
     return errors
 
@@ -596,7 +608,7 @@ def _get_sim211(node: ast.IfExp) -> List[Tuple[int, int, str]]:
         or node.orelse.value is not True
     ):
         return errors
-    cond = strip_parenthesis(astor.to_source(node.test).strip())
+    cond = to_source(node.test)
     errors.append((node.lineno, node.col_offset, SIM211.format(cond=cond)))
     return errors
 
@@ -629,8 +641,8 @@ def _get_sim212(node: ast.IfExp) -> List[Tuple[int, int, str]]:
         and is_same_expression(node.test.operand, node.orelse)
     ):
         return errors
-    a = strip_parenthesis(astor.to_source(node.test.operand).strip())
-    b = strip_parenthesis(astor.to_source(node.body).strip())
+    a = to_source(node.test.operand)
+    b = to_source(node.body)
     errors.append((node.lineno, node.col_offset, SIM212.format(a=a, b=b)))
     return errors
 
@@ -668,9 +680,7 @@ def _get_sim220(node: ast.BoolOp) -> List[Tuple[int, int, str]]:
     for negated_expression in negated_expressions:
         for non_negated_expression in non_negated_expressions:
             if is_same_expression(negated_expression, non_negated_expression):
-                a = strip_parenthesis(
-                    astor.to_source(negated_expression).strip()
-                )
+                a = to_source(negated_expression)
                 errors.append(
                     (node.lineno, node.col_offset, SIM220.format(a=a))
                 )
@@ -711,9 +721,7 @@ def _get_sim221(node: ast.BoolOp) -> List[Tuple[int, int, str]]:
     for negated_expression in negated_expressions:
         for non_negated_expression in non_negated_expressions:
             if is_same_expression(negated_expression, non_negated_expression):
-                a = strip_parenthesis(
-                    astor.to_source(negated_expression).strip()
-                )
+                a = to_source(negated_expression)
                 errors.append(
                     (node.lineno, node.col_offset, SIM221.format(a=a))
                 )
