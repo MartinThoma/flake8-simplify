@@ -2,7 +2,7 @@
 import ast
 import sys
 from collections import defaultdict
-from typing import Any, DefaultDict, Generator, List, Tuple, Type
+from typing import Any, DefaultDict, Dict, Generator, List, Tuple, Type
 
 # Third party
 import astor
@@ -29,6 +29,7 @@ SIM108 = (
     "'{assign} = {body} if {cond} else {orelse}' "
     "instead of if-else-block"
 )
+SIM109 = "SIM109 Use '{value} in {values}' instead of '{or_op}'"
 SIM201 = "SIM201 Use '{left} != {right}' instead of 'not {left} == {right}'"
 SIM202 = "SIM202 Use '{left} == {right}' instead of 'not {left} != {right}'"
 SIM203 = "SIM203 Use '{a} not in {b}' instead of 'not {a} in {b}'"
@@ -423,7 +424,67 @@ def _get_sim108(node: ast.If) -> List[Tuple[int, int, str]]:
     if len(new_code) > 79:
         return errors
     errors.append((node.lineno, node.col_offset, new_code))
+    return errors
 
+
+def _get_sim109(node: ast.BoolOp) -> List[Tuple[int, int, str]]:
+    """
+    Check if multiple equalities with the same value are combined via "or".
+
+        BoolOp(
+                op=Or(),
+                values=[
+                    Compare(
+                        left=Name(id='a', ctx=Load()),
+                        ops=[Eq()],
+                        comparators=[Name(id='b', ctx=Load())],
+                    ),
+                    Compare(
+                        left=Name(id='a', ctx=Load()),
+                        ops=[Eq()],
+                        comparators=[Name(id='c', ctx=Load())],
+                    ),
+                ],
+        )
+    """
+    errors: List[Tuple[int, int, str]] = []
+    if not isinstance(node.op, ast.Or):
+        return errors
+    equalities = [
+        value
+        for value in node.values
+        if isinstance(value, ast.Compare)
+        and len(value.ops) == 1
+        and isinstance(value.ops[0], ast.Eq)
+    ]
+    ids = []  # (name, compared_to)
+    for eq in equalities:
+        if isinstance(eq.left, ast.Name):
+            ids.append((eq.left, eq.comparators[0]))
+        if len(eq.comparators) == 1 and isinstance(
+            eq.comparators[0], ast.Name
+        ):
+            ids.append((eq.comparators[0], eq.left))
+
+    id2count: Dict[str, List[ast.expr]] = {}
+    for identifier, compared_to in ids:
+        if identifier.id not in id2count:
+            id2count[identifier.id] = []
+        id2count[identifier.id].append(compared_to)
+    for value, values in id2count.items():
+        if len(values) == 1:
+            continue
+        errors.append(
+            (
+                node.lineno,
+                node.col_offset,
+                SIM109.format(
+                    or_op=to_source(node),
+                    value=value,
+                    values=to_source(ast.List(elts=values)),
+                ),
+            )
+        )
     return errors
 
 
@@ -787,6 +848,7 @@ class Visitor(ast.NodeVisitor):
 
     def visit_BoolOp(self, node: ast.BoolOp) -> None:
         self.errors += _get_sim101(node)
+        self.errors += _get_sim109(node)
         self.errors += _get_sim220(node)
         self.errors += _get_sim221(node)
         self.errors += _get_sim222(node)
