@@ -13,10 +13,10 @@ Explain briefly why you think this makes the code simpler.
 
 ## Example
 
-```
+```python
 # Bad
-The simplest bad pattern
+...  # your bad code goes here
 
 # Good
-How it should be done
+...  # your improved code goes here
 ```
