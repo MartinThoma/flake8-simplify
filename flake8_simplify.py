@@ -30,6 +30,8 @@ SIM108 = (
     "instead of if-else-block"
 )
 SIM109 = "SIM109 Use '{value} in {values}' instead of '{or_op}'"
+SIM110 = "SIM110 Use 'return any({check} for {target} in {iterable})'"
+SIM111 = "SIM111 Use 'return all({check} for {target} in {iterable})'"
 SIM201 = "SIM201 Use '{left} != {right}' instead of 'not {left} == {right}'"
 SIM202 = "SIM202 Use '{left} == {right}' instead of 'not {left} != {right}'"
 SIM203 = "SIM203 Use '{a} not in {b}' instead of 'not {a} in {b}'"
@@ -488,6 +490,66 @@ def _get_sim109(node: ast.BoolOp) -> List[Tuple[int, int, str]]:
     return errors
 
 
+def _get_sim110_sim111(node: ast.For) -> List[Tuple[int, int, str]]:
+    """
+    Check if any / all could be used.
+
+    For(
+        target=Name(id='x', ctx=Store()),
+        iter=Name(id='iterable', ctx=Load()),
+        body=[
+            If(
+                test=Call(
+                    func=Name(id='check', ctx=Load()),
+                    args=[Name(id='x', ctx=Load())],
+                    keywords=[],
+                ),
+                body=[
+                    Return(
+                        value=Constant(value=True, kind=None),
+                    ),
+                ],
+                orelse=[],
+            ),
+        ],
+        orelse=[],
+        type_comment=None,
+    ),
+    Return(value=Constant(value=False, kind=None))
+    """
+    errors: List[Tuple[int, int, str]] = []
+    if not (
+        len(node.body) == 1
+        and isinstance(node.body[0], ast.If)
+        and len(node.body[0].body) == 1
+        and isinstance(node.body[0].body[0], ast.Return)
+        and isinstance(node.body[0].body[0].value, AST_CONST_TYPES)
+    ):
+        return errors
+    if not hasattr(node.body[0].body[0].value, "value"):
+        return errors
+    check = to_source(node.body[0].test)
+    target = to_source(node.target)
+    iterable = to_source(node.iter)
+    if node.body[0].body[0].value.value is True:
+        errors.append(
+            (
+                node.lineno,
+                node.col_offset,
+                SIM110.format(check=check, target=target, iterable=iterable),
+            )
+        )
+    elif node.body[0].body[0].value.value is False:
+        errors.append(
+            (
+                node.lineno,
+                node.col_offset,
+                SIM111.format(check=check, target=target, iterable=iterable),
+            )
+        )
+    return errors
+
+
 def _get_sim201(node: ast.UnaryOp) -> List[Tuple[int, int, str]]:
     """
     Get a list of all calls where an unary 'not' is used for an equality.
@@ -864,6 +926,7 @@ class Visitor(ast.NodeVisitor):
 
     def visit_For(self, node: ast.For) -> None:
         self.errors += _get_sim104(node)
+        self.errors += _get_sim110_sim111(node)
         self.generic_visit(node)
 
     def visit_Try(self, node: ast.Try) -> None:

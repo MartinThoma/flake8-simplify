@@ -227,6 +227,36 @@ def test_sim_109():
     }
 
 
+def test_sim_110_any():
+    ret = _results(
+        """for x in iterable:
+    if check(x):
+        return True
+return False"""
+    )
+    assert ret == {"1:0 SIM110 Use 'return any(check(x) for x in iterable)'"}
+
+
+def test_sim_111_all():
+    ret = _results(
+        """for x in iterable:
+    if check(x):
+        return False
+return True"""
+    )
+    assert ret == {"1:0 SIM111 Use 'return all(check(x) for x in iterable)'"}
+
+
+def test_sim_110_sim111_false_positive_check():
+    ret = _results(
+        """for x in iterable:
+    if check(x):
+        return "foo"
+return "bar" """
+    )
+    assert ret == set()
+
+
 def test_sim_201():
     ret = _results("not a == b")
     assert ret == {"1:0 SIM201 Use 'a != b' instead of 'not a == b'"}
