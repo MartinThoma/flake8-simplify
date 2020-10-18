@@ -53,6 +53,7 @@ SIM300 = (
 )
 
 # ast.Constant in Python 3.8, ast.NameConstant in Python 3.6 and 3.7
+BOOL_CONST_TYPES = (ast.Constant, ast.NameConstant)
 AST_CONST_TYPES = (ast.Constant, ast.NameConstant, ast.Str, ast.Num)
 
 
@@ -183,14 +184,14 @@ def _get_sim103(node: ast.If) -> List[Tuple[int, int, str]]:
     if (
         len(node.body) != 1
         or not isinstance(node.body[0], ast.Return)
-        or not isinstance(node.body[0].value, AST_CONST_TYPES)
+        or not isinstance(node.body[0].value, BOOL_CONST_TYPES)
         or not (
             node.body[0].value.value is True
             or node.body[0].value.value is False
         )
         or len(node.orelse) != 1
         or not isinstance(node.orelse[0], ast.Return)
-        or not isinstance(node.orelse[0].value, AST_CONST_TYPES)
+        or not isinstance(node.orelse[0].value, BOOL_CONST_TYPES)
         or not (
             node.orelse[0].value.value is True
             or node.orelse[0].value.value is False
@@ -652,9 +653,9 @@ def _get_sim210(node: ast.IfExp) -> List[Tuple[int, int, str]]:
     """Get a list of all calls of the type "True if a else False"."""
     errors: List[Tuple[int, int, str]] = []
     if (
-        not isinstance(node.body, AST_CONST_TYPES)
+        not isinstance(node.body, BOOL_CONST_TYPES)
         or node.body.value is not True
-        or not isinstance(node.orelse, AST_CONST_TYPES)
+        or not isinstance(node.orelse, BOOL_CONST_TYPES)
         or node.orelse.value is not False
     ):
         return errors
@@ -667,9 +668,9 @@ def _get_sim211(node: ast.IfExp) -> List[Tuple[int, int, str]]:
     """Get a list of all calls of the type "False if a else True"."""
     errors: List[Tuple[int, int, str]] = []
     if (
-        not isinstance(node.body, AST_CONST_TYPES)
+        not isinstance(node.body, BOOL_CONST_TYPES)
         or node.body.value is not False
-        or not isinstance(node.orelse, AST_CONST_TYPES)
+        or not isinstance(node.orelse, BOOL_CONST_TYPES)
         or node.orelse.value is not True
     ):
         return errors
@@ -814,7 +815,7 @@ def _get_sim222(node: ast.BoolOp) -> List[Tuple[int, int, str]]:
         return errors
 
     for exp in node.values:
-        if isinstance(exp, AST_CONST_TYPES) and exp.value is True:
+        if isinstance(exp, BOOL_CONST_TYPES) and exp.value is True:
             errors.append((node.lineno, node.col_offset, SIM222))
             return errors
     return errors
@@ -840,7 +841,7 @@ def _get_sim223(node: ast.BoolOp) -> List[Tuple[int, int, str]]:
         return errors
 
     for exp in node.values:
-        if isinstance(exp, AST_CONST_TYPES) and exp.value is False:
+        if isinstance(exp, BOOL_CONST_TYPES) and exp.value is False:
             errors.append((node.lineno, node.col_offset, SIM223))
             return errors
     return errors
