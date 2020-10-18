@@ -47,9 +47,13 @@ SIM220 = "SIM220 Use 'False' instead of '{a} and not {a}'"
 SIM221 = "SIM221 Use 'True' instead of '{a} or not {a}'"
 SIM222 = "SIM222 Use 'True' instead of '... or True'"
 SIM223 = "SIM223 Use 'False' instead of '... and False'"
+SIM300 = (
+    "SIM300 Use '{right} == {left}' instead of "
+    "'{left} == {right}' (Yoda-conditions)"
+)
 
 # ast.Constant in Python 3.8, ast.NameConstant in Python 3.6 and 3.7
-AST_CONST_TYPES = (ast.Constant, ast.NameConstant)
+AST_CONST_TYPES = (ast.Constant, ast.NameConstant, ast.Str, ast.Num)
 
 
 def strip_parenthesis(string: str) -> str:
@@ -842,6 +846,38 @@ def _get_sim223(node: ast.BoolOp) -> List[Tuple[int, int, str]]:
     return errors
 
 
+def _get_sim300(node: ast.Compare) -> List[Tuple[int, int, str]]:
+    """
+    Get a list of all Yoda conditions.
+
+    Compare(
+                left=Constant(value='Yoda', kind=None),
+                ops=[Eq()],
+                comparators=[Name(id='i_am', ctx=Load())],
+            )
+    """
+    errors: List[Tuple[int, int, str]] = []
+    if not (
+        isinstance(node.left, AST_CONST_TYPES)
+        and len(node.ops) == 1
+        and isinstance(node.ops[0], ast.Eq)
+    ):
+        return errors
+
+    left = to_source(node.left)
+    is_py37_str = isinstance(node.left, ast.Str)
+    is_py38_str = isinstance(node.left, ast.Constant) and isinstance(
+        node.left.value, str
+    )
+    if is_py38_str or is_py37_str:
+        left = f'"{left}"'
+    right = to_source(node.comparators[0])
+    errors.append(
+        (node.lineno, node.col_offset, SIM300.format(left=left, right=right))
+    )
+    return errors
+
+
 class Visitor(ast.NodeVisitor):
     def __init__(self) -> None:
         self.errors: List[Tuple[int, int, str]] = []
@@ -886,6 +922,10 @@ class Visitor(ast.NodeVisitor):
         self.errors += _get_sim210(node)
         self.errors += _get_sim211(node)
         self.errors += _get_sim212(node)
+        self.generic_visit(node)
+
+    def visit_Compare(self, node: ast.Compare) -> None:
+        self.errors += _get_sim300(node)
         self.generic_visit(node)
 
 

@@ -54,6 +54,7 @@ $ flake8 .
 * `SIM221`: Use 'True' instead of 'a or not a'
 * `SIM222`: Use 'True' instead of '... or True'
 * `SIM223`: Use 'False' instead of '... and False'
+* `SIM300`: Use 'age == 42' instead of '42 == age' (Yoda-Conditions)
 
 The `SIM201` - `SIM208` rules have one good reason to be ignored: When you are
 checking an error condition:
@@ -277,4 +278,14 @@ True
 
 # Good
 False
+```
+
+### SIM300
+
+```python
+# Bad; This is called a "Yoda-Condition"
+42 == age
+
+# Good
+age == 42
 ```
