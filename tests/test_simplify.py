@@ -182,6 +182,22 @@ else:
     assert ret == {"1:0 SIM106 Handle error-cases first"}
 
 
+def test_sim_106_no_error():
+    ret = _results(
+        """if merge_method in ["take_right_shallow", "take_right_deep"]:
+    ...
+elif merge_method == "take_left_shallow":
+    ...
+elif merge_method == "take_left_deep":
+    ...
+elif merge_method == "sum":
+    ...
+else:
+    raise NotImplementedError"""
+    )
+    assert ret == set()
+
+
 def test_sim_106_no():
     ret = _results(
         """if cond:

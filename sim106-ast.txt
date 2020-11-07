@@ -1,0 +1,68 @@
+If(
+    test=Compare(
+        left=Name(id='merge_method', ctx=Load()),
+        ops=[In()],
+        comparators=[
+            List(
+                elts=[
+                    Constant(value='take_right_shallow', kind=None),
+                    Constant(value='take_right_deep', kind=None),
+                ],
+                ctx=Load(),
+            ),
+        ],
+    ),
+    body=[
+        Expr(
+            value=Constant(value=Ellipsis, kind=None),
+        ),
+    ],
+    orelse=[
+        If(
+            test=Compare(
+                left=Name(id='merge_method', ctx=Load()),
+                ops=[Eq()],
+                comparators=[Constant(value='take_left_shallow', kind=None)],
+            ),
+            body=[
+                Expr(
+                    value=Constant(value=Ellipsis, kind=None),
+                ),
+            ],
+            orelse=[
+                If(
+                    test=Compare(
+                        left=Name(id='merge_method', ctx=Load()),
+                        ops=[Eq()],
+                        comparators=[Constant(value='take_left_deep', kind=None)],
+                    ),
+                    body=[
+                        Expr(
+                            value=Constant(value=Ellipsis, kind=None),
+                        ),
+                    ],
+                    orelse=[
+                        If(
+                            test=Compare(
+                                left=Name(id='merge_method', ctx=Load()),
+                                ops=[Eq()],
+                                comparators=[Constant(value='sum', kind=None)],
+                            ),
+                            body=[
+                                Expr(
+                                    value=Constant(value=Ellipsis, kind=None),
+                                ),
+                            ],
+                            orelse=[
+                                Raise(
+                                    exc=Name(id='NotImplementedError', ctx=Load()),
+                                    cause=None,
+                                ),
+                            ],
+                        ),
+                    ],
+                ),
+            ],
+        ),
+    ],
+),
