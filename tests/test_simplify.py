@@ -257,6 +257,29 @@ return "bar" """
     assert ret == set()
 
 
+def test_sim_112_index():
+    ret = _results("os.environ['foo']")
+    assert ret == {
+        "1:0 SIM112 Use 'os.environ[\"FOO\"]' instead of 'os.environ['foo']'"
+    }
+
+
+def test_sim_112_get():
+    ret = _results("os.environ.get('foo')")
+    assert ret == {
+        "1:0 SIM112 Use 'os.environ.get(\"FOO\")' instead of "
+        "'os.environ.get('foo')'"
+    }
+
+
+def test_sim_112_get_with_default():
+    ret = _results("os.environ.get('foo', 'bar')")
+    assert ret == {
+        '1:0 SIM112 Use \'os.environ.get("FOO", "bar")\' instead of '
+        "'os.environ.get('foo', 'bar')'"
+    }
+
+
 def test_sim_201():
     ret = _results("not a == b")
     assert ret == {"1:0 SIM201 Use 'a != b' instead of 'not a == b'"}
