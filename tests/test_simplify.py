@@ -280,6 +280,22 @@ def test_sim_112_get_with_default():
     }
 
 
+def test_sim_113():
+    ret = _results(
+        """for el in iterable:
+    idx += 1"""
+    )
+    assert ret == {"2:4 SIM113 Use enumerate instead of 'idx'"}
+
+
+def test_sim_113_false_positive():
+    ret = _results(
+        """for x in xs:
+    cm[x] += 1"""
+    )
+    assert ret == set()
+
+
 def test_sim_201():
     ret = _results("not a == b")
     assert ret == {"1:0 SIM201 Use 'a != b' instead of 'not a == b'"}

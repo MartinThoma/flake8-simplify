@@ -33,6 +33,7 @@ SIM109 = "SIM109 Use '{value} in {values}' instead of '{or_op}'"
 SIM110 = "SIM110 Use 'return any({check} for {target} in {iterable})'"
 SIM111 = "SIM111 Use 'return all({check} for {target} in {iterable})'"
 SIM112 = "SIM112 Use '{expected}' instead of '{original}'"
+SIM113 = "SIM113 Use enumerate instead of '{variable}'"
 SIM201 = "SIM201 Use '{left} != {right}' instead of 'not {left} == {right}'"
 SIM202 = "SIM202 Use '{left} == {right}' instead of 'not {left} != {right}'"
 SIM203 = "SIM203 Use '{a} not in {b}' instead of 'not {a} in {b}'"
@@ -650,6 +651,54 @@ def _get_sim112(node: ast.Expr) -> List[Tuple[int, int, str]]:
     return errors
 
 
+def _get_sim113(node: ast.For) -> List[Tuple[int, int, str]]:
+    """
+    Find loops in which "enumerate" should be used.
+
+        For(
+            target=Name(id='el', ctx=Store()),
+            iter=Name(id='iterable', ctx=Load()),
+            body=[
+                Expr(
+                    value=Constant(value=Ellipsis, kind=None),
+                ),
+                AugAssign(
+                    target=Name(id='idx', ctx=Store()),
+                    op=Add(),
+                    value=Constant(value=1, kind=None),
+                ),
+            ],
+            orelse=[],
+            type_comment=None,
+        ),
+    """
+    errors: List[Tuple[int, int, str]] = []
+    variable_candidates = []
+    for expression in node.body:
+        if (
+            isinstance(expression, ast.AugAssign)
+            and is_constant_increase(expression)
+            and isinstance(expression.target, ast.Name)
+        ):
+            variable_candidates.append(expression.target)
+
+    for candidate in variable_candidates:
+        errors.append(
+            (
+                candidate.lineno,
+                candidate.col_offset,
+                SIM113.format(variable=to_source(candidate)),
+            )
+        )
+    return errors
+
+
+def is_constant_increase(expr: ast.AugAssign) -> bool:
+    return isinstance(expr.op, ast.Add) and isinstance(
+        expr.value, (ast.Constant, ast.Num)
+    )
+
+
 def _get_sim201(node: ast.UnaryOp) -> List[Tuple[int, int, str]]:
     """
     Get a list of all calls where an unary 'not' is used for an equality.
@@ -1063,6 +1112,7 @@ class Visitor(ast.NodeVisitor):
     def visit_For(self, node: ast.For) -> None:
         self.errors += _get_sim104(node)
         self.errors += _get_sim110_sim111(node)
+        self.errors += _get_sim113(node)
         self.generic_visit(node)
 
     def visit_Try(self, node: ast.Try) -> None:
