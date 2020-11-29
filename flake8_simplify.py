@@ -1,5 +1,6 @@
 # Core Library
 import ast
+import itertools
 import sys
 from collections import defaultdict
 from typing import Any, DefaultDict, Dict, Generator, List, Tuple, Type, Union
@@ -34,6 +35,7 @@ SIM110 = "SIM110 Use 'return any({check} for {target} in {iterable})'"
 SIM111 = "SIM111 Use 'return all({check} for {target} in {iterable})'"
 SIM112 = "SIM112 Use '{expected}' instead of '{original}'"
 SIM113 = "SIM113 Use enumerate instead of '{variable}'"
+SIM114 = "SIM114 Use logical or (({cond1}) or ({cond2})) and a single body"
 SIM201 = "SIM201 Use '{left} != {right}' instead of 'not {left} == {right}'"
 SIM202 = "SIM202 Use '{left} == {right}' instead of 'not {left} != {right}'"
 SIM203 = "SIM203 Use '{a} not in {b}' instead of 'not {a} in {b}'"
@@ -585,20 +587,30 @@ def _get_sim112(node: ast.Expr) -> List[Tuple[int, int, str]]:
         and isinstance(node.value.value.value, ast.Name)
         and node.value.value.value.id == "os"
         and node.value.value.attr == "environ"
-        and isinstance(node.value.slice, ast.Index)
-        and isinstance(node.value.slice.value, STR_TYPES)
+        and (
+            (
+                isinstance(node.value.slice, ast.Index)
+                and isinstance(node.value.slice.value, STR_TYPES)
+            )
+            or isinstance(node.value.slice, ast.Constant)
+        )
     )
     if is_index_call:
         subscript = node.value
         assert isinstance(subscript, ast.Subscript)
         slice_ = subscript.slice
-        assert isinstance(slice_, ast.Index)
-        string_part = slice_.value
-        assert isinstance(string_part, STR_TYPES)
-        if isinstance(string_part, ast.Str):
-            env_name = string_part.s  # Python 3.6 / 3.7 fallback
-        else:
-            env_name = string_part.value
+        if isinstance(slice_, ast.Index):
+            # Python < 3.9
+            string_part = slice_.value
+            assert isinstance(string_part, STR_TYPES)
+            if isinstance(string_part, ast.Str):
+                env_name = string_part.s  # Python 3.6 / 3.7 fallback
+            else:
+                env_name = string_part.value
+        elif isinstance(slice_, ast.Constant):
+            # Python 3.9
+            env_name = slice_.value
+
         # Check if this has a change
         has_change = env_name != env_name.upper()
 
@@ -691,6 +703,94 @@ def _get_sim113(node: ast.For) -> List[Tuple[int, int, str]]:
             )
         )
     return errors
+
+
+def _get_sim114(node: ast.If) -> List[Tuple[int, int, str]]:
+    """
+    Find same bodys.
+
+    Examples
+    --------
+        If(
+            test=Name(id='a', ctx=Load()),
+            body=[
+                Expr(
+                    value=Name(id='b', ctx=Load()),
+                ),
+            ],
+            orelse=[
+                If(
+                    test=Name(id='c', ctx=Load()),
+                    body=[
+                        Expr(
+                            value=Name(id='b', ctx=Load()),
+                        ),
+                    ],
+                    orelse=[],
+                ),
+            ],
+        ),
+    """
+    errors: List[Tuple[int, int, str]] = []
+    if_body_pairs = get_if_body_pairs(node)
+    error_pairs = []
+    for ifbody1, ifbody2 in itertools.combinations(if_body_pairs, 2):
+        if is_body_same(ifbody1[1], ifbody2[1]):
+            error_pairs.append((ifbody1, ifbody2))
+    for ifbody1, ifbody2 in error_pairs:
+        errors.append(
+            (
+                ifbody1[0].lineno,
+                ifbody1[0].col_offset,
+                SIM114.format(
+                    cond1=to_source(ifbody1[0]), cond2=to_source(ifbody2[0])
+                ),
+            )
+        )
+    return errors
+
+
+def get_if_body_pairs(node: ast.If) -> List[Tuple[ast.expr, List[ast.stmt]]]:
+    pairs = [(node.test, node.body)]
+    orelse = node.orelse
+    while (
+        isinstance(orelse, list)
+        and len(orelse) == 1
+        and isinstance(orelse[0], ast.If)
+    ):
+        pairs.append((orelse[0].test, orelse[0].body))
+        orelse = orelse[0].orelse
+    return pairs
+
+
+def is_body_same(body1: List[ast.stmt], body2: List[ast.stmt]) -> bool:
+    """Check if two lists of expressions are equivalent."""
+    if len(body1) != len(body2):
+        return False
+    for a, b in zip(body1, body2):
+        try:
+            stmt_equal = is_stmt_equal(a, b)
+        except RecursionError:  # maximum recursion depth
+            stmt_equal = False
+        if not stmt_equal:
+            return False
+    return True
+
+
+def is_stmt_equal(a: ast.stmt, b: ast.stmt) -> bool:
+    if type(a) is not type(b):
+        return False
+    if isinstance(a, ast.AST):
+        for k, v in vars(a).items():
+            if k in ("lineno", "col_offset", "ctx", "end_lineno"):
+                continue
+            if not is_stmt_equal(v, getattr(b, k)):
+                return False
+        return True
+    elif isinstance(a, list):
+        return all(itertools.starmap(is_stmt_equal, zip(a, b)))
+    else:
+        return a == b
 
 
 def is_constant_increase(expr: ast.AugAssign) -> bool:
@@ -1107,6 +1207,7 @@ class Visitor(ast.NodeVisitor):
         self.errors += _get_sim103(node)
         self.errors += _get_sim106(node)
         self.errors += _get_sim108(node)
+        self.errors += _get_sim114(node)
         self.generic_visit(node)
 
     def visit_For(self, node: ast.For) -> None:

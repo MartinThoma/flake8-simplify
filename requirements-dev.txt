@@ -5,56 +5,50 @@
 #    pip-compile requirements-dev.in
 #
 appdirs==1.4.4            # via virtualenv
-attrs==20.2.0             # via pytest
+attrs==20.3.0             # via pytest
 bleach==3.2.1             # via readme-renderer
-certifi==2020.6.20        # via requests
-cffi==1.14.2              # via cryptography
+certifi==2020.11.8        # via requests
+cffi==1.14.4              # via cryptography
 cfgv==3.2.0               # via pre-commit
 chardet==3.0.4            # via requests
-click==7.1.2              # via mutmut, pip-tools
-colorama==0.4.3           # via twine
+click==7.1.2              # via pip-tools
+colorama==0.4.4           # via twine
 coverage==5.3             # via pytest-cov
-cryptography==3.1         # via secretstorage
+cryptography==3.2.1       # via secretstorage
 distlib==0.3.1            # via virtualenv
 docutils==0.16            # via readme-renderer
 filelock==3.0.12          # via virtualenv
-glob2==0.7                # via mutmut
-identify==1.5.3           # via pre-commit
+identify==1.5.10          # via pre-commit
 idna==2.10                # via requests
-iniconfig==1.0.1          # via pytest
-jeepney==0.4.3            # via keyring, secretstorage
-junit-xml==1.8            # via mutmut
-junit2html==25            # via -r requirements-dev.in
-keyring==21.4.0           # via twine
-more-itertools==8.5.0     # via pytest
-mutmut==2.1.0             # via -r requirements-dev.in
+iniconfig==1.1.1          # via pytest
+jeepney==0.6.0            # via keyring, secretstorage
+junit2html==26            # via -r requirements-dev.in
+keyring==21.5.0           # via twine
 nodeenv==1.5.0            # via pre-commit
-packaging==20.4           # via bleach, pytest
-parso==0.8.0              # via mutmut
-pip-tools==5.3.1          # via -r requirements-dev.in
-pkginfo==1.5.0.1          # via twine
+packaging==20.7           # via bleach, pytest
+pip-tools==5.4.0          # via -r requirements-dev.in
+pkginfo==1.6.1            # via twine
 pluggy==0.13.1            # via pytest
-pony==0.7.13              # via mutmut
-pre-commit==2.7.1         # via -r requirements-dev.in
+pre-commit==2.9.2         # via -r requirements-dev.in
 py==1.9.0                 # via pytest
 pycparser==2.20           # via cffi
-pygments==2.7.1           # via readme-renderer
+pygments==2.7.2           # via readme-renderer
 pyparsing==2.4.7          # via packaging
+pytest==6.1.2             # via -r requirements-dev.in, pytest-cov, pytest-timeout
 pytest-cov==2.10.1        # via -r requirements-dev.in
 pytest-timeout==1.4.2     # via -r requirements-dev.in
-pytest==6.0.2             # via -r requirements-dev.in, pytest-cov, pytest-timeout
 pyyaml==5.3.1             # via pre-commit
-readme-renderer==26.0     # via twine
+readme-renderer==28.0     # via twine
+requests==2.25.0          # via requests-toolbelt, twine
 requests-toolbelt==0.9.1  # via twine
-requests==2.24.0          # via requests-toolbelt, twine
 rfc3986==1.4.0            # via twine
-secretstorage==3.1.2      # via keyring
-six==1.15.0               # via bleach, cryptography, junit-xml, packaging, pip-tools, readme-renderer, virtualenv
-toml==0.10.1              # via pre-commit, pytest
-tqdm==4.49.0              # via twine
+secretstorage==3.3.0      # via keyring
+six==1.15.0               # via bleach, cryptography, pip-tools, readme-renderer, virtualenv
+toml==0.10.2              # via pre-commit, pytest
+tqdm==4.54.0              # via twine
 twine==3.2.0              # via -r requirements-dev.in
-urllib3==1.25.10          # via requests
-virtualenv==20.0.31       # via pre-commit
+urllib3==1.26.2           # via requests
+virtualenv==20.2.1        # via pre-commit
 webencodings==0.5.1       # via bleach
 wheel==0.35.1             # via -r requirements-dev.in
 
