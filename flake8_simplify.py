@@ -13,6 +13,18 @@ class UnaryOp(ast.UnaryOp):
     def __init__(self, orig: ast.UnaryOp) -> None:
         self.op = orig.op
         self.operand = orig.operand
+        # For all ast.*:
+        self.lineno = orig.lineno
+        self.col_offset = orig.col_offset
+        self.parent: ast.Expr = orig.parent  # type: ignore
+
+
+class Call(ast.Call):
+    def __init__(self, orig: ast.Call) -> None:
+        self.func = orig.func
+        self.args = orig.args
+        self.keywords = orig.keywords
+        # For all ast.*:
         self.lineno = orig.lineno
         self.col_offset = orig.col_offset
         self.parent: ast.Expr = orig.parent  # type: ignore
@@ -46,6 +58,7 @@ SIM111 = "SIM111 Use 'return all({check} for {target} in {iterable})'"
 SIM112 = "SIM112 Use '{expected}' instead of '{original}'"
 SIM113 = "SIM113 Use enumerate instead of '{variable}'"
 SIM114 = "SIM114 Use logical or (({cond1}) or ({cond2})) and a single body"
+SIM115 = "SIM115 Use context handler for opening files"
 SIM201 = "SIM201 Use '{left} != {right}' instead of 'not {left} == {right}'"
 SIM202 = "SIM202 Use '{left} == {right}' instead of 'not {left} != {right}'"
 SIM203 = "SIM203 Use '{a} not in {b}' instead of 'not {a} in {b}'"
@@ -760,6 +773,45 @@ def _get_sim114(node: ast.If) -> List[Tuple[int, int, str]]:
     return errors
 
 
+def _get_sim115(node: Call) -> List[Tuple[int, int, str]]:
+    """
+    Find places where open() is called without a context handler.
+
+    Example AST
+    -----------
+        Assign(
+            targets=[Name(id='f', ctx=Store())],
+            value=Call(
+                func=Name(id='open', ctx=Load()),
+                args=[Constant(value=Ellipsis, kind=None)],
+                keywords=[],
+            ),
+            type_comment=None,
+        )
+        ...
+        Expr(
+            value=Call(
+                func=Attribute(
+                    value=Name(id='f', ctx=Load()),
+                    attr='close',
+                    ctx=Load(),
+                ),
+                args=[],
+                keywords=[],
+            ),
+        ),
+    """
+    errors: List[Tuple[int, int, str]] = []
+    if not (
+        isinstance(node.func, ast.Name)
+        and node.func.id == "open"
+        and not isinstance(node.parent, ast.withitem)
+    ):
+        return errors
+    errors.append((node.lineno, node.col_offset, SIM115))
+    return errors
+
+
 def get_if_body_pairs(node: ast.If) -> List[Tuple[ast.expr, List[ast.stmt]]]:
     pairs = [(node.test, node.body)]
     orelse = node.orelse
@@ -1232,6 +1284,10 @@ def _get_sim300(node: ast.Compare) -> List[Tuple[int, int, str]]:
 class Visitor(ast.NodeVisitor):
     def __init__(self) -> None:
         self.errors: List[Tuple[int, int, str]] = []
+
+    def visit_Call(self, node: ast.Call) -> Any:
+        self.errors += _get_sim115(Call(node))
+        self.generic_visit(node)
 
     def visit_Expr(self, node: ast.Expr) -> None:
         self.errors += _get_sim112(node)

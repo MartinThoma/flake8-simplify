@@ -306,6 +306,23 @@ elif c:
     assert ret == {"1:3 SIM114 Use logical or ((a) or (c)) and a single body"}
 
 
+def test_sim_115():
+    ret = _results(
+        """f = open('foo.txt')
+data = f.read()
+f.close()"""
+    )
+    assert ret == {"1:4 SIM115 Use context handler for opening files"}
+
+
+def test_sim_115_not_triggered():
+    ret = _results(
+        """with open('foo.txt') as f:
+    data = f.read()"""
+    )
+    assert ret == set()
+
+
 def test_get_if_body_pairs():
     ret = ast.parse(
         """if a == b:
