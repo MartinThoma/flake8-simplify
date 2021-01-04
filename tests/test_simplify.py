@@ -355,6 +355,14 @@ def test_sim_201():
     assert ret == {"1:0 SIM201 Use 'a != b' instead of 'not a == b'"}
 
 
+def test_sim_201_not_in_exception_check():
+    ret = _results(
+        """if not a == b:
+    raise ValueError()"""
+    )
+    assert ret == set()
+
+
 def test_sim_202_base():
     ret = _results("not a != b")
     assert ret == {("1:0 SIM202 Use 'a == b' instead of 'not a != b'")}

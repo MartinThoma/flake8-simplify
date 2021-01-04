@@ -8,6 +8,16 @@ from typing import Any, DefaultDict, Dict, Generator, List, Tuple, Type, Union
 # Third party
 import astor
 
+
+class UnaryOp(ast.UnaryOp):
+    def __init__(self, orig: ast.UnaryOp) -> None:
+        self.op = orig.op
+        self.operand = orig.operand
+        self.lineno = orig.lineno
+        self.col_offset = orig.col_offset
+        self.parent: ast.Expr = orig.parent  # type: ignore
+
+
 if sys.version_info < (3, 8):  # pragma: no cover (<PY38)
     # Third party
     import importlib_metadata
@@ -590,7 +600,7 @@ def _get_sim112(node: ast.Expr) -> List[Tuple[int, int, str]]:
         and (
             (
                 isinstance(node.value.slice, ast.Index)
-                and isinstance(node.value.slice.value, STR_TYPES)
+                and isinstance(node.value.slice.value, STR_TYPES)  # type: ignore  # noqa
             )
             or isinstance(node.value.slice, ast.Constant)
         )
@@ -601,7 +611,7 @@ def _get_sim112(node: ast.Expr) -> List[Tuple[int, int, str]]:
         slice_ = subscript.slice
         if isinstance(slice_, ast.Index):
             # Python < 3.9
-            string_part = slice_.value
+            string_part = slice_.value  # type: ignore
             assert isinstance(string_part, STR_TYPES)
             if isinstance(string_part, ast.Str):
                 env_name = string_part.s  # Python 3.6 / 3.7 fallback
@@ -782,7 +792,7 @@ def is_stmt_equal(a: ast.stmt, b: ast.stmt) -> bool:
         return False
     if isinstance(a, ast.AST):
         for k, v in vars(a).items():
-            if k in ("lineno", "col_offset", "ctx", "end_lineno"):
+            if k in ("lineno", "col_offset", "ctx", "end_lineno", "parent"):
                 continue
             if not is_stmt_equal(v, getattr(b, k)):
                 return False
@@ -799,16 +809,20 @@ def is_constant_increase(expr: ast.AugAssign) -> bool:
     )
 
 
-def _get_sim201(node: ast.UnaryOp) -> List[Tuple[int, int, str]]:
+def _get_sim201(node: UnaryOp) -> List[Tuple[int, int, str]]:
     """
     Get a list of all calls where an unary 'not' is used for an equality.
     """
     errors: List[Tuple[int, int, str]] = []
     if (
-        not isinstance(node.op, ast.Not)
-        or not isinstance(node.operand, ast.Compare)
-        or len(node.operand.ops) != 1
-        or not isinstance(node.operand.ops[0], ast.Eq)
+        (
+            not isinstance(node.op, ast.Not)
+            or not isinstance(node.operand, ast.Compare)
+            or len(node.operand.ops) != 1
+            or not isinstance(node.operand.ops[0], ast.Eq)
+        )
+        or isinstance(node.parent, ast.If)
+        and is_exception_check(node.parent)
     ):
         return errors
     comparison = node.operand
@@ -821,16 +835,26 @@ def _get_sim201(node: ast.UnaryOp) -> List[Tuple[int, int, str]]:
     return errors
 
 
-def _get_sim202(node: ast.UnaryOp) -> List[Tuple[int, int, str]]:
+def is_exception_check(node: ast.If) -> bool:
+    if len(node.body) == 1 and isinstance(node.body[0], ast.Raise):
+        return True
+    return False
+
+
+def _get_sim202(node: UnaryOp) -> List[Tuple[int, int, str]]:
     """
     Get a list of all calls where an unary 'not' is used for an quality.
     """
     errors: List[Tuple[int, int, str]] = []
     if (
-        not isinstance(node.op, ast.Not)
-        or not isinstance(node.operand, ast.Compare)
-        or len(node.operand.ops) != 1
-        or not isinstance(node.operand.ops[0], ast.NotEq)
+        (
+            not isinstance(node.op, ast.Not)
+            or not isinstance(node.operand, ast.Compare)
+            or len(node.operand.ops) != 1
+            or not isinstance(node.operand.ops[0], ast.NotEq)
+        )
+        or isinstance(node.parent, ast.If)
+        and is_exception_check(node.parent)
     ):
         return errors
     comparison = node.operand
@@ -843,16 +867,20 @@ def _get_sim202(node: ast.UnaryOp) -> List[Tuple[int, int, str]]:
     return errors
 
 
-def _get_sim203(node: ast.UnaryOp) -> List[Tuple[int, int, str]]:
+def _get_sim203(node: UnaryOp) -> List[Tuple[int, int, str]]:
     """
     Get a list of all calls where an unary 'not' is used for an in-check.
     """
     errors: List[Tuple[int, int, str]] = []
     if (
-        not isinstance(node.op, ast.Not)
-        or not isinstance(node.operand, ast.Compare)
-        or len(node.operand.ops) != 1
-        or not isinstance(node.operand.ops[0], ast.In)
+        (
+            not isinstance(node.op, ast.Not)
+            or not isinstance(node.operand, ast.Compare)
+            or len(node.operand.ops) != 1
+            or not isinstance(node.operand.ops[0], ast.In)
+        )
+        or isinstance(node.parent, ast.If)
+        and is_exception_check(node.parent)
     ):
         return errors
     comparison = node.operand
@@ -865,14 +893,18 @@ def _get_sim203(node: ast.UnaryOp) -> List[Tuple[int, int, str]]:
     return errors
 
 
-def _get_sim204(node: ast.UnaryOp) -> List[Tuple[int, int, str]]:
+def _get_sim204(node: UnaryOp) -> List[Tuple[int, int, str]]:
     """Get a list of all calls of the type "not (a < b)"."""
     errors: List[Tuple[int, int, str]] = []
     if (
-        not isinstance(node.op, ast.Not)
-        or not isinstance(node.operand, ast.Compare)
-        or len(node.operand.ops) != 1
-        or not isinstance(node.operand.ops[0], ast.Lt)
+        (
+            not isinstance(node.op, ast.Not)
+            or not isinstance(node.operand, ast.Compare)
+            or len(node.operand.ops) != 1
+            or not isinstance(node.operand.ops[0], ast.Lt)
+        )
+        or isinstance(node.parent, ast.If)
+        and is_exception_check(node.parent)
     ):
         return errors
     comparison = node.operand
@@ -884,14 +916,18 @@ def _get_sim204(node: ast.UnaryOp) -> List[Tuple[int, int, str]]:
     return errors
 
 
-def _get_sim205(node: ast.UnaryOp) -> List[Tuple[int, int, str]]:
+def _get_sim205(node: UnaryOp) -> List[Tuple[int, int, str]]:
     """Get a list of all calls of the type "not (a <= b)"."""
     errors: List[Tuple[int, int, str]] = []
     if (
-        not isinstance(node.op, ast.Not)
-        or not isinstance(node.operand, ast.Compare)
-        or len(node.operand.ops) != 1
-        or not isinstance(node.operand.ops[0], ast.LtE)
+        (
+            not isinstance(node.op, ast.Not)
+            or not isinstance(node.operand, ast.Compare)
+            or len(node.operand.ops) != 1
+            or not isinstance(node.operand.ops[0], ast.LtE)
+        )
+        or isinstance(node.parent, ast.If)
+        and is_exception_check(node.parent)
     ):
         return errors
     comparison = node.operand
@@ -903,14 +939,18 @@ def _get_sim205(node: ast.UnaryOp) -> List[Tuple[int, int, str]]:
     return errors
 
 
-def _get_sim206(node: ast.UnaryOp) -> List[Tuple[int, int, str]]:
+def _get_sim206(node: UnaryOp) -> List[Tuple[int, int, str]]:
     """Get a list of all calls of the type "not (a > b)"."""
     errors: List[Tuple[int, int, str]] = []
     if (
-        not isinstance(node.op, ast.Not)
-        or not isinstance(node.operand, ast.Compare)
-        or len(node.operand.ops) != 1
-        or not isinstance(node.operand.ops[0], ast.Gt)
+        (
+            not isinstance(node.op, ast.Not)
+            or not isinstance(node.operand, ast.Compare)
+            or len(node.operand.ops) != 1
+            or not isinstance(node.operand.ops[0], ast.Gt)
+        )
+        or isinstance(node.parent, ast.If)
+        and is_exception_check(node.parent)
     ):
         return errors
     comparison = node.operand
@@ -922,14 +962,18 @@ def _get_sim206(node: ast.UnaryOp) -> List[Tuple[int, int, str]]:
     return errors
 
 
-def _get_sim207(node: ast.UnaryOp) -> List[Tuple[int, int, str]]:
+def _get_sim207(node: UnaryOp) -> List[Tuple[int, int, str]]:
     """Get a list of all calls of the type "not (a >= b)"."""
     errors: List[Tuple[int, int, str]] = []
     if (
-        not isinstance(node.op, ast.Not)
-        or not isinstance(node.operand, ast.Compare)
-        or len(node.operand.ops) != 1
-        or not isinstance(node.operand.ops[0], ast.GtE)
+        (
+            not isinstance(node.op, ast.Not)
+            or not isinstance(node.operand, ast.Compare)
+            or len(node.operand.ops) != 1
+            or not isinstance(node.operand.ops[0], ast.GtE)
+        )
+        or isinstance(node.parent, ast.If)
+        and is_exception_check(node.parent)
     ):
         return errors
     comparison = node.operand
@@ -1221,7 +1265,8 @@ class Visitor(ast.NodeVisitor):
         self.errors += _get_sim107(node)
         self.generic_visit(node)
 
-    def visit_UnaryOp(self, node: ast.UnaryOp) -> None:
+    def visit_UnaryOp(self, node_v: ast.UnaryOp) -> None:
+        node = UnaryOp(node_v)
         self.errors += _get_sim201(node)
         self.errors += _get_sim202(node)
         self.errors += _get_sim203(node)
@@ -1252,6 +1297,11 @@ class Plugin:
 
     def run(self) -> Generator[Tuple[int, int, str, Type[Any]], None, None]:
         visitor = Visitor()
+
+        # Add parent
+        for node in ast.walk(self._tree):
+            for child in ast.iter_child_nodes(node):
+                child.parent = node  # type: ignore
         visitor.visit(self._tree)
 
         for line, col, msg in visitor.errors:
