@@ -1,7 +1,7 @@
 maint:
 	pre-commit autoupdate && pre-commit run --all-files
-	pip-compile -U requirements-lint.in
-	pip-compile -U requirements-dev.in
+	pip-compile -U requirements/lint.in
+	pip-compile -U requirements/dev.in
 
 upload:
 	make clean
