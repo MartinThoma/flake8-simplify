@@ -136,3 +136,5 @@ tests/reports/
 
 .vscode/
 *.code-workspace
+
+html/
