@@ -323,6 +323,25 @@ def test_sim115_not_triggered():
     assert ret == set()
 
 
+def test_sim116():
+    ret = _results(
+        """if a == "foo":
+    return "bar"
+elif a == "bar":
+    return "baz"
+elif a == "boo":
+    return "ooh"
+else:
+    return 42"""
+    )
+    assert ret == {
+        "1:0 SIM116 Use a dictionary lookup "
+        "instead of 3+ if/elif-statements: "
+        "return {'foo': 'bar', 'bar': "
+        "'baz', 'boo': 'ooh'}.get(a, 42)"
+    }
+
+
 def test_get_if_body_pairs():
     ret = ast.parse(
         """if a == b:
