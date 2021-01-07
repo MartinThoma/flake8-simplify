@@ -46,6 +46,7 @@ $ flake8 .
 * [`SIM113`](https://github.com/MartinThoma/flake8-simplify/issues/18): Use enumerate instead of manually incrementing a counter ([example](#SIM113))
 * [`SIM114`](https://github.com/MartinThoma/flake8-simplify/issues/10): Combine conditions via a logical or to prevent duplicating code ([example](#SIM114))
 * [`SIM115`](https://github.com/MartinThoma/flake8-simplify/issues/17): Use context handler for opening files ([example](#SIM115))
+* [`SIM116`](https://github.com/MartinThoma/flake8-simplify/issues/31): Use a dictionary instead of many if/else equality checks ([example](#SIM116))
 * `SIM201`: Use 'a != b' instead of 'not a == b' ([example](#SIM201))
 * `SIM202`: Use 'a == b' instead of 'not a != b' ([example](#SIM202))
 * `SIM203`: Use 'a not in b' instead of 'not (a in b)' ([example](#SIM203))
@@ -228,6 +229,24 @@ f.close()
 # Good
 with open(...) as f:
     ...  # (do something with f)
+```
+
+### SIM116
+
+```python
+# Bad
+if a == "foo":
+    return "bar"
+elif a == "bar":
+    return "baz"
+elif a == "boo":
+    return "ooh"
+else:
+    return 42
+
+# Good
+mapping = {"foo": "bar", "bar": "baz", "boo": "ooh"}
+return mapping.get(a, 42)
 ```
 
 ### SIM201

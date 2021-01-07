@@ -3,7 +3,17 @@ import ast
 import itertools
 import sys
 from collections import defaultdict
-from typing import Any, DefaultDict, Dict, Generator, List, Tuple, Type, Union
+from typing import (
+    Any,
+    DefaultDict,
+    Dict,
+    Generator,
+    List,
+    Optional,
+    Tuple,
+    Type,
+    Union,
+)
 
 # Third party
 import astor
@@ -59,6 +69,10 @@ SIM112 = "SIM112 Use '{expected}' instead of '{original}'"
 SIM113 = "SIM113 Use enumerate instead of '{variable}'"
 SIM114 = "SIM114 Use logical or (({cond1}) or ({cond2})) and a single body"
 SIM115 = "SIM115 Use context handler for opening files"
+SIM116 = (
+    "SIM116 Use a dictionary lookup instead of 3+ if/elif-statements: "
+    "return {ret}"
+)
 SIM201 = "SIM201 Use '{left} != {right}' instead of 'not {left} == {right}'"
 SIM202 = "SIM202 Use '{left} == {right}' instead of 'not {left} != {right}'"
 SIM203 = "SIM203 Use '{a} not in {b}' instead of 'not {a} in {b}'"
@@ -106,7 +120,9 @@ def strip_triple_quotes(string: str) -> str:
     return string
 
 
-def to_source(node: Union[ast.expr, ast.Expr]) -> str:
+def to_source(node: Union[None, ast.expr, ast.Expr]) -> str:
+    if node is None:
+        return "None"
     source: str = astor.to_source(node).strip()
     source = strip_parenthesis(source)
     source = strip_triple_quotes(source)
@@ -812,6 +828,88 @@ def _get_sim115(node: Call) -> List[Tuple[int, int, str]]:
     return errors
 
 
+def _get_sim116(node: ast.If) -> List[Tuple[int, int, str]]:
+    """
+    Find places where 3 or more consecutive if-statements with direct returns.
+
+    * Each if-statement must be a check for equality with the
+      same variable
+    * Each if-statement must just have a "return"
+    * Else must also just have a return
+    """
+    errors: List[Tuple[int, int, str]] = []
+    if not (
+        isinstance(node.test, ast.Compare)
+        and isinstance(node.test.left, ast.Name)
+        and len(node.test.ops) == 1
+        and isinstance(node.test.ops[0], ast.Eq)
+        and len(node.test.comparators) == 1
+        and isinstance(node.test.comparators[0], AST_CONST_TYPES)
+        and len(node.body) == 1
+        and isinstance(node.body[0], ast.Return)
+        and len(node.orelse) == 1
+        and isinstance(node.orelse[0], ast.If)
+    ):
+        return errors
+    variable = node.test.left
+    child: Optional[ast.If] = node.orelse[0]
+    assert isinstance(child, ast.If), "hint for mypy"
+    else_value: Optional[str] = None
+    key_value_pairs: Dict[Any, Any]
+    if isinstance(node.test.comparators[0], ast.Str):
+        key_value_pairs = {
+            node.test.comparators[0].s: to_source(node.body[0].value)
+        }
+    elif isinstance(node.test.comparators[0], ast.Num):
+        key_value_pairs = {
+            node.test.comparators[0].n: to_source(node.body[0].value)
+        }
+    else:
+        key_value_pairs = {
+            node.test.comparators[0].value: to_source(node.body[0].value)
+        }
+    while child:
+        if not (
+            isinstance(child.test, ast.Compare)
+            and isinstance(child.test.left, ast.Name)
+            and child.test.left.id == variable.id
+            and len(child.test.ops) == 1
+            and isinstance(child.test.ops[0], ast.Eq)
+            and len(child.test.comparators) == 1
+            and isinstance(child.test.comparators[0], AST_CONST_TYPES)
+            and len(child.body) == 1
+            and isinstance(child.body[0], ast.Return)
+            and len(child.orelse) <= 1
+        ):
+            return errors
+        key: Any
+        if isinstance(child.test.comparators[0], ast.Str):
+            key = child.test.comparators[0].s
+        elif isinstance(child.test.comparators[0], ast.Num):
+            key = child.test.comparators[0].n
+        else:
+            key = child.test.comparators[0].value
+        key_value_pairs[key] = to_source(child.body[0].value)
+        if len(child.orelse) == 1:
+            if isinstance(child.orelse[0], ast.If):
+                child = child.orelse[0]
+            elif isinstance(child.orelse[0], ast.Return):
+                else_value = to_source(child.orelse[0].value)
+                child = None
+            else:
+                return errors
+        else:
+            child = None
+    if len(key_value_pairs) < 3:
+        return errors
+    if else_value:
+        ret = f"{key_value_pairs}.get({variable.id}, {else_value})"
+    else:
+        ret = f"{key_value_pairs}.get({variable.id})"
+    errors.append((node.lineno, node.col_offset, SIM116.format(ret=ret)))
+    return errors
+
+
 def get_if_body_pairs(node: ast.If) -> List[Tuple[ast.expr, List[ast.stmt]]]:
     pairs = [(node.test, node.body)]
     orelse = node.orelse
@@ -1308,6 +1406,7 @@ class Visitor(ast.NodeVisitor):
         self.errors += _get_sim106(node)
         self.errors += _get_sim108(node)
         self.errors += _get_sim114(node)
+        self.errors += _get_sim116(node)
         self.generic_visit(node)
 
     def visit_For(self, node: ast.For) -> None:
