@@ -76,7 +76,7 @@ def test_multiple_other_function():
     assert ret == set()
 
 
-def test_sim_102_pattern1():
+def test_sim102_pattern1():
     ret = _results(
         """if a:
     if b:
@@ -90,7 +90,7 @@ def test_sim_102_pattern1():
     }
 
 
-def test_sim_102_pattern2():
+def test_sim102_pattern2():
     ret = _results(
         """if a:
     pass
@@ -111,7 +111,7 @@ elif b:
     ]
 
 
-def test_sim_102_not_active1():
+def test_sim102_not_active1():
     ret = _results(
         """if a:
     if b:
@@ -122,7 +122,7 @@ def test_sim_102_not_active1():
     assert ret == set()
 
 
-def test_sim_102_not_active2():
+def test_sim102_not_active2():
     ret = _results(
         """if a:
     d
@@ -132,7 +132,7 @@ def test_sim_102_not_active2():
     assert ret == set()
 
 
-def test_sim_103_true_false():
+def test_sim103_true_false():
     ret = _results(
         """if a:
     return True
@@ -142,7 +142,7 @@ else:
     assert ret == {"1:0 SIM103 Return the condition a directly"}
 
 
-def test_sim_104():
+def test_sim104():
     ret = _results(
         """for item in iterable:
     yield item"""
@@ -150,7 +150,7 @@ def test_sim_104():
     assert ret == {"1:0 SIM104 Use 'yield from iterable'"}
 
 
-def test_sim_105():
+def test_sim105():
     ret = _results(
         """try:
     foo()
@@ -160,7 +160,7 @@ except ValueError:
     assert ret == {"1:0 SIM105 Use 'contextlib.suppress(ValueError)'"}
 
 
-def test_sim_105_pokemon():
+def test_sim105_pokemon():
     ret = _results(
         """try:
     foo()
@@ -170,7 +170,7 @@ except:
     assert ret == {"1:0 SIM105 Use 'contextlib.suppress(Exception)'"}
 
 
-def test_sim_106():
+def test_sim106():
     ret = _results(
         """if cond:
     a
@@ -182,7 +182,7 @@ else:
     assert ret == {"1:0 SIM106 Handle error-cases first"}
 
 
-def test_sim_106_no():
+def test_sim106_no():
     ret = _results(
         """if cond:
     raise Exception
@@ -192,7 +192,7 @@ else:
     assert ret == set()
 
 
-def test_sim_107():
+def test_sim107():
     ret = _results(
         """def foo():
     try:
@@ -206,7 +206,7 @@ def test_sim_107():
     assert ret == {"8:8 SIM107 Don't use return in try/except and finally"}
 
 
-def test_sim_108():
+def test_sim108():
     ret = _results(
         """if a:
     b = c
@@ -220,14 +220,14 @@ else:
     assert ret == {exp}
 
 
-def test_sim_109():
+def test_sim109():
     ret = _results("a == b or a == c")
     assert ret == {
         "1:0 SIM109 Use 'a in [b, c]' instead of 'a == b or a == c'"
     }
 
 
-def test_sim_110_any():
+def test_sim110_any():
     ret = _results(
         """for x in iterable:
     if check(x):
@@ -237,7 +237,7 @@ return False"""
     assert ret == {"1:0 SIM110 Use 'return any(check(x) for x in iterable)'"}
 
 
-def test_sim_111_all():
+def test_sim111_all():
     ret = _results(
         """for x in iterable:
     if check(x):
@@ -247,7 +247,7 @@ return True"""
     assert ret == {"1:0 SIM111 Use 'return all(check(x) for x in iterable)'"}
 
 
-def test_sim_110_sim111_false_positive_check():
+def test_sim110_sim111_false_positive_check():
     ret = _results(
         """for x in iterable:
     if check(x):
@@ -257,14 +257,14 @@ return "bar" """
     assert ret == set()
 
 
-def test_sim_112_index():
+def test_sim112_index():
     ret = _results("os.environ['foo']")
     assert ret == {
         "1:0 SIM112 Use 'os.environ[\"FOO\"]' instead of 'os.environ['foo']'"
     }
 
 
-def test_sim_112_get():
+def test_sim112_get():
     ret = _results("os.environ.get('foo')")
     assert ret == {
         "1:0 SIM112 Use 'os.environ.get(\"FOO\")' instead of "
@@ -272,7 +272,7 @@ def test_sim_112_get():
     }
 
 
-def test_sim_112_get_with_default():
+def test_sim112_get_with_default():
     ret = _results("os.environ.get('foo', 'bar')")
     assert ret == {
         '1:0 SIM112 Use \'os.environ.get("FOO", "bar")\' instead of '
@@ -280,7 +280,7 @@ def test_sim_112_get_with_default():
     }
 
 
-def test_sim_113():
+def test_sim113():
     ret = _results(
         """for el in iterable:
     idx += 1"""
@@ -288,7 +288,7 @@ def test_sim_113():
     assert ret == {"2:4 SIM113 Use enumerate instead of 'idx'"}
 
 
-def test_sim_113_false_positive():
+def test_sim113_false_positive():
     ret = _results(
         """for x in xs:
     cm[x] += 1"""
@@ -296,7 +296,7 @@ def test_sim_113_false_positive():
     assert ret == set()
 
 
-def test_sim_114():
+def test_sim114():
     ret = _results(
         """if a:
     b
@@ -306,7 +306,7 @@ elif c:
     assert ret == {"1:3 SIM114 Use logical or ((a) or (c)) and a single body"}
 
 
-def test_sim_115():
+def test_sim115():
     ret = _results(
         """f = open('foo.txt')
 data = f.read()
@@ -315,7 +315,7 @@ f.close()"""
     assert ret == {"1:4 SIM115 Use context handler for opening files"}
 
 
-def test_sim_115_not_triggered():
+def test_sim115_not_triggered():
     ret = _results(
         """with open('foo.txt') as f:
     data = f.read()"""
@@ -367,12 +367,12 @@ elif a == b:
     assert comp.comparators[0].id == "b"
 
 
-def test_sim_201():
+def test_sim201():
     ret = _results("not a == b")
     assert ret == {"1:0 SIM201 Use 'a != b' instead of 'not a == b'"}
 
 
-def test_sim_201_not_in_exception_check():
+def test_sim201_not_in_exception_check():
     ret = _results(
         """if not a == b:
     raise ValueError()"""
@@ -380,83 +380,83 @@ def test_sim_201_not_in_exception_check():
     assert ret == set()
 
 
-def test_sim_202_base():
+def test_sim202_base():
     ret = _results("not a != b")
     assert ret == {("1:0 SIM202 Use 'a == b' instead of 'not a != b'")}
 
 
-def test_sim_203_base():
+def test_sim203_base():
     ret = _results("not a in b")
     assert ret == {("1:0 SIM203 Use 'a not in b' instead of 'not a in b'")}
 
 
-def test_sim_204_base():
+def test_sim204_base():
     ret = _results("not a < b")
     assert ret == {("1:0 SIM204 Use 'a >= b' instead of 'not (a < b)'")}
 
 
-def test_sim_205_base():
+def test_sim205_base():
     ret = _results("not a <= b")
     assert ret == {("1:0 SIM205 Use 'a > b' instead of 'not (a <= b)'")}
 
 
-def test_sim_206_base():
+def test_sim206_base():
     ret = _results("not a > b")
     assert ret == {("1:0 SIM206 Use 'a <= b' instead of 'not (a > b)'")}
 
 
-def test_sim_207_base():
+def test_sim207_base():
     ret = _results("not a >= b")
     assert ret == {("1:0 SIM207 Use 'a < b' instead of 'not (a >= b)'")}
 
 
-def test_sim_208_base():
+def test_sim208_base():
     ret = _results("not (not a)")
     assert ret == {("1:0 SIM208 Use 'a' instead of 'not (not a)'")}
 
 
-def test_sim_210_base():
+def test_sim210_base():
     ret = _results("True if True else False")
     assert ret == {
         ("1:0 SIM210 Use 'bool(True)' instead of 'True if True else False'")
     }
 
 
-def test_sim_211_base():
+def test_sim211_base():
     ret = _results("False if True else True")
     assert ret == {
         ("1:0 SIM211 Use 'not True' instead of 'False if True else True'")
     }
 
 
-def test_sim_212_base():
+def test_sim212_base():
     ret = _results("b if not a else a")
     assert ret == {
         ("1:0 SIM212 Use 'a if a else b' instead of 'b if not a else a'")
     }
 
 
-def test_sim_220_base():
+def test_sim220_base():
     ret = _results("a and not a")
     assert ret == {("1:0 SIM220 Use 'False' instead of 'a and not a'")}
 
 
-def test_sim_221_base():
+def test_sim221_base():
     ret = _results("a or not a")
     assert ret == {("1:0 SIM221 Use 'True' instead of 'a or not a'")}
 
 
-def test_sim_222_base():
+def test_sim222_base():
     ret = _results("a or True")
     assert ret == {("1:0 SIM222 Use 'True' instead of '... or True'")}
 
 
-def test_sim_223_base():
+def test_sim223_base():
     ret = _results("a and False")
     assert ret == {("1:0 SIM223 Use 'False' instead of '... and False'")}
 
 
-def test_sim_300_string():
+def test_sim300_string():
     ret = _results("'Yoda' == i_am")
     assert ret == {
         (
@@ -466,7 +466,7 @@ def test_sim_300_string():
     }
 
 
-def test_sim_300_int():
+def test_sim300_int():
     ret = _results("42 == age")
     assert ret == {
         "1:0 SIM300 Use 'age == 42' instead of '42 == age' (Yoda-conditions)"
