@@ -107,7 +107,7 @@ def strip_triple_quotes(string: str) -> str:
 
 
 def to_source(node: Union[ast.expr, ast.Expr]) -> str:
-    source = astor.to_source(node).strip()
+    source: str = astor.to_source(node).strip()
     source = strip_parenthesis(source)
     source = strip_triple_quotes(source)
     return source

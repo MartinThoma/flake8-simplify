@@ -1,3 +1,3 @@
 #!/bin/bash -e
-mypy flake8_simplify.py
+mypy --strict flake8_simplify.py
 pytest -x
