@@ -47,6 +47,7 @@ $ flake8 .
 * [`SIM114`](https://github.com/MartinThoma/flake8-simplify/issues/10): Combine conditions via a logical or to prevent duplicating code ([example](#SIM114))
 * [`SIM115`](https://github.com/MartinThoma/flake8-simplify/issues/17): Use context handler for opening files ([example](#SIM115))
 * [`SIM116`](https://github.com/MartinThoma/flake8-simplify/issues/31): Use a dictionary instead of many if/else equality checks ([example](#SIM116))
+* [`SIM117`](https://github.com/MartinThoma/flake8-simplify/issues/35): Merge with-statements that use the same scope ([example](#SIM117))
 * `SIM201`: Use 'a != b' instead of 'not a == b' ([example](#SIM201))
 * `SIM202`: Use 'a == b' instead of 'not a != b' ([example](#SIM202))
 * `SIM203`: Use 'a not in b' instead of 'not (a in b)' ([example](#SIM203))
@@ -248,6 +249,22 @@ else:
 mapping = {"foo": "bar", "bar": "baz", "boo": "ooh"}
 return mapping.get(a, 42)
 ```
+
+### SIM117
+
+```python
+# Bad
+with A() as a:
+    with B() as b:
+        print("hello")
+
+# Good
+with A() as a, B() as b:
+    print("hello")
+```
+
+Thank you for pointing this one out, [Aaron Gokaslan](https://github.com/Skylion007)!
+
 
 ### SIM201
 
