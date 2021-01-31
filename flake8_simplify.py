@@ -73,6 +73,7 @@ SIM116 = (
     "SIM116 Use a dictionary lookup instead of 3+ if/elif-statements: "
     "return {ret}"
 )
+SIM117 = "SIM117 Use '{merged_with}' instead of multiple with statements"
 SIM201 = "SIM201 Use '{left} != {right}' instead of 'not {left} == {right}'"
 SIM202 = "SIM202 Use '{left} == {right}' instead of 'not {left} != {right}'"
 SIM203 = "SIM203 Use '{a} not in {b}' instead of 'not {a} in {b}'"
@@ -120,7 +121,7 @@ def strip_triple_quotes(string: str) -> str:
     return string
 
 
-def to_source(node: Union[None, ast.expr, ast.Expr]) -> str:
+def to_source(node: Union[None, ast.expr, ast.Expr, ast.withitem]) -> str:
     if node is None:
         return "None"
     source: str = astor.to_source(node).strip()
@@ -910,6 +911,61 @@ def _get_sim116(node: ast.If) -> List[Tuple[int, int, str]]:
     return errors
 
 
+def _get_sim117(node: ast.With) -> List[Tuple[int, int, str]]:
+    """
+    Find multiple with-statements with same scope.
+
+        With(
+            items=[
+                withitem(
+                    context_expr=Call(
+                        func=Name(id='A', ctx=Load()),
+                        args=[],
+                        keywords=[],
+                    ),
+                    optional_vars=Name(id='a', ctx=Store()),
+                ),
+            ],
+            body=[
+                With(
+                    items=[
+                        withitem(
+                            context_expr=Call(
+                                func=Name(id='B', ctx=Load()),
+                                args=[],
+                                keywords=[],
+                            ),
+                            optional_vars=Name(id='b', ctx=Store()),
+                        ),
+                    ],
+                    body=[
+                        Expr(
+                            value=Call(
+                                func=Name(id='print', ctx=Load()),
+                                args=[Constant(value='hello', kind=None)],
+                                keywords=[],
+                            ),
+                        ),
+                    ],
+                    type_comment=None,
+                ),
+            ],
+            type_comment=None,
+        ),
+    """
+    errors: List[Tuple[int, int, str]] = []
+    if not (len(node.body) == 1 and isinstance(node.body[0], ast.With)):
+        return errors
+    with_items = []
+    for withitem in node.items + node.body[0].items:
+        with_items.append(f"{to_source(withitem)}")
+    merged_with = f"with {', '.join(with_items)}:"
+    errors.append(
+        (node.lineno, node.col_offset, SIM117.format(merged_with=merged_with))
+    )
+    return errors
+
+
 def get_if_body_pairs(node: ast.If) -> List[Tuple[ast.expr, List[ast.stmt]]]:
     pairs = [(node.test, node.body)]
     orelse = node.orelse
@@ -1385,6 +1441,10 @@ class Visitor(ast.NodeVisitor):
 
     def visit_Call(self, node: ast.Call) -> Any:
         self.errors += _get_sim115(Call(node))
+        self.generic_visit(node)
+
+    def visit_With(self, node: ast.With) -> Any:
+        self.errors += _get_sim117(node)
         self.generic_visit(node)
 
     def visit_Expr(self, node: ast.Expr) -> None:

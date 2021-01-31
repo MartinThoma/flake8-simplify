@@ -342,6 +342,38 @@ else:
     }
 
 
+def test_sim117():
+    ret = _results(
+        """with A() as a:
+    with B() as b:
+        print('hello')"""
+    )
+    assert ret == {
+        "1:0 SIM117 Use 'with A() as a, B() as b:' "
+        "instead of multiple with statements"
+    }
+
+
+def test_sim117_no_trigger_begin():
+    ret = _results(
+        """with A() as a:
+    a()
+    with B() as b:
+        print('hello')"""
+    )
+    assert ret == set()
+
+
+def test_sim117_no_trigger_end():
+    ret = _results(
+        """with A() as a:
+    with B() as b:
+        print('hello')
+    a()"""
+    )
+    assert ret == set()
+
+
 def test_get_if_body_pairs():
     ret = ast.parse(
         """if a == b:
