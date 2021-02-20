@@ -30,6 +30,8 @@ $ flake8 .
 
 ## Rules
 
+Python-specific rules:
+
 * `SIM101`: Multiple isinstance-calls which can be merged into a single call by
   using a tuple as a second argument ([example](#SIM101))
 * `SIM102`: Use a single if-statement instead of nested if-statements ([example](#SIM102))
@@ -48,6 +50,10 @@ $ flake8 .
 * [`SIM115`](https://github.com/MartinThoma/flake8-simplify/issues/17): Use context handler for opening files ([example](#SIM115))
 * [`SIM116`](https://github.com/MartinThoma/flake8-simplify/issues/31): Use a dictionary instead of many if/else equality checks ([example](#SIM116))
 * [`SIM117`](https://github.com/MartinThoma/flake8-simplify/issues/35): Merge with-statements that use the same scope ([example](#SIM117))
+* [`SIM118`](https://github.com/MartinThoma/flake8-simplify/issues/40): Use 'key in dict' instead of 'key in dict.keys()' ([example](#SIM118))
+
+Comparations:
+
 * `SIM201`: Use 'a != b' instead of 'not a == b' ([example](#SIM201))
 * `SIM202`: Use 'a == b' instead of 'not a != b' ([example](#SIM202))
 * `SIM203`: Use 'a not in b' instead of 'not (a in b)' ([example](#SIM203))
@@ -265,6 +271,17 @@ with A() as a, B() as b:
 
 Thank you for pointing this one out, [Aaron Gokaslan](https://github.com/Skylion007)!
 
+### SIM118
+
+```python
+# Bad
+key in dict.keys()
+
+# Good
+key in dict
+```
+
+Thank you for pointing this one out, [Aaron Gokaslan](https://github.com/Skylion007)!
 
 ### SIM201
 
