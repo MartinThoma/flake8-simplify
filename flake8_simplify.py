@@ -590,6 +590,9 @@ def _get_sim110_sim111(node: ast.For) -> List[Tuple[int, int, str]]:
             )
         )
     elif node.body[0].body[0].value.value is False:
+        check = "not " + check
+        if check.startswith("not not"):
+            check = check[len("not not ") :]
         errors.append(
             (
                 node.lineno,
@@ -637,12 +640,12 @@ def _get_sim112(node: ast.Expr) -> List[Tuple[int, int, str]]:
     )
     if is_index_call:
         subscript = node.value
-        assert isinstance(subscript, ast.Subscript)
+        assert isinstance(subscript, ast.Subscript), "hint for mypy"  # noqa
         slice_ = subscript.slice
         if isinstance(slice_, ast.Index):
             # Python < 3.9
             string_part = slice_.value  # type: ignore
-            assert isinstance(string_part, STR_TYPES)
+            assert isinstance(string_part, STR_TYPES), "hint for mypy"  # noqa
             if isinstance(string_part, ast.Str):
                 env_name = string_part.s  # Python 3.6 / 3.7 fallback
             else:
@@ -667,9 +670,9 @@ def _get_sim112(node: ast.Expr) -> List[Tuple[int, int, str]]:
     )
     if is_get_call:
         call = node.value
-        assert isinstance(call, ast.Call)
+        assert isinstance(call, ast.Call), "hint for mypy"  # noqa
         string_part = call.args[0]
-        assert isinstance(string_part, STR_TYPES)
+        assert isinstance(string_part, STR_TYPES), "hint for mypy"  # noqa
         if isinstance(string_part, ast.Str):
             env_name = string_part.s  # Python 3.6 / 3.7 fallback
         else:
@@ -686,7 +689,7 @@ def _get_sim112(node: ast.Expr) -> List[Tuple[int, int, str]]:
         if len(node.value.args) == 1:  # type: ignore
             expected = f'os.environ.get("{env_name.upper()}")'
         else:
-            assert isinstance(node.value, ast.Call)
+            assert isinstance(node.value, ast.Call), "hint for mypy"  # noqa
             default_value = to_source(node.value.args[1])
             expected = (
                 f'os.environ.get("{env_name.upper()}", "{default_value}")'

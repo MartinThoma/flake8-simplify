@@ -1,6 +1,6 @@
 # Core Library
 import ast
-from typing import Set
+from typing import Iterable, Set
 
 # First party
 from flake8_simplify import Plugin, get_if_body_pairs
@@ -228,6 +228,15 @@ def test_sim109():
 
 
 def test_sim110_any():
+    def opt1(iterable):
+        for x in iterable:  # noqa
+            if x:
+                return True
+        return False
+
+    def opt2(iterable):
+        return any(x for x in iterable)
+
     ret = _results(
         """for x in iterable:
     if check(x):
@@ -238,13 +247,53 @@ return False"""
 
 
 def test_sim111_all():
+    def opt1(iterable: Iterable[bool]) -> bool:
+        for x in iterable:  # noqa
+            if x:
+                return False
+        return True
+
+    def opt2(iterable: Iterable[bool]) -> bool:
+        return all(not x for x in iterable)
+
+    iterables = ((True,), (False,))
+    for iterable in iterables:
+        assert opt1(iterable) == opt2(iterable)
+
     ret = _results(
         """for x in iterable:
     if check(x):
         return False
 return True"""
     )
-    assert ret == {"1:0 SIM111 Use 'return all(check(x) for x in iterable)'"}
+    assert ret == {
+        "1:0 SIM111 Use 'return all(not check(x) for x in iterable)'"
+    }
+
+
+def test_sim111_all2():
+    def opt1(iterable: Iterable[bool]) -> bool:
+        for x in iterable:  # noqa
+            if not x:
+                return False
+        return True
+
+    def opt2(iterable: Iterable[bool]) -> bool:
+        return all(x for x in iterable)
+
+    iterables = ((True,), (False,))
+    for iterable in iterables:
+        assert opt1(iterable) == opt2(iterable)
+
+    ret = _results(
+        """for x in iterable:
+    if not x.is_empty():
+        return False
+return True"""
+    )
+    assert ret == {
+        "1:0 SIM111 Use 'return all(x.is_empty() for x in iterable)'"
+    }
 
 
 def test_sim110_sim111_false_positive_check():
