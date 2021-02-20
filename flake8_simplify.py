@@ -74,6 +74,7 @@ SIM116 = (
     "return {ret}"
 )
 SIM117 = "SIM117 Use '{merged_with}' instead of multiple with statements"
+SIM118 = "SIM118 Use '{el} in {dict}' instead of '{el} in {dict}.keys()'"
 SIM201 = "SIM201 Use '{left} != {right}' instead of 'not {left} == {right}'"
 SIM202 = "SIM202 Use '{left} == {right}' instead of 'not {left} != {right}'"
 SIM203 = "SIM203 Use '{a} not in {b}' instead of 'not {a} in {b}'"
@@ -969,6 +970,57 @@ def _get_sim117(node: ast.With) -> List[Tuple[int, int, str]]:
     return errors
 
 
+def _get_sim118(node: ast.Compare) -> List[Tuple[int, int, str]]:
+    """
+    Get a list of all usages of "key in dict.keys()"
+
+    Compare(left=Name(id='key', ctx=Load()),
+            ops=[In()],
+            comparators=[
+                Call(
+                    func=Attribute(
+                        value=Name(id='dict', ctx=Load()),
+                        attr='keys',
+                        ctx=Load(),
+                    ),
+                    args=[],
+                    keywords=[],
+                ),
+            ],
+        )
+    """
+    errors: List[Tuple[int, int, str]] = []
+    if not (
+        len(node.ops) == 1
+        and isinstance(node.ops[0], ast.In)
+        and len(node.comparators) == 1
+    ):
+        return errors
+    call_node = node.comparators[0]
+    if not isinstance(call_node, ast.Call):
+        return errors
+
+    attr_node = call_node.func
+    if not (
+        isinstance(call_node.func, ast.Attribute)
+        and call_node.func.attr == "keys"
+        and isinstance(call_node.func.ctx, ast.Load)
+    ):
+        return errors
+    assert isinstance(attr_node, ast.Attribute), "hint for mypy"  # noqa
+
+    key_str = to_source(node.left)
+    dict_str = to_source(attr_node.value)
+    errors.append(
+        (
+            node.lineno,
+            node.col_offset,
+            SIM118.format(el=key_str, dict=dict_str),
+        )
+    )
+    return errors
+
+
 def get_if_body_pairs(node: ast.If) -> List[Tuple[ast.expr, List[ast.stmt]]]:
     pairs = [(node.test, node.body)]
     orelse = node.orelse
@@ -1502,6 +1554,7 @@ class Visitor(ast.NodeVisitor):
         self.generic_visit(node)
 
     def visit_Compare(self, node: ast.Compare) -> None:
+        self.errors += _get_sim118(node)
         self.errors += _get_sim300(node)
         self.generic_visit(node)
 

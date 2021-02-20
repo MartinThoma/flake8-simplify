@@ -423,6 +423,13 @@ def test_sim117_no_trigger_end():
     assert ret == set()
 
 
+def test_sim118():
+    results = _results("key in dict.keys()")
+    assert results == {
+        "1:0 SIM118 Use 'key in dict' instead of 'key in dict.keys()'"
+    }
+
+
 def test_get_if_body_pairs():
     ret = ast.parse(
         """if a == b:
