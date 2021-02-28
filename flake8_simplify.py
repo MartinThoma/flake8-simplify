@@ -1080,7 +1080,10 @@ def _get_sim119(node: ast.ClassDef) -> List[Tuple[int, int, str]]:
             has_only_constructur_function = False
             break
 
-    if not has_only_constructur_function:
+    if not (
+        has_only_constructur_function
+        and sum([1 for el in node.body if isinstance(el, ast.FunctionDef)]) > 0
+    ):
         return errors
 
     errors.append(

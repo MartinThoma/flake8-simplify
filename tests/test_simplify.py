@@ -460,6 +460,21 @@ class FooBar:
     assert results == {"2:0 SIM119 Use a dataclass for 'class FooBar'"}
 
 
+def test_sim119_pydantic():
+    results = _results(
+        """
+from pydantic import BaseModel
+
+class FooBar(BaseModel):
+    foo : str
+
+    class Config:
+        extra = "allow"
+"""
+    )
+    assert results == set()
+
+
 def test_sim120():
     results = _results("class FooBar(object): pass")
     assert results == {
