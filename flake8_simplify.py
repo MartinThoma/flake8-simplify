@@ -47,6 +47,7 @@ else:  # pragma: no cover (PY38+)
     # Core Library
     import importlib.metadata as importlib_metadata
 
+# Python-Specific
 SIM101 = (
     "SIM101 Multiple isinstance-calls which can be merged into a single "
     "call for variable '{var}'"
@@ -75,6 +76,12 @@ SIM116 = (
 )
 SIM117 = "SIM117 Use '{merged_with}' instead of multiple with statements"
 SIM118 = "SIM118 Use '{el} in {dict}' instead of '{el} in {dict}.keys()'"
+SIM119 = "SIM119 Use a dataclass for 'class {classname}'"
+SIM120 = (
+    "SIM120 Use 'class {classname}:' instead of 'class {classname}(object):'"
+)
+
+# Comparations
 SIM201 = "SIM201 Use '{left} != {right}' instead of 'not {left} == {right}'"
 SIM202 = "SIM202 Use '{left} == {right}' instead of 'not {left} != {right}'"
 SIM203 = "SIM203 Use '{a} not in {b}' instead of 'not {a} in {b}'"
@@ -1021,6 +1028,85 @@ def _get_sim118(node: ast.Compare) -> List[Tuple[int, int, str]]:
     return errors
 
 
+def _get_sim119(node: ast.ClassDef) -> List[Tuple[int, int, str]]:
+    """
+    Get a list of all classes that should be dataclasses"
+
+        ClassDef(
+            name='Person',
+            bases=[],
+            keywords=[],
+            body=[
+                AnnAssign(
+                    target=Name(id='first_name', ctx=Store()),
+                    annotation=Name(id='str', ctx=Load()),
+                    value=None,
+                    simple=1,
+                ),
+                AnnAssign(
+                    target=Name(id='last_name', ctx=Store()),
+                    annotation=Name(id='str', ctx=Load()),
+                    value=None,
+                    simple=1,
+                ),
+                AnnAssign(
+                    target=Name(id='birthdate', ctx=Store()),
+                    annotation=Name(id='date', ctx=Load()),
+                    value=None,
+                    simple=1,
+                ),
+            ],
+            decorator_list=[Name(id='dataclass', ctx=Load())],
+        )
+    """
+    errors: List[Tuple[int, int, str]] = []
+
+    if not (len(node.decorator_list) == 0 and len(node.bases) == 0):
+        return errors
+
+    dataclass_functions = [
+        "__init__",
+        "__eq__",
+        "__hash__",
+        "__repr__",
+        "__str__",
+    ]
+    has_only_constructur_function = True
+    for body_el in node.body:
+        if (
+            isinstance(body_el, ast.FunctionDef)
+            and body_el.name not in dataclass_functions
+        ):
+            has_only_constructur_function = False
+            break
+
+    if not has_only_constructur_function:
+        return errors
+
+    errors.append(
+        (node.lineno, node.col_offset, SIM119.format(classname=node.name))
+    )
+
+    return errors
+
+
+def _get_sim120(node: ast.ClassDef) -> List[Tuple[int, int, str]]:
+    """
+    Get a list of all classes that inherit from object.
+    """
+    errors: List[Tuple[int, int, str]] = []
+    if not (
+        len(node.bases) == 1
+        and isinstance(node.bases[0], ast.Name)
+        and node.bases[0].id == "object"
+    ):
+        return errors
+    errors.append(
+        (node.lineno, node.col_offset, SIM120.format(classname=node.name))
+    )
+    return errors
+
+
 def get_if_body_pairs(node: ast.If) -> List[Tuple[ast.expr, List[ast.stmt]]]:
     pairs = [(node.test, node.body)]
     orelse = node.orelse
@@ -1556,6 +1642,11 @@ class Visitor(ast.NodeVisitor):
     def visit_Compare(self, node: ast.Compare) -> None:
         self.errors += _get_sim118(node)
         self.errors += _get_sim300(node)
+        self.generic_visit(node)
+
+    def visit_ClassDef(self, node: ast.ClassDef) -> None:
+        self.errors += _get_sim119(node)
+        self.errors += _get_sim120(node)
         self.generic_visit(node)
 
 

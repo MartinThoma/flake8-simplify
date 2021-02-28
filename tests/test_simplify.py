@@ -430,6 +430,28 @@ def test_sim118():
     }
 
 
+def test_sim119():
+    results = _results(
+        """
+class FooBar:
+    def __init__(self, a, b):
+        self.a = a
+        self.b = b
+
+    def __str__(self):
+        return "FooBar"
+"""
+    )
+    assert results == {"2:0 SIM119 Use a dataclass for 'class FooBar'"}
+
+
+def test_sim120():
+    results = _results("class FooBar(object): pass")
+    assert results == {
+        "1:0 SIM120 Use 'class FooBar:' instead of 'class FooBar(object):'"
+    }
+
+
 def test_get_if_body_pairs():
     ret = ast.parse(
         """if a == b:
