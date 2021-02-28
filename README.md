@@ -34,23 +34,21 @@ Python-specific rules:
 
 * `SIM101`: Multiple isinstance-calls which can be merged into a single call by
   using a tuple as a second argument ([example](#SIM101))
-* `SIM102`: Use a single if-statement instead of nested if-statements ([example](#SIM102))
-* [`SIM103`](https://github.com/MartinThoma/flake8-simplify/issues/3): Return the boolean condition directly ([example](#SIM103))
-* [`SIM104`](https://github.com/MartinThoma/flake8-simplify/issues/4): Use 'yield from iterable' (introduced in Python 3.3, see [PEP 380](https://docs.python.org/3/whatsnew/3.3.html#pep-380)) ([example](#SIM104))
+* [`SIM104`](https://github.com/MartinThoma/flake8-simplify/issues/4) ![](https://shields.io/badge/-legacyfix-inactive): Use 'yield from iterable' (introduced in Python 3.3, see [PEP 380](https://docs.python.org/3/whatsnew/3.3.html#pep-380)) ([example](#SIM104))
 * [`SIM105`](https://github.com/MartinThoma/flake8-simplify/issues/5): Use ['contextlib.suppress(...)'](https://docs.python.org/3/library/contextlib.html#contextlib.suppress) instead of try-except-pass ([example](#SIM105))
-* [`SIM106`](https://github.com/MartinThoma/flake8-simplify/issues/8): Handle error-cases first ([example](#SIM106))
 * [`SIM107`](https://github.com/MartinThoma/flake8-simplify/issues/9): Don't use `return` in try/except and finally  ([example](#SIM107))
 * [`SIM108`](https://github.com/MartinThoma/flake8-simplify/issues/12): Use the ternary operator if it's reasonable  ([example](#SIM108))
 * [`SIM109`](https://github.com/MartinThoma/flake8-simplify/issues/11): Use a list to compare a value against multiple values ([example](#SIM109))
 * [`SIM110`](https://github.com/MartinThoma/flake8-simplify/issues/15): Use [any(...)](https://docs.python.org/3/library/functions.html#any)  ([example](#SIM110))
 * [`SIM111`](https://github.com/MartinThoma/flake8-simplify/issues/15): Use [all(...)](https://docs.python.org/3/library/functions.html#all) ([example](#SIM111))
-* [`SIM112`](https://github.com/MartinThoma/flake8-simplify/issues/19): Use CAPITAL environment variables ([example](#SIM112))
 * [`SIM113`](https://github.com/MartinThoma/flake8-simplify/issues/18): Use enumerate instead of manually incrementing a counter ([example](#SIM113))
 * [`SIM114`](https://github.com/MartinThoma/flake8-simplify/issues/10): Combine conditions via a logical or to prevent duplicating code ([example](#SIM114))
 * [`SIM115`](https://github.com/MartinThoma/flake8-simplify/issues/17): Use context handler for opening files ([example](#SIM115))
 * [`SIM116`](https://github.com/MartinThoma/flake8-simplify/issues/31): Use a dictionary instead of many if/else equality checks ([example](#SIM116))
 * [`SIM117`](https://github.com/MartinThoma/flake8-simplify/issues/35): Merge with-statements that use the same scope ([example](#SIM117))
 * [`SIM118`](https://github.com/MartinThoma/flake8-simplify/issues/40): Use 'key in dict' instead of 'key in dict.keys()' ([example](#SIM118))
+* [`SIM119`](https://github.com/MartinThoma/flake8-simplify/issues/37) ![](https://shields.io/badge/-legacyfix-inactive): Use dataclasses for data containers ([example](#SIM119))
+* `SIM120` ![](https://shields.io/badge/-legacyfix-inactive): Use 'class FooBar:' instead of 'class FooBar(object):' ([example](#SIM120))
 
 Comparations:
 
@@ -71,12 +69,18 @@ Comparations:
 * [`SIM223`](https://github.com/MartinThoma/flake8-simplify/issues/6): Use 'False' instead of '... and False' ([example](#SIM223))
 * [`SIM300`](https://github.com/MartinThoma/flake8-simplify/issues/16): Use 'age == 42' instead of '42 == age' ([example](#SIM300))
 
-The `SIM201` - `SIM208` rules have one good reason to be ignored: When you are
-checking an error condition:
+General Code Style:
+
+* `SIM102`: Use a single if-statement instead of nested if-statements ([example](#SIM102))
+* [`SIM103`](https://github.com/MartinThoma/flake8-simplify/issues/3): Return the boolean condition directly ([example](#SIM103))
+* [`SIM106`](https://github.com/MartinThoma/flake8-simplify/issues/8): Handle error-cases first ([example](#SIM106))
+* [`SIM112`](https://github.com/MartinThoma/flake8-simplify/issues/19): Use CAPITAL environment variables ([example](#SIM112))
+
+You might have good reasons to ignore some rules. To do that, use the standard Flake8 configuration. For example, within the `setup.cfg` file:
 
 ```python
-if not correct_condition:
-    handle_error()  # e.g. raise Exception
+[flake8]
+ignore = SIM106, SIM119
 ```
 
 
@@ -282,6 +286,37 @@ key in dict
 ```
 
 Thank you for pointing this one out, [Aaron Gokaslan](https://github.com/Skylion007)!
+
+### SIM119
+
+Dataclasses were introduced with [PEP 557](https://www.python.org/dev/peps/pep-0557/)
+in Python 3.7. The main reason not to use dataclasses is to support legacy Python versions.
+
+Dataclasses create a lot of the boilerplate code for you:
+
+* `__init__`
+* `__eq__`
+* `__hash__`
+* `__str__`
+* `__repr__`
+
+A lot of projects use them:
+
+* [black](https://github.com/psf/black/blob/master/src/black/__init__.py#L1472)
+
+### SIM120
+
+```
+# Bad
+class FooBar(object):
+    ...
+
+# Good
+class FooBar:
+    ...
+```
+
+Both notations are equivalent in Python 3, but the second one is shorter.
 
 ### SIM201
 
