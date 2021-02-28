@@ -80,7 +80,7 @@ You might have good reasons to ignore some rules. To do that, use the standard F
 
 ```python
 [flake8]
-ignore = SIM106, SIM119
+ignore = SIM106, SIM113, SIM119
 ```
 
 

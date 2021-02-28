@@ -2,6 +2,9 @@
 import ast
 from typing import Iterable, Set
 
+# Third party
+import pytest
+
 # First party
 from flake8_simplify import Plugin, get_if_body_pairs
 
@@ -244,6 +247,18 @@ def test_sim110_any():
 return False"""
     )
     assert ret == {"1:0 SIM110 Use 'return any(check(x) for x in iterable)'"}
+
+
+@pytest.mark.xfail(reason="See issue #34: False-positive for SIM110")
+def test_sim110_raise_exception():
+    ret = _results(
+        """
+for el in [1,2,3]:
+    if is_true(el):
+        return True
+raise Exception"""
+    )
+    assert ret == set()
 
 
 def test_sim111_all():
