@@ -1082,7 +1082,7 @@ def _get_sim119(node: ast.ClassDef) -> List[Tuple[int, int, str]]:
 
     if not (
         has_only_constructur_function
-        and sum([1 for el in node.body if isinstance(el, ast.FunctionDef)]) > 0
+        and sum(1 for el in node.body if isinstance(el, ast.FunctionDef)) > 0
     ):
         return errors
 
