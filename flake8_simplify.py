@@ -104,6 +104,10 @@ SIM300 = (
     "'{left} == {right}' (Yoda-conditions)"
 )
 
+# General Code Style
+SIM400 = "SIM400 Use keyword-argument instead of magic boolean"
+SIM401 = "SIM401 Use keyword-argument instead of magic number"
+
 # ast.Constant in Python 3.8, ast.NameConstant in Python 3.6 and 3.7
 BOOL_CONST_TYPES = (ast.Constant, ast.NameConstant)
 AST_CONST_TYPES = (ast.Constant, ast.NameConstant, ast.Str, ast.Num)
@@ -1579,12 +1583,54 @@ def _get_sim300(node: ast.Compare) -> List[Tuple[int, int, str]]:
     return errors
 
 
+def _get_sim400(node: Call) -> List[Tuple[int, int, str]]:
+    """Find bare boolean function arguments."""
+    errors: List[Tuple[int, int, str]] = []
+    has_bare_bool = any(
+        isinstance(call_arg, ast.Constant)
+        and (call_arg.value is True or call_arg.value is False)
+        for call_arg in node.args
+    )
+
+    is_exception = isinstance(node.func, ast.Attribute) and node.func.attr in [
+        "get"
+    ]
+    if has_bare_bool and not is_exception:
+        errors.append((node.lineno, node.col_offset, SIM400))
+    return errors
+
+
+def _get_sim401(node: Call) -> List[Tuple[int, int, str]]:
+    """Find bare numeric function arguments."""
+    errors: List[Tuple[int, int, str]] = []
+    has_bare_int = any(
+        isinstance(call_arg, ast.Constant)
+        and type(call_arg.value) in (float, int)
+        for call_arg in node.args
+    )
+
+    is_exception = isinstance(node.func, ast.Name) and node.func.id == "range"
+    is_exception = is_exception or (
+        isinstance(node.func, ast.Attribute)
+        and node.func.attr
+        in [
+            "get",
+            "insert",
+        ]
+    )
+    if has_bare_int and not is_exception:
+        errors.append((node.lineno, node.col_offset, SIM401))
+    return errors
+
+
 class Visitor(ast.NodeVisitor):
     def __init__(self) -> None:
         self.errors: List[Tuple[int, int, str]] = []
 
     def visit_Call(self, node: ast.Call) -> Any:
         self.errors += _get_sim115(Call(node))
+        self.errors += _get_sim400(Call(node))
+        self.errors += _get_sim401(Call(node))
         self.generic_visit(node)
 
     def visit_With(self, node: ast.With) -> Any:

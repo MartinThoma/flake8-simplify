@@ -639,3 +639,43 @@ def test_sim300_int():
     assert ret == {
         "1:0 SIM300 Use 'age == 42' instead of '42 == age' (Yoda-conditions)"
     }
+
+
+def test_sim400():
+    ret = _results("foo(a, b, True)")
+    assert ret == {"1:0 SIM400 Use keyword-argument instead of magic boolean"}
+
+
+def test_sim400_correct():
+    ret = _results("foo(a, b, foo=True)")
+    assert ret == set()
+
+
+def test_sim400_get_exception():
+    ret = _results("dict.get('foo', True)")
+    assert ret == set()
+
+
+def test_sim401_int():
+    ret = _results("foo(a, b, 123123)")
+    assert ret == {"1:0 SIM401 Use keyword-argument instead of magic number"}
+
+
+def test_sim401_float():
+    ret = _results("foo(a, b, 123.123)")
+    assert ret == {"1:0 SIM401 Use keyword-argument instead of magic number"}
+
+
+def test_sim401_get_exception():
+    ret = _results("dict.get('foo', 123)")
+    assert ret == set()
+
+
+def test_sim401_insert_exception():
+    ret = _results("sys.path.insert(0, 'foo')")
+    assert ret == set()
+
+
+def test_sim401_range_exception():
+    ret = _results("range(42)")
+    assert ret == set()
