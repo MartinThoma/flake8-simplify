@@ -445,6 +445,15 @@ def test_sim118():
     }
 
 
+def test_sim118_del_key():
+    results = _results(
+        """for key in list(dict.keys()):
+    if some_property(key):
+        del dict[key]"""
+    )
+    assert results == set()
+
+
 def test_sim119():
     results = _results(
         """
