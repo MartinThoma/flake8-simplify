@@ -491,6 +491,18 @@ def test_sim120():
     }
 
 
+def test_sim121():
+    results = _results(
+        """name = "some_default"
+if "some_key" in some_dict:
+    name = some_dict["some_key"]"""
+    )
+    assert results == {
+        "2:0 SIM121 Use 'some_dict.get(some_key)' istead of "
+        "'if some_key in some_dict: some_dict[some_key]'"
+    }
+
+
 def test_get_if_body_pairs():
     ret = ast.parse(
         """if a == b:

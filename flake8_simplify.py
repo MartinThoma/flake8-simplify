@@ -80,6 +80,10 @@ SIM119 = "SIM119 Use a dataclass for 'class {classname}'"
 SIM120 = (
     "SIM120 Use 'class {classname}:' instead of 'class {classname}(object):'"
 )
+SIM121 = (
+    "SIM121 Use '{dictname}.get({key})' istead of "
+    "'if {key} in {dictname}: {dictname}[{key}]'"
+)
 
 # Comparations
 SIM201 = "SIM201 Use '{left} != {right}' instead of 'not {left} == {right}'"
@@ -1110,6 +1114,41 @@ def _get_sim120(node: ast.ClassDef) -> List[Tuple[int, int, str]]:
     return errors
 
 
+def _get_sim121(node: ast.If) -> List[Tuple[int, int, str]]:
+    """
+    Get all if-blocks which only check if a key is in a dictionary.
+    """
+    errors: List[Tuple[int, int, str]] = []
+    if not (
+        isinstance(node.test, ast.Compare)
+        and len(node.test.ops) == 1
+        and isinstance(node.test.ops[0], ast.In)
+        and len(node.body) == 1
+        and len(node.orelse) == 0
+    ):
+        return errors
+    # We might still be left with a check if a value is in a list or in the body
+    # the developer might remove the element from the list
+    # We need to have a look at the body
+    if not (
+        isinstance(node.body[0], ast.Assign)
+        and isinstance(node.body[0].value, ast.Subscript)
+        and len(node.body[0].targets) == 1
+        and isinstance(node.body[0].targets[0], ast.Name)
+    ):
+        return errors
+    key = to_source(node.test.left)
+    dictname = to_source(node.test.comparators[0])
+    errors.append(
+        (
+            node.lineno,
+            node.col_offset,
+            SIM121.format(key=key, dictname=dictname),
+        )
+    )
+    return errors
+
+
 def get_if_body_pairs(node: ast.If) -> List[Tuple[ast.expr, List[ast.stmt]]]:
     pairs = [(node.test, node.body)]
     orelse = node.orelse
@@ -1611,6 +1650,7 @@ class Visitor(ast.NodeVisitor):
         self.errors += _get_sim108(node)
         self.errors += _get_sim114(node)
         self.errors += _get_sim116(node)
+        self.errors += _get_sim121(node)
         self.generic_visit(node)
 
     def visit_For(self, node: ast.For) -> None:

@@ -49,6 +49,7 @@ Python-specific rules:
 * [`SIM118`](https://github.com/MartinThoma/flake8-simplify/issues/40): Use 'key in dict' instead of 'key in dict.keys()' ([example](#SIM118))
 * [`SIM119`](https://github.com/MartinThoma/flake8-simplify/issues/37) ![](https://shields.io/badge/-legacyfix-inactive): Use dataclasses for data containers ([example](#SIM119))
 * `SIM120` ![](https://shields.io/badge/-legacyfix-inactive): Use 'class FooBar:' instead of 'class FooBar(object):' ([example](#SIM120))
+* [`SIM121`](https://github.com/MartinThoma/flake8-simplify/issues/50): Use `.get(key)` instead of `if key in dict`: dict[key]` ([example](#SIM121))
 
 Comparations:
 
@@ -306,10 +307,11 @@ A lot of projects use them:
 
 ### SIM120
 
-```
+```python
 # Bad
 class FooBar(object):
     ...
+
 
 # Good
 class FooBar:
@@ -317,6 +319,18 @@ class FooBar:
 ```
 
 Both notations are equivalent in Python 3, but the second one is shorter.
+
+### SIM121
+
+```python
+# Bad
+name = "some_default"
+if "some_key" in some_dict:
+    name = some_dict["some_key"]
+
+# Good
+name = some_dict.get("some_key", "some_default")
+```
 
 ### SIM201
 
