@@ -81,7 +81,7 @@ SIM120 = (
     "SIM120 Use 'class {classname}:' instead of 'class {classname}(object):'"
 )
 SIM121 = (
-    "SIM121 Use '{dictname}.get({key})' istead of "
+    "SIM121 Use '{dictname}.get({key})' instead of "
     "'if {key} in {dictname}: {dictname}[{key}]'"
 )
 
