@@ -737,6 +737,8 @@ def _get_sim113(node: ast.For) -> List[Tuple[int, int, str]]:
     """
     errors: List[Tuple[int, int, str]] = []
     variable_candidates = []
+    if body_contains_continue(node.body):
+        return errors
     for expression in node.body:
         if (
             isinstance(expression, ast.AugAssign)
@@ -754,6 +756,14 @@ def _get_sim113(node: ast.For) -> List[Tuple[int, int, str]]:
             )
         )
     return errors
+
+
+def body_contains_continue(stmts: List[ast.stmt]) -> bool:
+    return any(
+        isinstance(stmt, ast.Continue)
+        or (isinstance(stmt, ast.If) and body_contains_continue(stmt.body))
+        for stmt in stmts
+    )
 
 
 def _get_sim114(node: ast.If) -> List[Tuple[int, int, str]]:
