@@ -368,6 +368,17 @@ def test_sim113_false_positive_add_string():
     assert ret == set()
 
 
+def test_sim113_false_positive_continue():
+    ret = _results(
+        """even_numbers = 0
+for el in range(100):
+    if el % 2 == 1:
+        continue
+    even_numbers += 1"""
+    )
+    assert ret == set()
+
+
 def test_sim114():
     ret = _results(
         """if a:
