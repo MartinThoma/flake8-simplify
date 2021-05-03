@@ -360,6 +360,14 @@ def test_sim113_false_positive():
     assert ret == set()
 
 
+def test_sim113_false_positive_add_string():
+    ret = _results(
+        r"""for line in read_list(redis_conn, storage_key):
+    line += '\n'"""
+    )
+    assert ret == set()
+
+
 def test_sim114():
     ret = _results(
         """if a:
