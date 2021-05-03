@@ -1154,8 +1154,9 @@ def is_stmt_equal(a: ast.stmt, b: ast.stmt) -> bool:
 
 
 def is_constant_increase(expr: ast.AugAssign) -> bool:
-    return isinstance(expr.op, ast.Add) and isinstance(
-        expr.value, (ast.Constant, ast.Num)
+    return isinstance(expr.op, ast.Add) and (
+        (isinstance(expr.value, ast.Constant) and expr.value.value == 1)
+        or (isinstance(expr.value, ast.Num) and expr.value.n == 1)
     )
 
 
