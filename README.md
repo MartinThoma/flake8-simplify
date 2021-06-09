@@ -184,7 +184,7 @@ for x in iterable:
 return True
 
 # Good
-return all(check(x) for x in iterable)
+return all(not check(x) for x in iterable)
 ```
 
 ### SIM112
