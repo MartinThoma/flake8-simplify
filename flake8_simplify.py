@@ -1151,8 +1151,9 @@ def is_stmt_equal(a: ast.stmt, b: ast.stmt) -> bool:
     if type(a) is not type(b):
         return False
     if isinstance(a, ast.AST):
+        specials = ("lineno", "col_offset", "ctx", "end_lineno", "parent")
         for k, v in vars(a).items():
-            if k.startswith("_") or k in ("lineno", "col_offset", "ctx", "end_lineno", "parent"):
+            if k.startswith("_") or k in specials:
                 continue
             if not is_stmt_equal(v, getattr(b, k)):
                 return False
