@@ -598,9 +598,15 @@ def _get_sim110_sim111(node: ast.For) -> List[Tuple[int, int, str]]:
             )
         )
     elif node.body[0].body[0].value.value is False:
-        check = "not " + check
-        if check.startswith("not not"):
-            check = check[len("not not ") :]
+        is_compound_expression = " and " in check or " or " in check
+
+        if is_compound_expression:
+            check = f"not ({check})"
+        else:
+            if check.startswith("not "):
+                check = check[len("not ") :]
+            else:
+                check = f"not {check}"
         errors.append(
             (
                 node.lineno,
