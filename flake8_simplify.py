@@ -117,13 +117,13 @@ def strip_parenthesis(string: str) -> str:
 
 
 def strip_triple_quotes(string: str) -> str:
+    quotes = '"""'
+    is_tripple_quoted = string.startswith(quotes) and string.endswith(quotes)
     if not (
-        string.startswith('"""')
-        and string.endswith('"""')
-        and '"' not in string[3:-3]
+        is_tripple_quoted and '"' not in string[len(quotes) : -len(quotes)]
     ):
         return string
-    string = string[3:-3]
+    string = string[len(quotes) : -len(quotes)]
     if len(string) == 0:
         string = '""'
     return string
