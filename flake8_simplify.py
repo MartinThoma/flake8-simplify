@@ -103,6 +103,10 @@ SIM300 = (
     "SIM300 Use '{right} == {left}' instead of "
     "'{left} == {right}' (Yoda-conditions)"
 )
+SIM401 = (
+    "SIM401 Use '{value} = {dict}.get({key}, \"{default_value}\")' "
+    "instead of an if-block"
+)
 
 # ast.Constant in Python 3.8, ast.NameConstant in Python 3.6 and 3.7
 BOOL_CONST_TYPES = (ast.Constant, ast.NameConstant)
@@ -129,7 +133,9 @@ def strip_triple_quotes(string: str) -> str:
     return string
 
 
-def to_source(node: Union[None, ast.expr, ast.Expr, ast.withitem]) -> str:
+def to_source(
+    node: Union[None, ast.expr, ast.Expr, ast.withitem, ast.slice]
+) -> str:
     if node is None:
         return "None"
     source: str = astor.to_source(node).strip()
@@ -1597,6 +1603,152 @@ def _get_sim300(node: ast.Compare) -> List[Tuple[int, int, str]]:
     return errors
 
 
+def _get_sim401(node: ast.If) -> List[Tuple[int, int, str]]:
+    """
+    Get all calls that should use default values for dictionary access.
+
+    Pattern 1
+    ---------
+    if key in a_dict:
+        value = a_dict[key]
+    else:
+        value = "default"
+
+    which is
+
+        If(
+            test=Compare(
+                left=Name(id='key', ctx=Load()),
+                ops=[In()],
+                comparators=[Name(id='a_dict', ctx=Load())],
+            ),
+            body=[
+                Assign(
+                    targets=[Name(id='value', ctx=Store())],
+                    value=Subscript(
+                        value=Name(id='a_dict', ctx=Load()),
+                        slice=Name(id='key', ctx=Load()),
+                        ctx=Load(),
+                    ),
+                    type_comment=None,
+                ),
+            ],
+            orelse=[
+                Assign(
+                    targets=[Name(id='value', ctx=Store())],
+                    value=Constant(value='default', kind=None),
+                    type_comment=None,
+                ),
+            ],
+        ),
+
+    Pattern 2
+    ---------
+
+        if key not in a_dict:
+            value = 'default'
+        else:
+            value = a_dict[key]
+
+    which is
+
+        If(
+            test=Compare(
+                left=Name(id='key', ctx=Load()),
+                ops=[NotIn()],
+                comparators=[Name(id='a_dict', ctx=Load())],
+            ),
+            body=[
+                Assign(
+                    targets=[Name(id='value', ctx=Store())],
+                    value=Constant(value='default', kind=None),
+                    type_comment=None,
+                ),
+            ],
+            orelse=[
+                Assign(
+                    targets=[Name(id='value', ctx=Store())],
+                    value=Subscript(
+                        value=Name(id='a_dict', ctx=Load()),
+                        slice=Name(id='key', ctx=Load()),
+                        ctx=Load(),
+                    ),
+                    type_comment=None,
+                ),
+            ],
+        )
+
+    """
+    errors: List[Tuple[int, int, str]] = []
+    is_pattern_1 = (
+        len(node.body) == 1
+        and isinstance(node.body[0], ast.Assign)
+        and isinstance(node.body[0].value, ast.Subscript)
+        and len(node.orelse) == 1
+        and isinstance(node.orelse[0], ast.Assign)
+        and isinstance(node.test, ast.Compare)
+        and len(node.test.ops) == 1
+        and isinstance(node.test.ops[0], ast.In)
+    )
+
+    # just like pattern_1, but using NotIn and reversing if/else
+    is_pattern_2 = (
+        len(node.body) == 1
+        and isinstance(node.body[0], ast.Assign)
+        and len(node.orelse) == 1
+        and isinstance(node.orelse[0], ast.Assign)
+        and isinstance(node.orelse[0].value, ast.Subscript)
+        and isinstance(node.test, ast.Compare)
+        and len(node.test.ops) == 1
+        and isinstance(node.test.ops[0], ast.NotIn)
+    )
+    if is_pattern_1:
+        assert isinstance(node.test, ast.Compare)
+        assert isinstance(node.body[0], ast.Assign)
+        assert isinstance(node.body[0].value, ast.Subscript)
+        assert isinstance(node.orelse[0], ast.Assign)
+        key = node.test.left
+        if to_source(key) != to_source(node.body[0].value.slice):
+            return errors  # second part of pattern 1
+        dict_name = node.test.comparators[0]
+        default_value = node.orelse[0].value
+        value_node = node.body[0].targets[0]
+        key_str = to_source(key)
+        dict_str = to_source(dict_name)
+        default_str = to_source(default_value)
+        value_str = to_source(value_node)
+    elif is_pattern_2:
+        assert isinstance(node.test, ast.Compare)
+        assert isinstance(node.body[0], ast.Assign)
+        assert isinstance(node.orelse[0], ast.Assign)
+        assert isinstance(node.orelse[0].value, ast.Subscript)
+        key = node.test.left
+        if to_source(key) != to_source(node.orelse[0].value.slice):
+            return errors  # second part of pattern 1
+        dict_name = node.test.comparators[0]
+        default_value = node.body[0].value
+        value_node = node.body[0].targets[0]
+        key_str = to_source(key)
+        dict_str = to_source(dict_name)
+        default_str = to_source(default_value)
+        value_str = to_source(value_node)
+    else:
+        return errors
+    errors.append(
+        (
+            node.lineno,
+            node.col_offset,
+            SIM401.format(
+                key=key_str,
+                dict=dict_str,
+                default_value=default_str,
+                value=value_str,
+            ),
+        )
+    )
+    return errors
+
+
 class Visitor(ast.NodeVisitor):
     def __init__(self) -> None:
         self.errors: List[Tuple[int, int, str]] = []
@@ -1629,6 +1781,7 @@ class Visitor(ast.NodeVisitor):
         self.errors += _get_sim108(node)
         self.errors += _get_sim114(node)
         self.errors += _get_sim116(node)
+        self.errors += _get_sim401(node)
         self.generic_visit(node)
 
     def visit_For(self, node: ast.For) -> None:
@@ -1673,7 +1826,7 @@ class Visitor(ast.NodeVisitor):
 
 class Plugin:
     name = __name__
-    version = importlib_metadata.version(__name__)
+    version = importlib_metadata.version(__name__)  # type: ignore
 
     def __init__(self, tree: ast.AST):
         self._tree = tree

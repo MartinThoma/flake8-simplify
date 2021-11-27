@@ -46,11 +46,10 @@ Python-specific rules:
 * [`SIM115`](https://github.com/MartinThoma/flake8-simplify/issues/17): Use context handler for opening files ([example](#SIM115))
 * [`SIM116`](https://github.com/MartinThoma/flake8-simplify/issues/31): Use a dictionary instead of many if/else equality checks ([example](#SIM116))
 * [`SIM117`](https://github.com/MartinThoma/flake8-simplify/issues/35): Merge with-statements that use the same scope ([example](#SIM117))
-* [`SIM118`](https://github.com/MartinThoma/flake8-simplify/issues/40): Use 'key in dict' instead of 'key in dict.keys()' ([example](#SIM118))
 * [`SIM119`](https://github.com/MartinThoma/flake8-simplify/issues/37) ![](https://shields.io/badge/-legacyfix-inactive): Use dataclasses for data containers ([example](#SIM119))
 * `SIM120` ![](https://shields.io/badge/-legacyfix-inactive): Use 'class FooBar:' instead of 'class FooBar(object):' ([example](#SIM120))
 
-Comparations:
+Simplifying Comparations:
 
 * `SIM201`: Use 'a != b' instead of 'not a == b' ([example](#SIM201))
 * `SIM202`: Use 'a == b' instead of 'not a != b' ([example](#SIM202))
@@ -68,6 +67,11 @@ Comparations:
 * [`SIM222`](https://github.com/MartinThoma/flake8-simplify/issues/6): Use 'True' instead of '... or True' ([example](#SIM222))
 * [`SIM223`](https://github.com/MartinThoma/flake8-simplify/issues/6): Use 'False' instead of '... and False' ([example](#SIM223))
 * [`SIM300`](https://github.com/MartinThoma/flake8-simplify/issues/16): Use 'age == 42' instead of '42 == age' ([example](#SIM300))
+
+Simplifying usage of dictionaries:
+
+* [`SIM401`](https://github.com/MartinThoma/flake8-simplify/issues/72): Use 'a_dict.get(key, "default_value")' instead of an if-block ([example](#SIM401))
+* [`SIM118`](https://github.com/MartinThoma/flake8-simplify/issues/40): Use 'key in dict' instead of 'key in dict.keys()' ([example](#SIM118))
 
 General Code Style:
 
@@ -279,10 +283,10 @@ Thank you for pointing this one out, [Aaron Gokaslan](https://github.com/Skylion
 
 ```python
 # Bad
-key in dict.keys()
+key in a_dict.keys()
 
 # Good
-key in dict
+key in a_dict
 ```
 
 Thank you for pointing this one out, [Aaron Gokaslan](https://github.com/Skylion007)!
@@ -476,4 +480,17 @@ False
 
 # Good
 age == 42
+```
+
+### SIM401
+
+```python
+# Bad
+if key in a_dict:
+    value = a_dict[key]
+else:
+    value = "default_value"
+
+# Good
+thing = a_dict.get(key, "default_value")
 ```
