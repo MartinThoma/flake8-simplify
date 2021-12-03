@@ -1093,24 +1093,39 @@ def _get_sim119(node: ast.ClassDef) -> List[Tuple[int, int, str]]:
         "__repr__",
         "__str__",
     ]
-    has_only_constructur_function = True
+    has_only_dataclass_functions = True
+    has_any_functions = False
     for body_el in node.body:
-        if (
-            isinstance(body_el, ast.FunctionDef)
-            and body_el.name not in dataclass_functions
-        ):
-            has_only_constructur_function = False
-            break
+        if isinstance(body_el, (ast.FunctionDef, ast.AsyncFunctionDef)):
+            has_any_functions = True
+            if body_el.name == "__init__":
+                # Ensure constructor only has pure assignments without any calculation.
+                has_complex_statements = False
+                for el in body_el.body:
+                    if not isinstance(el, ast.Assign):
+                        has_complex_statements = True
+                        break
+                    else:
+                        # It is an assignment, but we only allow `self.attribute = name`.
+                        if any(
+                            [
+                                not isinstance(target, ast.Attribute)
+                                for target in el.targets
+                            ]
+                        ) or not isinstance(el.value, ast.Name):
+                            has_complex_statements = True
+                            break
+            if body_el.name not in dataclass_functions:
+                has_only_dataclass_functions = False
 
-    if not (
-        has_only_constructur_function
-        and sum(1 for el in node.body if isinstance(el, ast.FunctionDef)) > 0
+    if (
+        has_any_functions
+        and has_only_dataclass_functions
+        and not has_complex_statements
     ):
-        return errors
-
-    errors.append(
-        (node.lineno, node.col_offset, SIM119.format(classname=node.name))
-    )
+        errors.append(
+            (node.lineno, node.col_offset, SIM119.format(classname=node.name))
+        )
 
     return errors
 
