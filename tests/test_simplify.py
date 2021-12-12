@@ -486,7 +486,14 @@ class FooBar:
 
 
 def test_sim119_ignored_dunder_methods():
-    """Dunder methods like __str__ do not make a class not be a dataclass candidate."""
+    """
+    Dunder methods do not make a class not be a dataclass candidate.
+    
+    Examples for dunder (double underscore) methods are:
+      * __str__
+      * __eq__
+      * __hash__
+    """
     results = _results(
         """
 class FooBar:
