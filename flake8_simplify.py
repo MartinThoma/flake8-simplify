@@ -523,21 +523,15 @@ def _get_sim109(node: ast.BoolOp) -> List[Tuple[int, int, str]]:
         and len(value.ops) == 1
         and isinstance(value.ops[0], ast.Eq)
     ]
-    ids = []  # (name, compared_to)
+    id2vals: Dict[str, List[ast.Name]] = defaultdict(list)
     for eq in equalities:
-        if isinstance(eq.left, ast.Name):
-            ids.append((eq.left, eq.comparators[0]))
-        if len(eq.comparators) == 1 and isinstance(
-            eq.comparators[0], ast.Name
+        if (
+            isinstance(eq.left, ast.Name)
+            and len(eq.comparators) == 1
+            and isinstance(eq.comparators[0], ast.Name)
         ):
-            ids.append((eq.comparators[0], eq.left))
-
-    id2count: Dict[str, List[ast.expr]] = {}
-    for identifier, compared_to in ids:
-        if identifier.id not in id2count:
-            id2count[identifier.id] = []
-        id2count[identifier.id].append(compared_to)
-    for value, values in id2count.items():
+            id2vals[eq.left.id].append(eq.comparators[0])
+    for value, values in id2vals.items():
         if len(values) == 1:
             continue
         errors.append(
