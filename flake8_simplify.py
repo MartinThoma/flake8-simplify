@@ -139,7 +139,8 @@ def to_source(
     if node is None:
         return "None"
     source: str = astor.to_source(node).strip()
-    source = strip_parenthesis(source)
+    if not isinstance(node, ast.Tuple):
+        source = strip_parenthesis(source)
     source = strip_triple_quotes(source)
     return source
 
@@ -547,7 +548,7 @@ def _get_sim109(node: ast.BoolOp) -> List[Tuple[int, int, str]]:
                 SIM109.format(
                     or_op=to_source(node),
                     value=value,
-                    values=to_source(ast.List(elts=values)),
+                    values=to_source(ast.Tuple(elts=values)),
                 ),
             )
         )
