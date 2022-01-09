@@ -38,7 +38,7 @@ Python-specific rules:
 * [`SIM105`](https://github.com/MartinThoma/flake8-simplify/issues/5): Use ['contextlib.suppress(...)'](https://docs.python.org/3/library/contextlib.html#contextlib.suppress) instead of try-except-pass ([example](#SIM105))
 * [`SIM107`](https://github.com/MartinThoma/flake8-simplify/issues/9): Don't use `return` in try/except and finally  ([example](#SIM107))
 * [`SIM108`](https://github.com/MartinThoma/flake8-simplify/issues/12): Use the ternary operator if it's reasonable  ([example](#SIM108))
-* [`SIM109`](https://github.com/MartinThoma/flake8-simplify/issues/11): Use a list to compare a value against multiple values ([example](#SIM109))
+* [`SIM109`](https://github.com/MartinThoma/flake8-simplify/issues/11): Use a tuple to compare a value against multiple values ([example](#SIM109))
 * [`SIM110`](https://github.com/MartinThoma/flake8-simplify/issues/15): Use [any(...)](https://docs.python.org/3/library/functions.html#any)  ([example](#SIM110))
 * [`SIM111`](https://github.com/MartinThoma/flake8-simplify/issues/15): Use [all(...)](https://docs.python.org/3/library/functions.html#all) ([example](#SIM111))
 * [`SIM113`](https://github.com/MartinThoma/flake8-simplify/issues/18): Use enumerate instead of manually incrementing a counter ([example](#SIM113))
@@ -161,7 +161,7 @@ if a == b or a == c:
     d
 
 # Good
-if a in [b, c]:
+if a in (b, c):
     d
 ```
 

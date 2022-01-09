@@ -547,7 +547,7 @@ def _get_sim109(node: ast.BoolOp) -> List[Tuple[int, int, str]]:
                 SIM109.format(
                     or_op=to_source(node),
                     value=value,
-                    values=to_source(ast.List(elts=values)),
+                    values=f"({to_source(ast.Tuple(elts=values))})",
                 ),
             )
         )

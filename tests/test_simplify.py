@@ -226,7 +226,7 @@ else:
 def test_sim109():
     ret = _results("a == b or a == c")
     assert ret == {
-        "1:0 SIM109 Use 'a in [b, c]' instead of 'a == b or a == c'"
+        "1:0 SIM109 Use 'a in (b, c)' instead of 'a == b or a == c'"
     }
 
 
