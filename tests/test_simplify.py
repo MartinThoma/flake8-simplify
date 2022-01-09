@@ -230,6 +230,19 @@ def test_sim109():
     }
 
 
+@pytest.mark.parametrize(
+    "s",
+    (
+        "a == b() or a == c",
+        "a == b or a == c()",
+        "a == b() or a == c()",
+    ),
+)
+def test_sim109_nop(s):
+    ret = _results(s)
+    assert not ret
+
+
 def test_sim110_any():
     def opt1(iterable):
         for x in iterable:  # noqa
