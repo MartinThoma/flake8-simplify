@@ -807,7 +807,12 @@ def _get_sim114(node: ast.If) -> List[Tuple[int, int, str]]:
     errors: List[Tuple[int, int, str]] = []
     if_body_pairs = get_if_body_pairs(node)
     error_pairs = []
-    for ifbody1, ifbody2 in itertools.combinations(if_body_pairs, 2):
+    for i in range(len(if_body_pairs) - 1):
+        # It's not all combinations because of this:
+        # https://github.com/MartinThoma/flake8-simplify/issues/70
+        # #issuecomment-924074984
+        ifbody1 = if_body_pairs[i]
+        ifbody2 = if_body_pairs[i + 1]
         if is_body_same(ifbody1[1], ifbody2[1]):
             error_pairs.append((ifbody1, ifbody2))
     for ifbody1, ifbody2 in error_pairs:
@@ -1187,6 +1192,8 @@ def is_stmt_equal(a: ast.stmt, b: ast.stmt) -> bool:
                 return False
         return True
     elif isinstance(a, list):
+        if len(a) != len(b):
+            return False
         return all(itertools.starmap(is_stmt_equal, zip(a, b)))
     else:
         return a == b

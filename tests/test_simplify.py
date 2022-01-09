@@ -389,6 +389,39 @@ elif c:
     assert ret == {"1:3 SIM114 Use logical or ((a) or (c)) and a single body"}
 
 
+def test_sim114_false_positive70():
+    ret = _results(
+        """def complicated_calc(*arg, **kwargs):
+    return 42
+
+def foo(p):
+    if p == 2:
+        return complicated_calc(microsecond=0)
+    elif p == 3:
+        return complicated_calc(microsecond=0, second=0)
+    return None"""
+    )
+    for el in ret:
+        assert "SIM114" not in el
+
+
+def test_sim114_false_positive_elif_in_between():
+    ret = _results(
+        """a = False
+b = True
+c = True
+
+if a:
+    z = 1
+elif b:
+    z = 2
+elif c:
+    z = 1 """
+    )
+    for el in ret:
+        assert "SIM114" not in el
+
+
 def test_sim115():
     ret = _results(
         """f = open('foo.txt')
