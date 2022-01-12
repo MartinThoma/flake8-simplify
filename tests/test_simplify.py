@@ -791,3 +791,14 @@ else:
         "1:3 SIM203 Use 'key not in a_dict' instead of 'not key in a_dict'"
         in ret
     )
+
+
+def test_sim401_false_positive():
+    ret = _results(
+        """if "foo" in some_dict["a"]:
+    some_dict["b"] = some_dict["a"]["foo"]
+else:
+    some_dict["a"]["foo"] = some_dict["b"]"""
+    )
+    for el in ret:
+        assert "SIM401" not in el
