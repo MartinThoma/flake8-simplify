@@ -804,7 +804,12 @@ else:
         assert "SIM401" not in el
 
 
-def test_sim401_positive_msg_check1():
+def test_sim401_positive_msg_issue84_example1():
+    """
+    This is a regression test for the SIM401 message.
+
+    The original issue #84 was reported by jonyscathe. Thank you 🤗
+    """
     ret = _results(
         """if "last_name" in test_dict:
     name = test_dict["last_name"]
@@ -824,7 +829,12 @@ else:
     assert has_sim401
 
 
-def test_sim401_positive_msg_check2():
+def test_sim401_positive_msg_issue84_example2():
+    """
+    This is a regression test for the SIM401 message.
+
+    The original issue #84 was reported by jonyscathe. Thank you 🤗
+    """
     ret = _results(
         """if "phone_number" in test_dict:
     number = test_dict["phone_number"]
@@ -835,6 +845,32 @@ else:
     expected_proposal = (
         'Use \'number = test_dict.get("phone_number", "")\' '
         "instead of an if-block"
+    )
+    for el in ret:
+        if "SIM401" in el:
+            msg = el.split("SIM401")[1].strip()
+            has_sim401 = True
+            assert msg == expected_proposal
+    assert has_sim401
+
+
+def test_sim401_positive_msg_check_issue89():
+    """
+    This is a regression test for the SIM401 message.
+
+    The original issue #89 was reported by Aarni Koskela. Thank you 🤗
+    """
+    ret = _results(
+        """if a:
+    token = a[1]
+elif 'token' in dct:
+    token = dct['token']
+else:
+    token = None"""
+    )
+    has_sim401 = False
+    expected_proposal = (
+        "Use 'token = dct.get(token, None)' instead of an if-block"
     )
     for el in ret:
         if "SIM401" in el:
