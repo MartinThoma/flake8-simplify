@@ -1700,9 +1700,11 @@ def _get_sim401(node: ast.If) -> List[Tuple[int, int, str]]:
     is_pattern_1 = (
         len(node.body) == 1
         and isinstance(node.body[0], ast.Assign)
+        and len(node.body[0].targets) == 1
         and isinstance(node.body[0].value, ast.Subscript)
         and len(node.orelse) == 1
         and isinstance(node.orelse[0], ast.Assign)
+        and len(node.orelse[0].targets) == 1
         and isinstance(node.test, ast.Compare)
         and len(node.test.ops) == 1
         and isinstance(node.test.ops[0], ast.In)
@@ -1727,6 +1729,10 @@ def _get_sim401(node: ast.If) -> List[Tuple[int, int, str]]:
         key = node.test.left
         if to_source(key) != to_source(node.body[0].value.slice):
             return errors  # second part of pattern 1
+        assign_to_if_body = node.body[0].targets[0]
+        assign_to_else = node.orelse[0].targets[0]
+        if to_source(assign_to_if_body) != to_source(assign_to_else):
+            return errors
         dict_name = node.test.comparators[0]
         default_value = node.orelse[0].value
         value_node = node.body[0].targets[0]
