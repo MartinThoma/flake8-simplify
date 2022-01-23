@@ -514,6 +514,8 @@ thing = a_dict.get(key, "default_value")
 This rule will be renamed to `SIM224` after its 6-month trial period is over.
 Please report any issues you encounter with this rule!
 
+The trial period starts on 23rd of January and will end on 23rd of August 2022.
+
 ```python
 # Bad
 bool(a == b)
