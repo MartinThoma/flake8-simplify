@@ -66,6 +66,7 @@ Simplifying Comparations:
 * [`SIM221`](https://github.com/MartinThoma/flake8-simplify/issues/6): Use 'True' instead of 'a or not a' ([example](#SIM221))
 * [`SIM222`](https://github.com/MartinThoma/flake8-simplify/issues/6): Use 'True' instead of '... or True' ([example](#SIM222))
 * [`SIM223`](https://github.com/MartinThoma/flake8-simplify/issues/6): Use 'False' instead of '... and False' ([example](#SIM223))
+* [`SIM224`](https://github.com/MartinThoma/flake8-simplify/issues/88): Reserved for SIM901 once it's stable
 * [`SIM300`](https://github.com/MartinThoma/flake8-simplify/issues/16): Use 'age == 42' instead of '42 == age' ([example](#SIM300))
 
 Simplifying usage of dictionaries:
@@ -80,11 +81,24 @@ General Code Style:
 * [`SIM106`](https://github.com/MartinThoma/flake8-simplify/issues/8): Handle error-cases first ([example](#SIM106))
 * [`SIM112`](https://github.com/MartinThoma/flake8-simplify/issues/19): Use CAPITAL environment variables ([example](#SIM112))
 
+**Experimental rules:**
+
+Getting rules right for every possible case is hard. I don't want to disturb
+peoples workflows. For this reason, flake8-simplify introduces new rules with
+the `SIM9` prefix. Every new rule will start with SIM9 and stay there for at
+least 6 months. In this time people can give feedback. Once the rule is stable,
+the code will change to another number.
+
+Current experimental rules:
+
+* `SIM901`: Use comparisons directly instead of wrapping them in a `bool(...)` call ([example](#SIM901))
+
+
 You might have good reasons to ignore some rules. To do that, use the standard Flake8 configuration. For example, within the `setup.cfg` file:
 
 ```python
 [flake8]
-ignore = SIM106, SIM113, SIM119
+ignore = SIM106, SIM113, SIM119, SIM9
 ```
 
 
@@ -493,4 +507,19 @@ else:
 
 # Good
 thing = a_dict.get(key, "default_value")
+```
+
+### SIM901
+
+This rule will be renamed to `SIM224` after its 6-month trial period is over.
+Please report any issues you encounter with this rule!
+
+The trial period starts on 23rd of January and will end on 23rd of August 2022.
+
+```python
+# Bad
+bool(a == b)
+
+# Good
+a == b
 ```

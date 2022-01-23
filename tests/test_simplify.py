@@ -878,3 +878,8 @@ else:
             has_sim401 = True
             assert msg == expected_proposal
     assert has_sim401
+
+
+def test_sim901():
+    results = _results("bool(a == b)")
+    assert results == {"1:0 SIM901 Use 'a == b' instead of 'bool(a == b)'"}
