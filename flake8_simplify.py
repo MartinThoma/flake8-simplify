@@ -107,6 +107,7 @@ SIM401 = (
     "SIM401 Use '{value} = {dict}.get({key}, {default_value})' "
     "instead of an if-block"
 )
+SIM901 = "SIM901 Use '{better}' instead of '{current}'"
 
 # ast.Constant in Python 3.8, ast.NameConstant in Python 3.6 and 3.7
 BOOL_CONST_TYPES = (ast.Constant, ast.NameConstant)
@@ -1775,12 +1776,51 @@ def _get_sim401(node: ast.If) -> List[Tuple[int, int, str]]:
     return errors
 
 
+def _get_sim901(node: ast.Call) -> List[Tuple[int, int, str]]:
+    """
+    Get a list of all calls of the type "bool(comparison)".
+
+    Call(
+        func=Name(id='bool', ctx=Load()),
+        args=[
+            Compare(
+                left=Name(id='a', ctx=Load()),
+                ops=[Eq()],
+                comparators=[Name(id='b', ctx=Load())],
+            ),
+        ],
+        keywords=[],
+    )
+    """
+    errors: List[Tuple[int, int, str]] = []
+    if not (
+        isinstance(node.func, ast.Name)
+        and node.func.id == "bool"
+        and len(node.args) == 1
+        and isinstance(node.args[0], ast.Compare)
+    ):
+        return errors
+
+    current = to_source(node)
+    better = to_source(node.args[0])
+
+    errors.append(
+        (
+            node.lineno,
+            node.col_offset,
+            SIM901.format(current=current, better=better),
+        )
+    )
+    return errors
+
+
 class Visitor(ast.NodeVisitor):
     def __init__(self) -> None:
         self.errors: List[Tuple[int, int, str]] = []
 
     def visit_Call(self, node: ast.Call) -> Any:
         self.errors += _get_sim115(Call(node))
+        self.errors += _get_sim901(node)
         self.generic_visit(node)
 
     def visit_With(self, node: ast.With) -> Any:
