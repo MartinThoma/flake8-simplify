@@ -116,7 +116,7 @@ STR_TYPES = (ast.Constant, ast.Str)
 
 
 def strip_parenthesis(string: str) -> str:
-    if string[0] == "(" and string[-1] == ")":
+    if len(string) >= 2 and string[0] == "(" and string[-1] == ")":
         return string[1:-1]
     return string
 
@@ -139,7 +139,7 @@ def use_double_quotes(string: str) -> str:
     quotes = "'''"
     if string.startswith(quotes) and string.endswith(quotes):
         return f'"""{string[len(quotes):-len(quotes)]}"""'
-    if string[0] == "'" and string[-1] == "'":
+    if len(string) >= 2 and string[0] == "'" and string[-1] == "'":
         return f'"{string[1:-1]}"'
     return string
 
