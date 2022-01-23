@@ -802,3 +802,42 @@ else:
     )
     for el in ret:
         assert "SIM401" not in el
+
+
+def test_sim401_positive_msg_check1():
+    ret = _results(
+        """if "last_name" in test_dict:
+    name = test_dict["last_name"]
+else:
+    name = test_dict["first_name"]"""
+    )
+    has_sim401 = False
+    expected_proposal = (
+        'Use \'name = test_dict.get("last_name", '
+        'test_dict["first_name"])\'  instead of an if-block'
+    )
+    for el in ret:
+        if "SIM401" in el:
+            msg = el.split("SIM401")[1].strip()
+            has_sim401 = True
+            assert msg == expected_proposal
+    assert has_sim401
+
+
+def test_sim401_positive_msg_check2():
+    ret = _results(
+        """if "phone_number" in test_dict:
+    number = test_dict["phone_number"]
+else:
+    number = "" """
+    )
+    has_sim401 = False
+    expected_proposal = (
+        'Use \'number = test_dict.get("phone_number,", "")\' '
+        "instead of an if-block"
+    )
+    for el in ret:
+        if "SIM401" in el:
+            msg = el.split("SIM401")[1].strip()
+            has_sim401 = True
+            assert msg == expected_proposal
