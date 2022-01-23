@@ -870,7 +870,7 @@ else:
     )
     has_sim401 = False
     expected_proposal = (
-        "Use 'token = dct.get(token, None)' instead of an if-block"
+        "Use 'token = dct.get(\"token\", None)' instead of an if-block"
     )
     for el in ret:
         if "SIM401" in el:
