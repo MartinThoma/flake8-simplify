@@ -841,3 +841,4 @@ else:
             msg = el.split("SIM401")[1].strip()
             has_sim401 = True
             assert msg == expected_proposal
+    assert has_sim401

@@ -1616,10 +1616,6 @@ def _get_sim300(node: ast.Compare) -> List[Tuple[int, int, str]]:
         return errors
 
     left = to_source(node.left)
-    is_py37_str = isinstance(node.left, ast.Str)
-    is_py38_str = isinstance(node.left, ast.Constant) and isinstance(
-        node.left.value, str
-    )
     right = to_source(node.comparators[0])
     errors.append(
         (node.lineno, node.col_offset, SIM300.format(left=left, right=right))
