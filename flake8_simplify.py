@@ -104,7 +104,7 @@ SIM300 = (
     "'{left} == {right}' (Yoda-conditions)"
 )
 SIM401 = (
-    "SIM401 Use '{value} = {dict}.get({key}, \"{default_value}\")' "
+    "SIM401 Use '{value} = {dict}.get({key}, {default_value})' "
     "instead of an if-block"
 )
 
@@ -128,6 +128,7 @@ def strip_triple_quotes(string: str) -> str:
     ):
         return string
     string = string[len(quotes) : -len(quotes)]
+    string = f'"{string}"'
     if len(string) == 0:
         string = '""'
     return string
@@ -660,13 +661,10 @@ def _get_sim112(node: ast.Expr) -> List[Tuple[int, int, str]]:
             # Python < 3.9
             string_part = slice_.value  # type: ignore
             assert isinstance(string_part, STR_TYPES), "hint for mypy"  # noqa
-            if isinstance(string_part, ast.Str):
-                env_name = string_part.s  # Python 3.6 / 3.7 fallback
-            else:
-                env_name = string_part.value
+            env_name = to_source(string_part)
         elif isinstance(slice_, ast.Constant):
             # Python 3.9
-            env_name = slice_.value
+            env_name = to_source(slice_)
 
         # Check if this has a change
         has_change = env_name != env_name.upper()
@@ -687,27 +685,22 @@ def _get_sim112(node: ast.Expr) -> List[Tuple[int, int, str]]:
         assert isinstance(call, ast.Call), "hint for mypy"  # noqa
         string_part = call.args[0]
         assert isinstance(string_part, STR_TYPES), "hint for mypy"  # noqa
-        if isinstance(string_part, ast.Str):
-            env_name = string_part.s  # Python 3.6 / 3.7 fallback
-        else:
-            env_name = string_part.value
+        env_name = to_source(string_part)
         # Check if this has a change
         has_change = env_name != env_name.upper()
     if not (is_index_call or is_get_call) or not has_change:
         return errors
     if is_index_call:
         original = to_source(node)
-        expected = f'os.environ["{env_name.upper()}"]'
+        expected = f"os.environ[{env_name.upper()}]"
     elif is_get_call:
         original = to_source(node)
         if len(node.value.args) == 1:  # type: ignore
-            expected = f'os.environ.get("{env_name.upper()}")'
+            expected = f"os.environ.get({env_name.upper()})"
         else:
             assert isinstance(node.value, ast.Call), "hint for mypy"  # noqa
             default_value = to_source(node.value.args[1])
-            expected = (
-                f'os.environ.get("{env_name.upper()}", "{default_value}")'
-            )
+            expected = f"os.environ.get({env_name.upper()}, {default_value})"
     else:
         return errors
     errors.append(
@@ -890,9 +883,10 @@ def _get_sim116(node: ast.If) -> List[Tuple[int, int, str]]:
     else_value: Optional[str] = None
     key_value_pairs: Dict[Any, Any]
     if isinstance(node.test.comparators[0], ast.Str):
-        key_value_pairs = {
-            node.test.comparators[0].s: to_source(node.body[0].value)
-        }
+        value = to_source(node.body[0].value)
+        if value[0] == '"' and value[-1] == '"':
+            value = value[1:-1]
+        key_value_pairs = {node.test.comparators[0].s: value}
     elif isinstance(node.test.comparators[0], ast.Num):
         key_value_pairs = {
             node.test.comparators[0].n: to_source(node.body[0].value)
@@ -922,7 +916,12 @@ def _get_sim116(node: ast.If) -> List[Tuple[int, int, str]]:
             key = child.test.comparators[0].n
         else:
             key = child.test.comparators[0].value
-        key_value_pairs[key] = to_source(child.body[0].value)
+
+        value = to_source(child.body[0].value)
+        if value[0] == '"' and value[-1] == '"':
+            value = value[1:-1]
+        key_value_pairs[key] = value
+
         if len(child.orelse) == 1:
             if isinstance(child.orelse[0], ast.If):
                 child = child.orelse[0]
@@ -1611,8 +1610,6 @@ def _get_sim300(node: ast.Compare) -> List[Tuple[int, int, str]]:
     is_py38_str = isinstance(node.left, ast.Constant) and isinstance(
         node.left.value, str
     )
-    if is_py38_str or is_py37_str:
-        left = f'"{left}"'
     right = to_source(node.comparators[0])
     errors.append(
         (node.lineno, node.col_offset, SIM300.format(left=left, right=right))

@@ -814,7 +814,7 @@ else:
     has_sim401 = False
     expected_proposal = (
         'Use \'name = test_dict.get("last_name", '
-        'test_dict["first_name"])\'  instead of an if-block'
+        "test_dict['first_name'])' instead of an if-block"
     )
     for el in ret:
         if "SIM401" in el:
@@ -833,7 +833,7 @@ else:
     )
     has_sim401 = False
     expected_proposal = (
-        'Use \'number = test_dict.get("phone_number,", "")\' '
+        'Use \'number = test_dict.get("phone_number", "")\' '
         "instead of an if-block"
     )
     for el in ret:
