@@ -134,6 +134,15 @@ def strip_triple_quotes(string: str) -> str:
     return string
 
 
+def use_double_quotes(string: str) -> str:
+    quotes = "'''"
+    if string.startswith(quotes) and string.endswith(quotes):
+        return f'"""{string[len(quotes):-len(quotes)]}"""'
+    if string[0] == "'" and string[-1] == "'":
+        return f'"{string[1:-1]}"'
+    return string
+
+
 def to_source(
     node: Union[None, ast.expr, ast.Expr, ast.withitem, ast.slice]
 ) -> str:
@@ -142,6 +151,7 @@ def to_source(
     source: str = astor.to_source(node).strip()
     source = strip_parenthesis(source)
     source = strip_triple_quotes(source)
+    source = use_double_quotes(source)
     return source
 
 
