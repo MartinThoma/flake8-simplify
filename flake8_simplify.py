@@ -311,6 +311,8 @@ def _get_sim104(node: ast.For) -> List[Tuple[int, int, str]]:
         or node.orelse != []
     ):
         return errors
+    if isinstance(node.parent, ast.AsyncFunctionDef):  # type: ignore
+        return errors
     iterable = to_source(node.iter)
     errors.append(
         (node.lineno, node.col_offset, SIM104.format(iterable=iterable))
