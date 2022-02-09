@@ -153,6 +153,16 @@ def test_sim104():
     assert ret == {"1:0 SIM104 Use 'yield from iterable'"}
 
 
+def test_s104_async_generator_false_positive():
+    ret = _results(
+        """async def items():
+    for c in 'abc':
+        yield c"""
+    )
+    for el in ret:
+        assert "SIM104" not in el
+
+
 def test_sim105():
     ret = _results(
         """try:
