@@ -93,8 +93,11 @@ Current experimental rules:
 
 * `SIM901`: Use comparisons directly instead of wrapping them in a `bool(...)` call ([example](#SIM901))
 
+## Disabling Rules
 
-You might have good reasons to ignore some rules. To do that, use the standard Flake8 configuration. For example, within the `setup.cfg` file:
+You might have good reasons to
+[ignore some flake8 rules](https://flake8.pycqa.org/en/3.1.1/user/ignoring-errors.html).
+To do that, use the standard Flake8 configuration. For example, within the `setup.cfg` file:
 
 ```python
 [flake8]
@@ -126,6 +129,25 @@ if a:
 if a and b:
     c
 ```
+
+### SIM105
+
+```python
+# Bad
+try:
+    foo()
+except ValueError:
+    pass
+
+# Good
+from contextlib import suppress
+
+with suppress(ValueError):
+    foo()
+```
+
+Please note that `contextlib.suppress` is roughly 3x slower than `try/except`
+([source](https://github.com/MartinThoma/flake8-simplify/issues/91)).
 
 ### SIM107
 
