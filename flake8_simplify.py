@@ -421,6 +421,18 @@ def _get_sim106(node: ast.If) -> List[Tuple[int, int, str]]:
     )
     if not (just_one or many):
         return errors
+    ast_raise = node.orelse[-1]
+    if not isinstance(ast_raise, ast.Raise):
+        return errors
+    ast_raised = ast_raise.exc
+    if (
+        isinstance(ast_raised, ast.Call)
+        and ast_raised.func
+        and isinstance(ast_raised.func, ast.Name)
+        and ast_raised.func.id in ["ValueError", "NotImplementedError"]
+    ):
+        return errors
+
     errors.append((node.lineno, node.col_offset, SIM106))
     return errors
 
