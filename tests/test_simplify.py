@@ -195,14 +195,33 @@ else:
     assert ret == {"1:0 SIM106 Handle error-cases first"}
 
 
-def test_sim106_no():
-    ret = _results(
+@pytest.mark.parametrize(
+    "s",
+    (
+        """if image_extension in ['.jpg', '.jpeg']:
+    return 'JPEG'
+elif image_extension in ['.png']:
+    return 'PNG'
+else:
+    raise ValueError("Unknwon image extension {image extension}")""",
+        """if image_extension in ['.jpg', '.jpeg']:
+    return 'JPEG'
+elif image_extension in ['.png']:
+    return 'PNG'
+else:
+    logger.error("Unknwon image extension {image extension}")
+    raise ValueError("Unknwon image extension {image extension}")""",
         """if cond:
     raise Exception
 else:
-    raise Exception"""
-    )
-    assert ret == set()
+    raise Exception""",
+    ),
+    ids=["ValueError", "ValueError-with-logging", "TwoExceptions"],
+)
+def test_sim106_false_positive(s):
+    ret = _results(s)
+    for el in ret:
+        assert "SIM106" not in el
 
 
 def test_sim107():
