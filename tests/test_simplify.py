@@ -291,7 +291,6 @@ return False"""
     assert ret == {"1:0 SIM110 Use 'return any(check(x) for x in iterable)'"}
 
 
-@pytest.mark.xfail(reason="See issue #34: False-positive for SIM110")
 def test_sim110_raise_exception():
     ret = _results(
         """
@@ -300,7 +299,8 @@ for el in [1,2,3]:
         return True
 raise Exception"""
     )
-    assert ret == set()
+    for el in ret:
+        assert "SIM110" not in el
 
 
 def test_sim111_all():
