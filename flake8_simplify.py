@@ -1925,15 +1925,23 @@ class Plugin:
         visitor = Visitor()
 
         # Add parent
-        for node in ast.walk(self._tree):
-            previous_sibling = None
-            for child in ast.iter_child_nodes(node):
-                child.previous_sibling = previous_sibling  # type: ignore
-                if previous_sibling:
-                    child.previous_sibling.next_sibling = child  # type: ignore
-                child.parent = node  # type: ignore
-                previous_sibling = child
+        add_meta(self._tree)
         visitor.visit(self._tree)
 
         for line, col, msg in visitor.errors:
             yield line, col, msg, type(self)
+
+
+def add_meta(root: ast.AST, level: int = 0) -> None:
+    previous_sibling = None
+    for node in ast.iter_child_nodes(root):
+        if level == 0:
+            node.parent = None  # type: ignore
+        node.previous_sibling = previous_sibling  # type: ignore
+        node.next_sibling = None  # type: ignore
+        if previous_sibling:
+            node.previous_sibling.next_sibling = node  # type: ignore
+        previous_sibling = node
+        for child in ast.iter_child_nodes(node):
+            child.parent = node  # type: ignore
+        add_meta(node, level=level + 1)
