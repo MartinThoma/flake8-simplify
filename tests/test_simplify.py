@@ -582,6 +582,29 @@ class FooBar:
     assert results == {"2:0 SIM119 Use a dataclass for 'class FooBar'"}
 
 
+@pytest.mark.xfail(
+    reason="https://github.com/MartinThoma/flake8-simplify/issues/63"
+)
+def test_sim119_false_positive():
+    results = _results(
+        '''class OfType:
+    """
+    >>> 3 == OfType(int, str, bool)
+    True
+    >>> 'txt' == OfType(int)
+    False
+    """
+
+    def __init__(self, *types):
+        self.types = types
+
+    def __eq__(self, other):
+        return isinstance(other, self.types)'''
+    )
+    for el in results:
+        assert "SIM119" not in el
+
+
 def test_sim119_async():
     results = _results(
         """
