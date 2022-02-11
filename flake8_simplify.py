@@ -612,6 +612,8 @@ def _get_sim110_sim111(node: ast.For) -> List[Tuple[int, int, str]]:
         return errors
     if not hasattr(node.body[0].body[0].value, "value"):
         return errors
+    if isinstance(node.next_sibling, ast.Raise):  # type: ignore
+        return errors
     check = to_source(node.body[0].test)
     target = to_source(node.target)
     iterable = to_source(node.iter)
@@ -1202,7 +1204,15 @@ def is_stmt_equal(a: ast.stmt, b: ast.stmt) -> bool:
     if type(a) is not type(b):
         return False
     if isinstance(a, ast.AST):
-        specials = ("lineno", "col_offset", "ctx", "end_lineno", "parent")
+        specials = (
+            "lineno",
+            "col_offset",
+            "ctx",
+            "end_lineno",
+            "parent",
+            "previous_sibling",
+            "next_sibling",
+        )
         for k, v in vars(a).items():
             if k.startswith("_") or k in specials:
                 continue
@@ -1916,8 +1926,13 @@ class Plugin:
 
         # Add parent
         for node in ast.walk(self._tree):
+            previous_sibling = None
             for child in ast.iter_child_nodes(node):
+                child.previous_sibling = previous_sibling  # type: ignore
+                if previous_sibling:
+                    child.previous_sibling.next_sibling = child  # type: ignore
                 child.parent = node  # type: ignore
+                previous_sibling = child
         visitor.visit(self._tree)
 
         for line, col, msg in visitor.errors:
