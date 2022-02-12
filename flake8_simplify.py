@@ -1841,7 +1841,7 @@ def _get_sim901(node: ast.Call) -> List[Tuple[int, int, str]]:
 
 def _get_sim904(node: ast.Assign) -> List[Tuple[int, int, str]]:
     """
-    Use a dictionary directly.
+    Assign values to dictionary directly at initialization.
 
     Example
     -------

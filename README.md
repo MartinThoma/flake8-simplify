@@ -48,6 +48,7 @@ Python-specific rules:
 * [`SIM117`](https://github.com/MartinThoma/flake8-simplify/issues/35): Merge with-statements that use the same scope ([example](#SIM117))
 * [`SIM119`](https://github.com/MartinThoma/flake8-simplify/issues/37) ![](https://shields.io/badge/-legacyfix-inactive): Use dataclasses for data containers ([example](#SIM119))
 * `SIM120` ![](https://shields.io/badge/-legacyfix-inactive): Use 'class FooBar:' instead of 'class FooBar(object):' ([example](#SIM120))
+* `SIM124`: Reserved for SIM904 once it's stable
 
 Simplifying Comparations:
 
@@ -92,6 +93,7 @@ the code will change to another number.
 Current experimental rules:
 
 * `SIM901`: Use comparisons directly instead of wrapping them in a `bool(...)` call ([example](#SIM901))
+* `SIM904`: Assign values to dictionary directly at initialization ([example](#SIM904))
 
 ## Disabling Rules
 
