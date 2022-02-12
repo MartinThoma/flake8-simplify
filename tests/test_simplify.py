@@ -153,6 +153,16 @@ def test_sim104():
     assert ret == {"1:0 SIM104 Use 'yield from iterable'"}
 
 
+def test_s104_async_generator_false_positive():
+    ret = _results(
+        """async def items():
+    for c in 'abc':
+        yield c"""
+    )
+    for el in ret:
+        assert "SIM104" not in el
+
+
 def test_sim105():
     ret = _results(
         """try:
@@ -185,14 +195,33 @@ else:
     assert ret == {"1:0 SIM106 Handle error-cases first"}
 
 
-def test_sim106_no():
-    ret = _results(
+@pytest.mark.parametrize(
+    "s",
+    (
+        """if image_extension in ['.jpg', '.jpeg']:
+    return 'JPEG'
+elif image_extension in ['.png']:
+    return 'PNG'
+else:
+    raise ValueError("Unknwon image extension {image extension}")""",
+        """if image_extension in ['.jpg', '.jpeg']:
+    return 'JPEG'
+elif image_extension in ['.png']:
+    return 'PNG'
+else:
+    logger.error("Unknwon image extension {image extension}")
+    raise ValueError("Unknwon image extension {image extension}")""",
         """if cond:
     raise Exception
 else:
-    raise Exception"""
-    )
-    assert ret == set()
+    raise Exception""",
+    ),
+    ids=["ValueError", "ValueError-with-logging", "TwoExceptions"],
+)
+def test_sim106_false_positive(s):
+    ret = _results(s)
+    for el in ret:
+        assert "SIM106" not in el
 
 
 def test_sim107():
@@ -226,8 +255,21 @@ else:
 def test_sim109():
     ret = _results("a == b or a == c")
     assert ret == {
-        "1:0 SIM109 Use 'a in [b, c]' instead of 'a == b or a == c'"
+        "1:0 SIM109 Use 'a in (b, c)' instead of 'a == b or a == c'"
     }
+
+
+@pytest.mark.parametrize(
+    "s",
+    (
+        "a == b() or a == c",
+        "a == b or a == c()",
+        "a == b() or a == c()",
+    ),
+)
+def test_sim109_nop(s):
+    ret = _results(s)
+    assert not ret
 
 
 def test_sim110_any():
@@ -249,7 +291,6 @@ return False"""
     assert ret == {"1:0 SIM110 Use 'return any(check(x) for x in iterable)'"}
 
 
-@pytest.mark.xfail(reason="See issue #34: False-positive for SIM110")
 def test_sim110_raise_exception():
     ret = _results(
         """
@@ -258,7 +299,8 @@ for el in [1,2,3]:
         return True
 raise Exception"""
     )
-    assert ret == set()
+    for el in ret:
+        assert "SIM110" not in el
 
 
 def test_sim111_all():
@@ -360,6 +402,25 @@ def test_sim113_false_positive():
     assert ret == set()
 
 
+def test_sim113_false_positive_add_string():
+    ret = _results(
+        r"""for line in read_list(redis_conn, storage_key):
+    line += '\n'"""
+    )
+    assert ret == set()
+
+
+def test_sim113_false_positive_continue():
+    ret = _results(
+        """even_numbers = 0
+for el in range(100):
+    if el % 2 == 1:
+        continue
+    even_numbers += 1"""
+    )
+    assert ret == set()
+
+
 def test_sim114():
     ret = _results(
         """if a:
@@ -368,6 +429,39 @@ elif c:
     b"""
     )
     assert ret == {"1:3 SIM114 Use logical or ((a) or (c)) and a single body"}
+
+
+def test_sim114_false_positive70():
+    ret = _results(
+        """def complicated_calc(*arg, **kwargs):
+    return 42
+
+def foo(p):
+    if p == 2:
+        return complicated_calc(microsecond=0)
+    elif p == 3:
+        return complicated_calc(microsecond=0, second=0)
+    return None"""
+    )
+    for el in ret:
+        assert "SIM114" not in el
+
+
+def test_sim114_false_positive_elif_in_between():
+    ret = _results(
+        """a = False
+b = True
+c = True
+
+if a:
+    z = 1
+elif b:
+    z = 2
+elif c:
+    z = 1 """
+    )
+    for el in ret:
+        assert "SIM114" not in el
 
 
 def test_sim115():
@@ -461,12 +555,80 @@ class FooBar:
     def __init__(self, a, b):
         self.a = a
         self.b = b
+"""
+    )
+    assert results == {"2:0 SIM119 Use a dataclass for 'class FooBar'"}
+
+
+def test_sim119_ignored_dunder_methods():
+    """
+    Dunder methods do not make a class not be a dataclass candidate.
+    Examples for dunder (double underscore) methods are:
+      * __str__
+      * __eq__
+      * __hash__
+    """
+    results = _results(
+        """
+class FooBar:
+    def __init__(self, a, b):
+        self.a = a
+        self.b = b
 
     def __str__(self):
         return "FooBar"
 """
     )
     assert results == {"2:0 SIM119 Use a dataclass for 'class FooBar'"}
+
+
+@pytest.mark.xfail(
+    reason="https://github.com/MartinThoma/flake8-simplify/issues/63"
+)
+def test_sim119_false_positive():
+    results = _results(
+        '''class OfType:
+    """
+    >>> 3 == OfType(int, str, bool)
+    True
+    >>> 'txt' == OfType(int)
+    False
+    """
+
+    def __init__(self, *types):
+        self.types = types
+
+    def __eq__(self, other):
+        return isinstance(other, self.types)'''
+    )
+    for el in results:
+        assert "SIM119" not in el
+
+
+def test_sim119_async():
+    results = _results(
+        """
+class FooBar:
+    def __init__(self, a, b):
+        self.a = a
+        self.b = b
+
+    async def foo(self):
+        return "FooBar"
+"""
+    )
+    assert results == set()
+
+
+def test_sim119_constructor_processing():
+    results = _results(
+        """
+class FooBar:
+    def __init__(self, a):
+        self.a = a + 5
+"""
+    )
+    assert results == set()
 
 
 def test_sim119_pydantic():
@@ -641,41 +803,175 @@ def test_sim300_int():
     }
 
 
-def test_sim400():
+def test_sim902():
     ret = _results("foo(a, b, True)")
-    assert ret == {"1:0 SIM400 Use keyword-argument instead of magic boolean"}
+    assert ret == {"1:0 SIM902 Use keyword-argument instead of magic boolean"}
 
 
-def test_sim400_correct():
+def test_sim902_correct():
     ret = _results("foo(a, b, foo=True)")
     assert ret == set()
 
 
-def test_sim400_get_exception():
+def test_sim902_get_exception():
     ret = _results("dict.get('foo', True)")
     assert ret == set()
 
 
-def test_sim401_int():
+def test_sim903_int():
     ret = _results("foo(a, b, 123123)")
-    assert ret == {"1:0 SIM401 Use keyword-argument instead of magic number"}
+    assert ret == {"1:0 SIM903 Use keyword-argument instead of magic number"}
 
 
-def test_sim401_float():
+def test_sim903_float():
     ret = _results("foo(a, b, 123.123)")
-    assert ret == {"1:0 SIM401 Use keyword-argument instead of magic number"}
+    assert ret == {"1:0 SIM903 Use keyword-argument instead of magic number"}
 
 
-def test_sim401_get_exception():
+def test_sim903_get_exception():
     ret = _results("dict.get('foo', 123)")
     assert ret == set()
 
 
-def test_sim401_insert_exception():
+def test_sim903_insert_exception():
     ret = _results("sys.path.insert(0, 'foo')")
     assert ret == set()
 
 
-def test_sim401_range_exception():
+def test_sim903_range_exception():
     ret = _results("range(42)")
     assert ret == set()
+
+
+def test_sim401_if_else():
+    ret = _results(
+        """if key in a_dict:
+    value = a_dict[key]
+else:
+    value = 'default'"""
+    )
+    assert ret == {
+        """1:0 SIM401 Use 'value = a_dict.get(key, "default")' """
+        """instead of an if-block"""
+    }
+
+
+def test_sim401_negated_if_else():
+    ret = _results(
+        """if key not in a_dict:
+    value = 'default'
+else:
+    value = a_dict[key] """
+    )
+    assert (
+        """1:0 SIM401 Use 'value = a_dict.get(key, "default")' """
+        """instead of an if-block""" in ret
+    )
+
+
+def test_sim401_prefix_negated_if_else():
+    ret = _results(
+        """if not key in a_dict:
+    value = 'default'
+else:
+    value = a_dict[key] """
+    )
+    assert (
+        """1:3 SIM401 Use 'value = a_dict.get(key, "default")' """
+        """instead of an if-block""" in ret
+    ) or (
+        "1:3 SIM203 Use 'key not in a_dict' instead of 'not key in a_dict'"
+        in ret
+    )
+
+
+def test_sim401_false_positive():
+    ret = _results(
+        """if "foo" in some_dict["a"]:
+    some_dict["b"] = some_dict["a"]["foo"]
+else:
+    some_dict["a"]["foo"] = some_dict["b"]"""
+    )
+    for el in ret:
+        assert "SIM401" not in el
+
+
+def test_sim401_positive_msg_issue84_example1():
+    """
+    This is a regression test for the SIM401 message.
+
+    The original issue #84 was reported by jonyscathe. Thank you 🤗
+    """
+    ret = _results(
+        """if "last_name" in test_dict:
+    name = test_dict["last_name"]
+else:
+    name = test_dict["first_name"]"""
+    )
+    has_sim401 = False
+    expected_proposal = (
+        'Use \'name = test_dict.get("last_name", '
+        "test_dict['first_name'])' instead of an if-block"
+    )
+    for el in ret:
+        if "SIM401" in el:
+            msg = el.split("SIM401")[1].strip()
+            has_sim401 = True
+            assert msg == expected_proposal
+    assert has_sim401
+
+
+def test_sim401_positive_msg_issue84_example2():
+    """
+    This is a regression test for the SIM401 message.
+
+    The original issue #84 was reported by jonyscathe. Thank you 🤗
+    """
+    ret = _results(
+        """if "phone_number" in test_dict:
+    number = test_dict["phone_number"]
+else:
+    number = "" """
+    )
+    has_sim401 = False
+    expected_proposal = (
+        'Use \'number = test_dict.get("phone_number", "")\' '
+        "instead of an if-block"
+    )
+    for el in ret:
+        if "SIM401" in el:
+            msg = el.split("SIM401")[1].strip()
+            has_sim401 = True
+            assert msg == expected_proposal
+    assert has_sim401
+
+
+def test_sim401_positive_msg_check_issue89():
+    """
+    This is a regression test for the SIM401 message.
+
+    The original issue #89 was reported by Aarni Koskela. Thank you 🤗
+    """
+    ret = _results(
+        """if a:
+    token = a[1]
+elif 'token' in dct:
+    token = dct['token']
+else:
+    token = None"""
+    )
+    has_sim401 = False
+    expected_proposal = (
+        "Use 'token = dct.get(\"token\", None)' instead of an if-block"
+    )
+    for el in ret:
+        if "SIM401" in el:
+            msg = el.split("SIM401")[1].strip()
+            has_sim401 = True
+            assert msg == expected_proposal
+    assert has_sim401
+
+
+def test_sim901():
+    results = _results("bool(a == b)")
+    assert results == {"1:0 SIM901 Use 'a == b' instead of 'bool(a == b)'"}

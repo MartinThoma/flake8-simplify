@@ -38,7 +38,7 @@ Python-specific rules:
 * [`SIM105`](https://github.com/MartinThoma/flake8-simplify/issues/5): Use ['contextlib.suppress(...)'](https://docs.python.org/3/library/contextlib.html#contextlib.suppress) instead of try-except-pass ([example](#SIM105))
 * [`SIM107`](https://github.com/MartinThoma/flake8-simplify/issues/9): Don't use `return` in try/except and finally  ([example](#SIM107))
 * [`SIM108`](https://github.com/MartinThoma/flake8-simplify/issues/12): Use the ternary operator if it's reasonable  ([example](#SIM108))
-* [`SIM109`](https://github.com/MartinThoma/flake8-simplify/issues/11): Use a list to compare a value against multiple values ([example](#SIM109))
+* [`SIM109`](https://github.com/MartinThoma/flake8-simplify/issues/11): Use a tuple to compare a value against multiple values ([example](#SIM109))
 * [`SIM110`](https://github.com/MartinThoma/flake8-simplify/issues/15): Use [any(...)](https://docs.python.org/3/library/functions.html#any)  ([example](#SIM110))
 * [`SIM111`](https://github.com/MartinThoma/flake8-simplify/issues/15): Use [all(...)](https://docs.python.org/3/library/functions.html#all) ([example](#SIM111))
 * [`SIM113`](https://github.com/MartinThoma/flake8-simplify/issues/18): Use enumerate instead of manually incrementing a counter ([example](#SIM113))
@@ -46,11 +46,10 @@ Python-specific rules:
 * [`SIM115`](https://github.com/MartinThoma/flake8-simplify/issues/17): Use context handler for opening files ([example](#SIM115))
 * [`SIM116`](https://github.com/MartinThoma/flake8-simplify/issues/31): Use a dictionary instead of many if/else equality checks ([example](#SIM116))
 * [`SIM117`](https://github.com/MartinThoma/flake8-simplify/issues/35): Merge with-statements that use the same scope ([example](#SIM117))
-* [`SIM118`](https://github.com/MartinThoma/flake8-simplify/issues/40): Use 'key in dict' instead of 'key in dict.keys()' ([example](#SIM118))
 * [`SIM119`](https://github.com/MartinThoma/flake8-simplify/issues/37) ![](https://shields.io/badge/-legacyfix-inactive): Use dataclasses for data containers ([example](#SIM119))
 * `SIM120` ![](https://shields.io/badge/-legacyfix-inactive): Use 'class FooBar:' instead of 'class FooBar(object):' ([example](#SIM120))
 
-Comparations:
+Simplifying Comparations:
 
 * `SIM201`: Use 'a != b' instead of 'not a == b' ([example](#SIM201))
 * `SIM202`: Use 'a == b' instead of 'not a != b' ([example](#SIM202))
@@ -67,7 +66,13 @@ Comparations:
 * [`SIM221`](https://github.com/MartinThoma/flake8-simplify/issues/6): Use 'True' instead of 'a or not a' ([example](#SIM221))
 * [`SIM222`](https://github.com/MartinThoma/flake8-simplify/issues/6): Use 'True' instead of '... or True' ([example](#SIM222))
 * [`SIM223`](https://github.com/MartinThoma/flake8-simplify/issues/6): Use 'False' instead of '... and False' ([example](#SIM223))
+* [`SIM224`](https://github.com/MartinThoma/flake8-simplify/issues/88): Reserved for SIM901 once it's stable
 * [`SIM300`](https://github.com/MartinThoma/flake8-simplify/issues/16): Use 'age == 42' instead of '42 == age' ([example](#SIM300))
+
+Simplifying usage of dictionaries:
+
+* [`SIM401`](https://github.com/MartinThoma/flake8-simplify/issues/72): Use 'a_dict.get(key, "default_value")' instead of an if-block ([example](#SIM401))
+* [`SIM118`](https://github.com/MartinThoma/flake8-simplify/issues/40): Use 'key in dict' instead of 'key in dict.keys()' ([example](#SIM118))
 
 General Code Style:
 
@@ -76,11 +81,27 @@ General Code Style:
 * [`SIM106`](https://github.com/MartinThoma/flake8-simplify/issues/8): Handle error-cases first ([example](#SIM106))
 * [`SIM112`](https://github.com/MartinThoma/flake8-simplify/issues/19): Use CAPITAL environment variables ([example](#SIM112))
 
-You might have good reasons to ignore some rules. To do that, use the standard Flake8 configuration. For example, within the `setup.cfg` file:
+**Experimental rules:**
+
+Getting rules right for every possible case is hard. I don't want to disturb
+peoples workflows. For this reason, flake8-simplify introduces new rules with
+the `SIM9` prefix. Every new rule will start with SIM9 and stay there for at
+least 6 months. In this time people can give feedback. Once the rule is stable,
+the code will change to another number.
+
+Current experimental rules:
+
+* `SIM901`: Use comparisons directly instead of wrapping them in a `bool(...)` call ([example](#SIM901))
+
+## Disabling Rules
+
+You might have good reasons to
+[ignore some flake8 rules](https://flake8.pycqa.org/en/3.1.1/user/ignoring-errors.html).
+To do that, use the standard Flake8 configuration. For example, within the `setup.cfg` file:
 
 ```python
 [flake8]
-ignore = SIM106, SIM113, SIM119
+ignore = SIM106, SIM113, SIM119, SIM9
 ```
 
 
@@ -108,6 +129,25 @@ if a:
 if a and b:
     c
 ```
+
+### SIM105
+
+```python
+# Bad
+try:
+    foo()
+except ValueError:
+    pass
+
+# Good
+from contextlib import suppress
+
+with suppress(ValueError):
+    foo()
+```
+
+Please note that `contextlib.suppress` is roughly 3x slower than `try/except`
+([source](https://github.com/MartinThoma/flake8-simplify/issues/91)).
 
 ### SIM107
 
@@ -157,7 +197,7 @@ if a == b or a == c:
     d
 
 # Good
-if a in [b, c]:
+if a in (b, c):
     d
 ```
 
@@ -184,7 +224,7 @@ for x in iterable:
 return True
 
 # Good
-return all(check(x) for x in iterable)
+return all(not check(x) for x in iterable)
 ```
 
 ### SIM112
@@ -279,10 +319,10 @@ Thank you for pointing this one out, [Aaron Gokaslan](https://github.com/Skylion
 
 ```python
 # Bad
-key in dict.keys()
+key in a_dict.keys()
 
 # Good
-key in dict
+key in a_dict
 ```
 
 Thank you for pointing this one out, [Aaron Gokaslan](https://github.com/Skylion007)!
@@ -476,4 +516,32 @@ False
 
 # Good
 age == 42
+```
+
+### SIM401
+
+```python
+# Bad
+if key in a_dict:
+    value = a_dict[key]
+else:
+    value = "default_value"
+
+# Good
+thing = a_dict.get(key, "default_value")
+```
+
+### SIM901
+
+This rule will be renamed to `SIM224` after its 6-month trial period is over.
+Please report any issues you encounter with this rule!
+
+The trial period starts on 23rd of January and will end on 23rd of August 2022.
+
+```python
+# Bad
+bool(a == b)
+
+# Good
+a == b
 ```

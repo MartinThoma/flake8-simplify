@@ -103,10 +103,13 @@ SIM300 = (
     "SIM300 Use '{right} == {left}' instead of "
     "'{left} == {right}' (Yoda-conditions)"
 )
-
-# General Code Style
-SIM400 = "SIM400 Use keyword-argument instead of magic boolean"
-SIM401 = "SIM401 Use keyword-argument instead of magic number"
+SIM401 = (
+    "SIM401 Use '{value} = {dict}.get({key}, {default_value})' "
+    "instead of an if-block"
+)
+SIM901 = "SIM901 Use '{better}' instead of '{current}'"
+SIM902 = "SIM902 Use keyword-argument instead of magic boolean"
+SIM903 = "SIM903 Use keyword-argument instead of magic number"
 
 # ast.Constant in Python 3.8, ast.NameConstant in Python 3.6 and 3.7
 BOOL_CONST_TYPES = (ast.Constant, ast.NameConstant)
@@ -115,30 +118,43 @@ STR_TYPES = (ast.Constant, ast.Str)
 
 
 def strip_parenthesis(string: str) -> str:
-    if string[0] == "(" and string[-1] == ")":
+    if len(string) >= 2 and string[0] == "(" and string[-1] == ")":
         return string[1:-1]
     return string
 
 
 def strip_triple_quotes(string: str) -> str:
+    quotes = '"""'
+    is_tripple_quoted = string.startswith(quotes) and string.endswith(quotes)
     if not (
-        string.startswith('"""')
-        and string.endswith('"""')
-        and '"' not in string[3:-3]
+        is_tripple_quoted and '"' not in string[len(quotes) : -len(quotes)]
     ):
         return string
-    string = string[3:-3]
+    string = string[len(quotes) : -len(quotes)]
+    string = f'"{string}"'
     if len(string) == 0:
         string = '""'
     return string
 
 
-def to_source(node: Union[None, ast.expr, ast.Expr, ast.withitem]) -> str:
+def use_double_quotes(string: str) -> str:
+    quotes = "'''"
+    if string.startswith(quotes) and string.endswith(quotes):
+        return f'"""{string[len(quotes):-len(quotes)]}"""'
+    if len(string) >= 2 and string[0] == "'" and string[-1] == "'":
+        return f'"{string[1:-1]}"'
+    return string
+
+
+def to_source(
+    node: Union[None, ast.expr, ast.Expr, ast.withitem, ast.slice]
+) -> str:
     if node is None:
         return "None"
     source: str = astor.to_source(node).strip()
     source = strip_parenthesis(source)
     source = strip_triple_quotes(source)
+    source = use_double_quotes(source)
     return source
 
 
@@ -297,6 +313,8 @@ def _get_sim104(node: ast.For) -> List[Tuple[int, int, str]]:
         or node.orelse != []
     ):
         return errors
+    if isinstance(node.parent, ast.AsyncFunctionDef):  # type: ignore
+        return errors
     iterable = to_source(node.iter)
     errors.append(
         (node.lineno, node.col_offset, SIM104.format(iterable=iterable))
@@ -405,6 +423,18 @@ def _get_sim106(node: ast.If) -> List[Tuple[int, int, str]]:
     )
     if not (just_one or many):
         return errors
+    ast_raise = node.orelse[-1]
+    if not isinstance(ast_raise, ast.Raise):
+        return errors
+    ast_raised = ast_raise.exc
+    if (
+        isinstance(ast_raised, ast.Call)
+        and ast_raised.func
+        and isinstance(ast_raised.func, ast.Name)
+        and ast_raised.func.id in ["ValueError", "NotImplementedError"]
+    ):
+        return errors
+
     errors.append((node.lineno, node.col_offset, SIM106))
     return errors
 
@@ -521,21 +551,15 @@ def _get_sim109(node: ast.BoolOp) -> List[Tuple[int, int, str]]:
         and len(value.ops) == 1
         and isinstance(value.ops[0], ast.Eq)
     ]
-    ids = []  # (name, compared_to)
+    id2vals: Dict[str, List[ast.Name]] = defaultdict(list)
     for eq in equalities:
-        if isinstance(eq.left, ast.Name):
-            ids.append((eq.left, eq.comparators[0]))
-        if len(eq.comparators) == 1 and isinstance(
-            eq.comparators[0], ast.Name
+        if (
+            isinstance(eq.left, ast.Name)
+            and len(eq.comparators) == 1
+            and isinstance(eq.comparators[0], ast.Name)
         ):
-            ids.append((eq.comparators[0], eq.left))
-
-    id2count: Dict[str, List[ast.expr]] = {}
-    for identifier, compared_to in ids:
-        if identifier.id not in id2count:
-            id2count[identifier.id] = []
-        id2count[identifier.id].append(compared_to)
-    for value, values in id2count.items():
+            id2vals[eq.left.id].append(eq.comparators[0])
+    for value, values in id2vals.items():
         if len(values) == 1:
             continue
         errors.append(
@@ -545,7 +569,7 @@ def _get_sim109(node: ast.BoolOp) -> List[Tuple[int, int, str]]:
                 SIM109.format(
                     or_op=to_source(node),
                     value=value,
-                    values=to_source(ast.List(elts=values)),
+                    values=f"({to_source(ast.Tuple(elts=values))})",
                 ),
             )
         )
@@ -590,6 +614,8 @@ def _get_sim110_sim111(node: ast.For) -> List[Tuple[int, int, str]]:
         return errors
     if not hasattr(node.body[0].body[0].value, "value"):
         return errors
+    if isinstance(node.next_sibling, ast.Raise):  # type: ignore
+        return errors
     check = to_source(node.body[0].test)
     target = to_source(node.target)
     iterable = to_source(node.iter)
@@ -602,9 +628,15 @@ def _get_sim110_sim111(node: ast.For) -> List[Tuple[int, int, str]]:
             )
         )
     elif node.body[0].body[0].value.value is False:
-        check = "not " + check
-        if check.startswith("not not"):
-            check = check[len("not not ") :]
+        is_compound_expression = " and " in check or " or " in check
+
+        if is_compound_expression:
+            check = f"not ({check})"
+        else:
+            if check.startswith("not "):
+                check = check[len("not ") :]
+            else:
+                check = f"not {check}"
         errors.append(
             (
                 node.lineno,
@@ -658,13 +690,10 @@ def _get_sim112(node: ast.Expr) -> List[Tuple[int, int, str]]:
             # Python < 3.9
             string_part = slice_.value  # type: ignore
             assert isinstance(string_part, STR_TYPES), "hint for mypy"  # noqa
-            if isinstance(string_part, ast.Str):
-                env_name = string_part.s  # Python 3.6 / 3.7 fallback
-            else:
-                env_name = string_part.value
+            env_name = to_source(string_part)
         elif isinstance(slice_, ast.Constant):
             # Python 3.9
-            env_name = slice_.value
+            env_name = to_source(slice_)
 
         # Check if this has a change
         has_change = env_name != env_name.upper()
@@ -685,27 +714,22 @@ def _get_sim112(node: ast.Expr) -> List[Tuple[int, int, str]]:
         assert isinstance(call, ast.Call), "hint for mypy"  # noqa
         string_part = call.args[0]
         assert isinstance(string_part, STR_TYPES), "hint for mypy"  # noqa
-        if isinstance(string_part, ast.Str):
-            env_name = string_part.s  # Python 3.6 / 3.7 fallback
-        else:
-            env_name = string_part.value
+        env_name = to_source(string_part)
         # Check if this has a change
         has_change = env_name != env_name.upper()
     if not (is_index_call or is_get_call) or not has_change:
         return errors
     if is_index_call:
         original = to_source(node)
-        expected = f'os.environ["{env_name.upper()}"]'
+        expected = f"os.environ[{env_name.upper()}]"
     elif is_get_call:
         original = to_source(node)
         if len(node.value.args) == 1:  # type: ignore
-            expected = f'os.environ.get("{env_name.upper()}")'
+            expected = f"os.environ.get({env_name.upper()})"
         else:
             assert isinstance(node.value, ast.Call), "hint for mypy"  # noqa
             default_value = to_source(node.value.args[1])
-            expected = (
-                f'os.environ.get("{env_name.upper()}", "{default_value}")'
-            )
+            expected = f"os.environ.get({env_name.upper()}, {default_value})"
     else:
         return errors
     errors.append(
@@ -741,6 +765,8 @@ def _get_sim113(node: ast.For) -> List[Tuple[int, int, str]]:
     """
     errors: List[Tuple[int, int, str]] = []
     variable_candidates = []
+    if body_contains_continue(node.body):
+        return errors
     for expression in node.body:
         if (
             isinstance(expression, ast.AugAssign)
@@ -758,6 +784,14 @@ def _get_sim113(node: ast.For) -> List[Tuple[int, int, str]]:
             )
         )
     return errors
+
+
+def body_contains_continue(stmts: List[ast.stmt]) -> bool:
+    return any(
+        isinstance(stmt, ast.Continue)
+        or (isinstance(stmt, ast.If) and body_contains_continue(stmt.body))
+        for stmt in stmts
+    )
 
 
 def _get_sim114(node: ast.If) -> List[Tuple[int, int, str]]:
@@ -789,7 +823,12 @@ def _get_sim114(node: ast.If) -> List[Tuple[int, int, str]]:
     errors: List[Tuple[int, int, str]] = []
     if_body_pairs = get_if_body_pairs(node)
     error_pairs = []
-    for ifbody1, ifbody2 in itertools.combinations(if_body_pairs, 2):
+    for i in range(len(if_body_pairs) - 1):
+        # It's not all combinations because of this:
+        # https://github.com/MartinThoma/flake8-simplify/issues/70
+        # #issuecomment-924074984
+        ifbody1 = if_body_pairs[i]
+        ifbody2 = if_body_pairs[i + 1]
         if is_body_same(ifbody1[1], ifbody2[1]):
             error_pairs.append((ifbody1, ifbody2))
     for ifbody1, ifbody2 in error_pairs:
@@ -873,9 +912,10 @@ def _get_sim116(node: ast.If) -> List[Tuple[int, int, str]]:
     else_value: Optional[str] = None
     key_value_pairs: Dict[Any, Any]
     if isinstance(node.test.comparators[0], ast.Str):
-        key_value_pairs = {
-            node.test.comparators[0].s: to_source(node.body[0].value)
-        }
+        value = to_source(node.body[0].value)
+        if value[0] == '"' and value[-1] == '"':
+            value = value[1:-1]
+        key_value_pairs = {node.test.comparators[0].s: value}
     elif isinstance(node.test.comparators[0], ast.Num):
         key_value_pairs = {
             node.test.comparators[0].n: to_source(node.body[0].value)
@@ -905,7 +945,12 @@ def _get_sim116(node: ast.If) -> List[Tuple[int, int, str]]:
             key = child.test.comparators[0].n
         else:
             key = child.test.comparators[0].value
-        key_value_pairs[key] = to_source(child.body[0].value)
+
+        value = to_source(child.body[0].value)
+        if value[0] == '"' and value[-1] == '"':
+            value = value[1:-1]
+        key_value_pairs[key] = value
+
         if len(child.orelse) == 1:
             if isinstance(child.orelse[0], ast.If):
                 child = child.orelse[0]
@@ -1075,24 +1120,40 @@ def _get_sim119(node: ast.ClassDef) -> List[Tuple[int, int, str]]:
         "__repr__",
         "__str__",
     ]
-    has_only_constructur_function = True
+    has_only_dataclass_functions = True
+    has_any_functions = False
+    has_complex_statements = False
     for body_el in node.body:
-        if (
-            isinstance(body_el, ast.FunctionDef)
-            and body_el.name not in dataclass_functions
-        ):
-            has_only_constructur_function = False
-            break
+        if isinstance(body_el, (ast.FunctionDef, ast.AsyncFunctionDef)):
+            has_any_functions = True
+            if body_el.name == "__init__":
+                # Ensure constructor only has pure assignments
+                # without any calculation.
+                for el in body_el.body:
+                    if not isinstance(el, ast.Assign):
+                        has_complex_statements = True
+                        break
+                    # It is an assignment, but we only allow
+                    # `self.attribute = name`.
+                    if any(
+                        [
+                            not isinstance(target, ast.Attribute)
+                            for target in el.targets
+                        ]
+                    ) or not isinstance(el.value, ast.Name):
+                        has_complex_statements = True
+                        break
+            if body_el.name not in dataclass_functions:
+                has_only_dataclass_functions = False
 
-    if not (
-        has_only_constructur_function
-        and sum(1 for el in node.body if isinstance(el, ast.FunctionDef)) > 0
+    if (
+        has_any_functions
+        and has_only_dataclass_functions
+        and not has_complex_statements
     ):
-        return errors
-
-    errors.append(
-        (node.lineno, node.col_offset, SIM119.format(classname=node.name))
-    )
+        errors.append(
+            (node.lineno, node.col_offset, SIM119.format(classname=node.name))
+        )
 
     return errors
 
@@ -1145,21 +1206,33 @@ def is_stmt_equal(a: ast.stmt, b: ast.stmt) -> bool:
     if type(a) is not type(b):
         return False
     if isinstance(a, ast.AST):
+        specials = (
+            "lineno",
+            "col_offset",
+            "ctx",
+            "end_lineno",
+            "parent",
+            "previous_sibling",
+            "next_sibling",
+        )
         for k, v in vars(a).items():
-            if k in ("lineno", "col_offset", "ctx", "end_lineno", "parent"):
+            if k.startswith("_") or k in specials:
                 continue
             if not is_stmt_equal(v, getattr(b, k)):
                 return False
         return True
     elif isinstance(a, list):
+        if len(a) != len(b):
+            return False
         return all(itertools.starmap(is_stmt_equal, zip(a, b)))
     else:
         return a == b
 
 
 def is_constant_increase(expr: ast.AugAssign) -> bool:
-    return isinstance(expr.op, ast.Add) and isinstance(
-        expr.value, (ast.Constant, ast.Num)
+    return isinstance(expr.op, ast.Add) and (
+        (isinstance(expr.value, ast.Constant) and expr.value.value == 1)
+        or (isinstance(expr.value, ast.Num) and expr.value.n == 1)
     )
 
 
@@ -1570,12 +1643,6 @@ def _get_sim300(node: ast.Compare) -> List[Tuple[int, int, str]]:
         return errors
 
     left = to_source(node.left)
-    is_py37_str = isinstance(node.left, ast.Str)
-    is_py38_str = isinstance(node.left, ast.Constant) and isinstance(
-        node.left.value, str
-    )
-    if is_py38_str or is_py37_str:
-        left = f'"{left}"'
     right = to_source(node.comparators[0])
     errors.append(
         (node.lineno, node.col_offset, SIM300.format(left=left, right=right))
@@ -1583,7 +1650,7 @@ def _get_sim300(node: ast.Compare) -> List[Tuple[int, int, str]]:
     return errors
 
 
-def _get_sim400(node: Call) -> List[Tuple[int, int, str]]:
+def _get_sim902(node: Call) -> List[Tuple[int, int, str]]:
     """Find bare boolean function arguments."""
     errors: List[Tuple[int, int, str]] = []
     has_bare_bool = any(
@@ -1596,11 +1663,11 @@ def _get_sim400(node: Call) -> List[Tuple[int, int, str]]:
         "get"
     ]
     if has_bare_bool and not is_exception:
-        errors.append((node.lineno, node.col_offset, SIM400))
+        errors.append((node.lineno, node.col_offset, SIM902))
     return errors
 
 
-def _get_sim401(node: Call) -> List[Tuple[int, int, str]]:
+def _get_sim903(node: Call) -> List[Tuple[int, int, str]]:
     """Find bare numeric function arguments."""
     errors: List[Tuple[int, int, str]] = []
     has_bare_int = any(
@@ -1619,7 +1686,197 @@ def _get_sim401(node: Call) -> List[Tuple[int, int, str]]:
         ]
     )
     if has_bare_int and not is_exception:
-        errors.append((node.lineno, node.col_offset, SIM401))
+        errors.append((node.lineno, node.col_offset, SIM903))
+    return errors
+
+
+def _get_sim401(node: ast.If) -> List[Tuple[int, int, str]]:
+    """
+    Get all calls that should use default values for dictionary access.
+
+    Pattern 1
+    ---------
+    if key in a_dict:
+        value = a_dict[key]
+    else:
+        value = "default"
+
+    which is
+
+        If(
+            test=Compare(
+                left=Name(id='key', ctx=Load()),
+                ops=[In()],
+                comparators=[Name(id='a_dict', ctx=Load())],
+            ),
+            body=[
+                Assign(
+                    targets=[Name(id='value', ctx=Store())],
+                    value=Subscript(
+                        value=Name(id='a_dict', ctx=Load()),
+                        slice=Name(id='key', ctx=Load()),
+                        ctx=Load(),
+                    ),
+                    type_comment=None,
+                ),
+            ],
+            orelse=[
+                Assign(
+                    targets=[Name(id='value', ctx=Store())],
+                    value=Constant(value='default', kind=None),
+                    type_comment=None,
+                ),
+            ],
+        ),
+
+    Pattern 2
+    ---------
+
+        if key not in a_dict:
+            value = 'default'
+        else:
+            value = a_dict[key]
+
+    which is
+
+        If(
+            test=Compare(
+                left=Name(id='key', ctx=Load()),
+                ops=[NotIn()],
+                comparators=[Name(id='a_dict', ctx=Load())],
+            ),
+            body=[
+                Assign(
+                    targets=[Name(id='value', ctx=Store())],
+                    value=Constant(value='default', kind=None),
+                    type_comment=None,
+                ),
+            ],
+            orelse=[
+                Assign(
+                    targets=[Name(id='value', ctx=Store())],
+                    value=Subscript(
+                        value=Name(id='a_dict', ctx=Load()),
+                        slice=Name(id='key', ctx=Load()),
+                        ctx=Load(),
+                    ),
+                    type_comment=None,
+                ),
+            ],
+        )
+
+    """
+    errors: List[Tuple[int, int, str]] = []
+    is_pattern_1 = (
+        len(node.body) == 1
+        and isinstance(node.body[0], ast.Assign)
+        and len(node.body[0].targets) == 1
+        and isinstance(node.body[0].value, ast.Subscript)
+        and len(node.orelse) == 1
+        and isinstance(node.orelse[0], ast.Assign)
+        and len(node.orelse[0].targets) == 1
+        and isinstance(node.test, ast.Compare)
+        and len(node.test.ops) == 1
+        and isinstance(node.test.ops[0], ast.In)
+    )
+
+    # just like pattern_1, but using NotIn and reversing if/else
+    is_pattern_2 = (
+        len(node.body) == 1
+        and isinstance(node.body[0], ast.Assign)
+        and len(node.orelse) == 1
+        and isinstance(node.orelse[0], ast.Assign)
+        and isinstance(node.orelse[0].value, ast.Subscript)
+        and isinstance(node.test, ast.Compare)
+        and len(node.test.ops) == 1
+        and isinstance(node.test.ops[0], ast.NotIn)
+    )
+    if is_pattern_1:
+        assert isinstance(node.test, ast.Compare)
+        assert isinstance(node.body[0], ast.Assign)
+        assert isinstance(node.body[0].value, ast.Subscript)
+        assert isinstance(node.orelse[0], ast.Assign)
+        key = node.test.left
+        if to_source(key) != to_source(node.body[0].value.slice):
+            return errors  # second part of pattern 1
+        assign_to_if_body = node.body[0].targets[0]
+        assign_to_else = node.orelse[0].targets[0]
+        if to_source(assign_to_if_body) != to_source(assign_to_else):
+            return errors
+        dict_name = node.test.comparators[0]
+        default_value = node.orelse[0].value
+        value_node = node.body[0].targets[0]
+        key_str = to_source(key)
+        dict_str = to_source(dict_name)
+        default_str = to_source(default_value)
+        value_str = to_source(value_node)
+    elif is_pattern_2:
+        assert isinstance(node.test, ast.Compare)
+        assert isinstance(node.body[0], ast.Assign)
+        assert isinstance(node.orelse[0], ast.Assign)
+        assert isinstance(node.orelse[0].value, ast.Subscript)
+        key = node.test.left
+        if to_source(key) != to_source(node.orelse[0].value.slice):
+            return errors  # second part of pattern 1
+        dict_name = node.test.comparators[0]
+        default_value = node.body[0].value
+        value_node = node.body[0].targets[0]
+        key_str = to_source(key)
+        dict_str = to_source(dict_name)
+        default_str = to_source(default_value)
+        value_str = to_source(value_node)
+    else:
+        return errors
+    errors.append(
+        (
+            node.lineno,
+            node.col_offset,
+            SIM401.format(
+                key=key_str,
+                dict=dict_str,
+                default_value=default_str,
+                value=value_str,
+            ),
+        )
+    )
+    return errors
+
+
+def _get_sim901(node: ast.Call) -> List[Tuple[int, int, str]]:
+    """
+    Get a list of all calls of the type "bool(comparison)".
+
+    Call(
+        func=Name(id='bool', ctx=Load()),
+        args=[
+            Compare(
+                left=Name(id='a', ctx=Load()),
+                ops=[Eq()],
+                comparators=[Name(id='b', ctx=Load())],
+            ),
+        ],
+        keywords=[],
+    )
+    """
+    errors: List[Tuple[int, int, str]] = []
+    if not (
+        isinstance(node.func, ast.Name)
+        and node.func.id == "bool"
+        and len(node.args) == 1
+        and isinstance(node.args[0], ast.Compare)
+    ):
+        return errors
+
+    current = to_source(node)
+    better = to_source(node.args[0])
+
+    errors.append(
+        (
+            node.lineno,
+            node.col_offset,
+            SIM901.format(current=current, better=better),
+        )
+    )
     return errors
 
 
@@ -1629,8 +1886,9 @@ class Visitor(ast.NodeVisitor):
 
     def visit_Call(self, node: ast.Call) -> Any:
         self.errors += _get_sim115(Call(node))
-        self.errors += _get_sim400(Call(node))
-        self.errors += _get_sim401(Call(node))
+        self.errors += _get_sim901(node)
+        self.errors += _get_sim902(Call(node))
+        self.errors += _get_sim903(Call(node))
         self.generic_visit(node)
 
     def visit_With(self, node: ast.With) -> Any:
@@ -1657,6 +1915,7 @@ class Visitor(ast.NodeVisitor):
         self.errors += _get_sim108(node)
         self.errors += _get_sim114(node)
         self.errors += _get_sim116(node)
+        self.errors += _get_sim401(node)
         self.generic_visit(node)
 
     def visit_For(self, node: ast.For) -> None:
@@ -1701,7 +1960,7 @@ class Visitor(ast.NodeVisitor):
 
 class Plugin:
     name = __name__
-    version = importlib_metadata.version(__name__)
+    version = importlib_metadata.version(__name__)  # type: ignore
 
     def __init__(self, tree: ast.AST):
         self._tree = tree
@@ -1710,10 +1969,23 @@ class Plugin:
         visitor = Visitor()
 
         # Add parent
-        for node in ast.walk(self._tree):
-            for child in ast.iter_child_nodes(node):
-                child.parent = node  # type: ignore
+        add_meta(self._tree)
         visitor.visit(self._tree)
 
         for line, col, msg in visitor.errors:
             yield line, col, msg, type(self)
+
+
+def add_meta(root: ast.AST, level: int = 0) -> None:
+    previous_sibling = None
+    for node in ast.iter_child_nodes(root):
+        if level == 0:
+            node.parent = None  # type: ignore
+        node.previous_sibling = previous_sibling  # type: ignore
+        node.next_sibling = None  # type: ignore
+        if previous_sibling:
+            node.previous_sibling.next_sibling = node  # type: ignore
+        previous_sibling = node
+        for child in ast.iter_child_nodes(node):
+            child.parent = node  # type: ignore
+        add_meta(node, level=level + 1)
