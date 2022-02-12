@@ -939,7 +939,7 @@ def test_sim901():
 
 def test_sim904():
     results = _results(
-        """a = dict()
+        """a = { }
 a['b'] = 'c'"""
     )
     assert results == {"1:0 SIM904 Initialize dictionary 'a' directly"}
