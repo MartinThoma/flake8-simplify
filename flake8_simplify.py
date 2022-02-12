@@ -1847,7 +1847,7 @@ def _get_sim904(node: ast.Assign) -> List[Tuple[int, int, str]]:
     -------
     Code:
         # Bad
-        a = {}
+        a = dict()
         a['b] = 'c'
 
         # Good
