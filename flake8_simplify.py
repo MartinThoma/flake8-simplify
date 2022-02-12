@@ -1667,7 +1667,7 @@ def _get_sim902(node: Call) -> List[Tuple[int, int, str]]:
 
     nb_args = len(node.args)
 
-    if call_name in ["partial", "min", "max"]:
+    if call_name in ["partial", "min", "max"] or call_name.startswith("_"):
         return errors
 
     has_bare_bool = any(
@@ -1676,7 +1676,7 @@ def _get_sim902(node: Call) -> List[Tuple[int, int, str]]:
         for call_arg in node.args
     )
 
-    is_setter = call_name.startswith("set") and nb_args == 1
+    is_setter = call_name.lower().startswith("set") and nb_args <= 2
     is_exception = isinstance(node.func, ast.Attribute) and node.func.attr in [
         "get"
     ]
@@ -1702,8 +1702,10 @@ def _get_sim903(node: Call) -> List[Tuple[int, int, str]]:
         return errors
 
     nb_args = len(node.args)
+    if nb_args <= 1 or call_name.startswith("_"):
+        return errors
 
-    functions_any_arg = ["partial", "min", "max"]
+    functions_any_arg = ["partial", "min", "max", "minimum", "maximum"]
     functions_1_arg = ["sqrt", "sleep", "hideColumn"]
     functions_2_args = [
         "arange",
@@ -1711,12 +1713,18 @@ def _get_sim903(node: Call) -> List[Tuple[int, int, str]]:
         "zeros",
         "percentile",
         "setColumnWidth",
+        "float_power",
+        "power",
+        "pow",
+        "float_power",
+        "binomial",
     ]
     if any(
         (
             call_name in functions_any_arg,
             call_name in functions_1_arg and nb_args == 1,
             call_name in functions_2_args and nb_args == 2,
+            call_name in ["linspace"] and nb_args == 3,
             "color" in call_name.lower() and nb_args in [3, 4],
             "point" in call_name.lower() and nb_args in [2, 3],
         )
@@ -1729,7 +1737,7 @@ def _get_sim903(node: Call) -> List[Tuple[int, int, str]]:
         for call_arg in node.args
     )
 
-    is_setter = call_name.startswith("set") and nb_args == 1
+    is_setter = call_name.lower().startswith("set") and nb_args <= 2
     is_exception = isinstance(node.func, ast.Name) and node.func.id == "range"
     is_exception = is_exception or (
         isinstance(node.func, ast.Attribute)
