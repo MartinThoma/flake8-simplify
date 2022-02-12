@@ -1659,13 +1659,18 @@ def _get_sim902(node: Call) -> List[Tuple[int, int, str]]:
         for call_arg in node.args
     )
 
-    is_boolean_setter = isinstance(
+    is_boolean_setter_function = isinstance(
         node.func, ast.Name
     ) and node.func.id.startswith("set_")
+    is_bool_setter_method = isinstance(
+        node.func, ast.Attribute
+    ) and node.func.attr.startswith("set_")
     is_exception = isinstance(node.func, ast.Attribute) and node.func.attr in [
         "get"
     ]
-    if has_bare_bool and not (is_exception or is_boolean_setter):
+    if has_bare_bool and not (
+        is_exception or is_boolean_setter_function or is_bool_setter_method
+    ):
         errors.append((node.lineno, node.col_offset, SIM902))
     return errors
 

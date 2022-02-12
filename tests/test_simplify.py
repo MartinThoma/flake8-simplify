@@ -814,8 +814,14 @@ def test_sim902():
         "foo(a, b, foo=True)",
         "dict.get('foo', True)",
         "set_visible(True)",
+        "line.set_visible(True)",
     ),
-    ids=["kw_arg_is_used", "dict_get", "boolean_setter"],
+    ids=[
+        "kw_arg_is_used",
+        "dict_get",
+        "boolean_setter_function",
+        "boolean_setter_method",
+    ],
 )
 def test_sim902_false_positive(s):
     error_messages = _results(s)
