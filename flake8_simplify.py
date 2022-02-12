@@ -1,6 +1,7 @@
 # Core Library
 import ast
 import itertools
+import logging
 import sys
 from collections import defaultdict
 from typing import (
@@ -17,6 +18,8 @@ from typing import (
 
 # Third party
 import astor
+
+logger = logging.getLogger(__name__)
 
 
 class UnaryOp(ast.UnaryOp):
@@ -108,8 +111,8 @@ SIM401 = (
     "instead of an if-block"
 )
 SIM901 = "SIM901 Use '{better}' instead of '{current}'"
-SIM902 = "SIM902 Use keyword-argument instead of magic boolean"
-SIM903 = "SIM903 Use keyword-argument instead of magic number"
+SIM902 = "SIM902 Use keyword-argument instead of magic boolean for '{func}'"
+SIM903 = "SIM903 Use keyword-argument instead of magic number for '{func}'"
 
 # ast.Constant in Python 3.8, ast.NameConstant in Python 3.6 and 3.7
 BOOL_CONST_TYPES = (ast.Constant, ast.NameConstant)
@@ -1653,25 +1656,35 @@ def _get_sim300(node: ast.Compare) -> List[Tuple[int, int, str]]:
 def _get_sim902(node: Call) -> List[Tuple[int, int, str]]:
     """Find bare boolean function arguments."""
     errors: List[Tuple[int, int, str]] = []
+
+    if isinstance(node.func, ast.Attribute):
+        call_name = node.func.attr
+    elif isinstance(node.func, ast.Name):
+        call_name = node.func.id
+    else:
+        logger.debug(f"Unknown call type: {type(node.func)}")
+        return errors
+
+    nb_args = len(node.args)
+
+    if call_name in ["partial", "min", "max"]:
+        return errors
+
     has_bare_bool = any(
         isinstance(call_arg, (ast.Constant, ast.NameConstant))
         and (call_arg.value is True or call_arg.value is False)
         for call_arg in node.args
     )
 
-    is_boolean_setter_function = isinstance(
-        node.func, ast.Name
-    ) and node.func.id.startswith("set_")
-    is_bool_setter_method = isinstance(
-        node.func, ast.Attribute
-    ) and node.func.attr.startswith("set_")
+    is_setter = call_name.startswith("set") and nb_args == 1
     is_exception = isinstance(node.func, ast.Attribute) and node.func.attr in [
         "get"
     ]
-    if has_bare_bool and not (
-        is_exception or is_boolean_setter_function or is_bool_setter_method
-    ):
-        errors.append((node.lineno, node.col_offset, SIM902))
+    if has_bare_bool and not (is_exception or is_setter):
+        source = to_source(node)
+        errors.append(
+            (node.lineno, node.col_offset, SIM902.format(func=source))
+        )
     return errors
 
 
@@ -1679,12 +1692,44 @@ def _get_sim903(node: Call) -> List[Tuple[int, int, str]]:
     """Find bare numeric function arguments."""
     acceptable_magic_numbers = (0, 1, 2)
     errors: List[Tuple[int, int, str]] = []
+
+    if isinstance(node.func, ast.Attribute):
+        call_name = node.func.attr
+    elif isinstance(node.func, ast.Name):
+        call_name = node.func.id
+    else:
+        logger.debug(f"Unknown call type: {type(node.func)}")
+        return errors
+
+    nb_args = len(node.args)
+
+    functions_any_arg = ["partial", "min", "max"]
+    functions_1_arg = ["sqrt", "sleep", "hideColumn"]
+    functions_2_args = [
+        "arange",
+        "uniform",
+        "zeros",
+        "percentile",
+        "setColumnWidth",
+    ]
+    if any(
+        (
+            call_name in functions_any_arg,
+            call_name in functions_1_arg and nb_args == 1,
+            call_name in functions_2_args and nb_args == 2,
+            "color" in call_name.lower() and nb_args in [3, 4],
+            "point" in call_name.lower() and nb_args in [2, 3],
+        )
+    ):
+        return errors
+
     has_bare_int = any(
         isinstance(call_arg, ast.Num)
         and call_arg.n not in acceptable_magic_numbers
         for call_arg in node.args
     )
 
+    is_setter = call_name.startswith("set") and nb_args == 1
     is_exception = isinstance(node.func, ast.Name) and node.func.id == "range"
     is_exception = is_exception or (
         isinstance(node.func, ast.Attribute)
@@ -1694,8 +1739,11 @@ def _get_sim903(node: Call) -> List[Tuple[int, int, str]]:
             "insert",
         ]
     )
-    if has_bare_int and not is_exception:
-        errors.append((node.lineno, node.col_offset, SIM903))
+    if has_bare_int and not (is_exception or is_setter):
+        source = to_source(node)
+        errors.append(
+            (node.lineno, node.col_offset, SIM903.format(func=source))
+        )
     return errors
 
 

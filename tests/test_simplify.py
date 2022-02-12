@@ -803,9 +803,20 @@ def test_sim300_int():
     }
 
 
-def test_sim902():
-    ret = _results("foo(a, b, True)")
-    assert ret == {"1:0 SIM902 Use keyword-argument instead of magic boolean"}
+@pytest.mark.parametrize(
+    "s",
+    (
+        "foo(a, b, True)",
+        "set_foo(a, b, True)",
+    ),
+    ids=[
+        "basic",
+        "set_multiple",
+    ],
+)
+def test_sim902(s):
+    error_messages = _results(s)
+    assert any("SIM902" in error_message for error_message in error_messages)
 
 
 @pytest.mark.parametrize(
@@ -815,33 +826,57 @@ def test_sim902():
         "dict.get('foo', True)",
         "set_visible(True)",
         "line.set_visible(True)",
+        "partial(foo, True)",
+        "partial(foo, bar=True)",
     ),
     ids=[
         "kw_arg_is_used",
         "dict_get",
         "boolean_setter_function",
         "boolean_setter_method",
+        "partial_arg",
+        "partial_kwarg",
     ],
 )
-def test_sim902_false_positive(s):
+def test_sim902_false_positive_check(s):
     error_messages = _results(s)
     for error_message in error_messages:
         assert "SIM902" not in error_message
 
 
-def test_sim903_int():
-    ret = _results("foo(a, b, 123123)")
-    assert ret == {"1:0 SIM903 Use keyword-argument instead of magic number"}
+@pytest.mark.parametrize(
+    "s",
+    ("foo(a, b, 123123)", "foo(a, b, 123.123)"),
+    ids=["int", "float"],
+)
+def test_sim903_true_positive_check(s):
+    error_messages = _results(s)
+    assert any("SIM903" in error_message for error_message in error_messages)
 
 
-def test_sim903_float():
-    ret = _results("foo(a, b, 123.123)")
-    assert ret == {"1:0 SIM903 Use keyword-argument instead of magic number"}
-
-
-def test_sim903_get_exception():
-    ret = _results("dict.get('foo', 123)")
-    assert ret == set()
+@pytest.mark.parametrize(
+    "s",
+    (
+        "dict.get('foo', 123)",
+        "set_foo(1.23)",
+        "line.set_foo(1.23)",
+        "partial(foo, 1, 2, 3)",
+        "min(0.5, g_norm)",
+        "QColor(53, 53, 53, 128)",
+    ),
+    ids=[
+        "get_exception",
+        "set_function",
+        "set_method",
+        "partial",
+        "min",
+        "color",
+    ],
+)
+def test_sim903_false_positive_check(s):
+    error_messages = _results(s)
+    for error_message in error_messages:
+        assert "SIM903" not in error_message
 
 
 def test_sim903_insert_exception():
