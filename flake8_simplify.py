@@ -1873,15 +1873,16 @@ def _get_sim904(node: ast.Assign) -> List[Tuple[int, int, str]]:
         ]
     """
     errors: List[Tuple[int, int, str]] = []
+    n2 = node.next_sibling  # type: ignore
     if not (
         isinstance(node.value, ast.Dict)
-        and isinstance(node.next_sibling, ast.Assign)  # type: ignore
-        and len(node.next_sibling.targets) == 1  # type: ignore
+        and isinstance(n2, ast.Assign)
+        and len(n2.targets) == 1
         and len(node.targets) == 1
-        and isinstance(node.next_sibling.targets[0], ast.Subscript)  # type: ignore
-        and isinstance(node.next_sibling.targets[0].value, ast.Name)  # type: ignore
+        and isinstance(n2.targets[0], ast.Subscript)
+        and isinstance(n2.targets[0].value, ast.Name)
         and isinstance(node.targets[0], ast.Name)
-        and node.next_sibling.targets[0].value.id == node.targets[0].id  # type: ignore
+        and n2.targets[0].value.id == node.targets[0].id
     ):
         return errors
     dict_name = to_source(node.targets[0])
