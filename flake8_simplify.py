@@ -108,6 +108,7 @@ SIM401 = (
     "instead of an if-block"
 )
 SIM901 = "SIM901 Use '{better}' instead of '{current}'"
+SIM904 = "SIM904 Initialize dictionary '{dict_name}' directly"
 
 # ast.Constant in Python 3.8, ast.NameConstant in Python 3.6 and 3.7
 BOOL_CONST_TYPES = (ast.Constant, ast.NameConstant)
@@ -1838,9 +1839,70 @@ def _get_sim901(node: ast.Call) -> List[Tuple[int, int, str]]:
     return errors
 
 
+def _get_sim904(node: ast.Assign) -> List[Tuple[int, int, str]]:
+    """
+    Assign values to dictionary directly at initialization.
+
+    Example
+    -------
+    Code:
+        # Bad
+        a = { }
+        a['b] = 'c'
+
+        # Good
+        a = {'b': 'c'}
+    Bad AST:
+        [
+            Assign(
+                targets=[Name(id='a', ctx=Store())],
+                value=Dict(keys=[], values=[]),
+                type_comment=None,
+            ),
+            Assign(
+                targets=[
+                    Subscript(
+                        value=Name(id='a', ctx=Load()),
+                        slice=Constant(value='b', kind=None),
+                        ctx=Store(),
+                    ),
+                ],
+                value=Constant(value='c', kind=None),
+                type_comment=None,
+            ),
+        ]
+    """
+    errors: List[Tuple[int, int, str]] = []
+    n2 = node.next_sibling  # type: ignore
+    if not (
+        isinstance(node.value, ast.Dict)
+        and isinstance(n2, ast.Assign)
+        and len(n2.targets) == 1
+        and len(node.targets) == 1
+        and isinstance(n2.targets[0], ast.Subscript)
+        and isinstance(n2.targets[0].value, ast.Name)
+        and isinstance(node.targets[0], ast.Name)
+        and n2.targets[0].value.id == node.targets[0].id
+    ):
+        return errors
+    dict_name = to_source(node.targets[0])
+    errors.append(
+        (
+            node.lineno,
+            node.col_offset,
+            SIM904.format(dict_name=dict_name),
+        )
+    )
+    return errors
+
+
 class Visitor(ast.NodeVisitor):
     def __init__(self) -> None:
         self.errors: List[Tuple[int, int, str]] = []
+
+    def visit_Assign(self, node: ast.Assign) -> Any:
+        self.errors += _get_sim904(node)
+        self.generic_visit(node)
 
     def visit_Call(self, node: ast.Call) -> Any:
         self.errors += _get_sim115(Call(node))
