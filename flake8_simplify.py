@@ -1654,7 +1654,7 @@ def _get_sim902(node: Call) -> List[Tuple[int, int, str]]:
     """Find bare boolean function arguments."""
     errors: List[Tuple[int, int, str]] = []
     has_bare_bool = any(
-        isinstance(call_arg, ast.Constant)
+        isinstance(call_arg, (ast.Constant, ast.NameConstant))
         and (call_arg.value is True or call_arg.value is False)
         for call_arg in node.args
     )
@@ -1669,10 +1669,11 @@ def _get_sim902(node: Call) -> List[Tuple[int, int, str]]:
 
 def _get_sim903(node: Call) -> List[Tuple[int, int, str]]:
     """Find bare numeric function arguments."""
+    acceptable_magic_numbers = (0, 1, 2)
     errors: List[Tuple[int, int, str]] = []
     has_bare_int = any(
-        isinstance(call_arg, ast.Constant)
-        and type(call_arg.value) in (float, int)
+        isinstance(call_arg, ast.Num)
+        and call_arg.n not in acceptable_magic_numbers
         for call_arg in node.args
     )
 
