@@ -545,3 +545,14 @@ bool(a == b)
 # Good
 a == b
 ```
+
+### SIM904
+
+```python
+# Bad
+a = {}
+a["b"] = "c"
+
+# Good
+a = {"b": "c"}
+```
