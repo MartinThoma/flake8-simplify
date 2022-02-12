@@ -808,14 +808,19 @@ def test_sim902():
     assert ret == {"1:0 SIM902 Use keyword-argument instead of magic boolean"}
 
 
-def test_sim902_correct():
-    ret = _results("foo(a, b, foo=True)")
-    assert ret == set()
-
-
-def test_sim902_get_exception():
-    ret = _results("dict.get('foo', True)")
-    assert ret == set()
+@pytest.mark.parametrize(
+    "s",
+    (
+        "foo(a, b, foo=True)",
+        "dict.get('foo', True)",
+        "set_visible(True)",
+    ),
+    ids=["kw_arg_is_used", "dict_get", "boolean_setter"],
+)
+def test_sim902_false_positive(s):
+    error_messages = _results(s)
+    for error_message in error_messages:
+        assert "SIM902" not in error_message
 
 
 def test_sim903_int():
