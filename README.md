@@ -49,6 +49,7 @@ Python-specific rules:
 * [`SIM119`](https://github.com/MartinThoma/flake8-simplify/issues/37) ![](https://shields.io/badge/-legacyfix-inactive): Use dataclasses for data containers ([example](#SIM119))
 * `SIM120` ![](https://shields.io/badge/-legacyfix-inactive): Use 'class FooBar:' instead of 'class FooBar(object):' ([example](#SIM120))
 * `SIM124`: Reserved for [SIM904](#sim904) once it's stable
+* `SIM125`: Reserved for [SIM905](#sim905) once it's stable
 
 Simplifying Comparations:
 
@@ -94,7 +95,7 @@ Current experimental rules:
 
 * `SIM901`: Use comparisons directly instead of wrapping them in a `bool(...)` call ([example](#SIM901))
 * `SIM904`: Assign values to dictionary directly at initialization ([example](#SIM904))
-* `SIM905`: Split string directly if only constants are used ([example](#SIM905))
+* [`SIM905`](https://github.com/MartinThoma/flake8-simplify/issues/86): Split string directly if only constants are used ([example](#SIM905))
 
 ## Disabling Rules
 
@@ -551,6 +552,12 @@ a == b
 
 ### SIM904
 
+This rule will be renamed to `SIM224` after its 6-month trial period is over.
+Please report any issues you encounter with this rule!
+
+The trial period starts on 12th of February and will end on 12th of September 2022.
+
+
 ```python
 # Bad
 a = {}
@@ -561,6 +568,11 @@ a = {"b": "c"}
 ```
 
 ### SIM905
+
+This rule will be renamed to `SIM225` after its 6-month trial period is over.
+Please report any issues you encounter with this rule!
+
+The trial period starts on 13th of February and will end on 13th of September 2022.
 
 ```python
 # Bad
