@@ -1,6 +1,7 @@
 # Core Library
 import ast
 import itertools
+import json
 import sys
 from collections import defaultdict
 from typing import (
@@ -109,6 +110,7 @@ SIM401 = (
 )
 SIM901 = "SIM901 Use '{better}' instead of '{current}'"
 SIM904 = "SIM904 Initialize dictionary '{dict_name}' directly"
+SIM905 = "SIM905 Use '{expected}' instead of '{actual}'"
 
 # ast.Constant in Python 3.8, ast.NameConstant in Python 3.6 and 3.7
 BOOL_CONST_TYPES = (ast.Constant, ast.NameConstant)
@@ -1896,6 +1898,32 @@ def _get_sim904(node: ast.Assign) -> List[Tuple[int, int, str]]:
     return errors
 
 
+def _get_sim905(node: ast.Call) -> List[Tuple[int, int, str]]:
+    errors: List[Tuple[int, int, str]] = []
+    if not (
+        isinstance(node.func, ast.Attribute)
+        and node.func.attr == "split"
+        and isinstance(node.func.value, (ast.Str, ast.Constant))
+    ):
+        return errors
+
+    if isinstance(node.func.value, ast.Constant):
+        value = node.func.value.value
+    else:
+        value = node.func.value.s
+
+    expected = json.dumps(value.split())
+    actual = to_source(node.func.value) + ".split()"
+    errors.append(
+        (
+            node.lineno,
+            node.col_offset,
+            SIM905.format(expected=expected, actual=actual),
+        )
+    )
+    return errors
+
+
 class Visitor(ast.NodeVisitor):
     def __init__(self) -> None:
         self.errors: List[Tuple[int, int, str]] = []
@@ -1907,6 +1935,7 @@ class Visitor(ast.NodeVisitor):
     def visit_Call(self, node: ast.Call) -> Any:
         self.errors += _get_sim115(Call(node))
         self.errors += _get_sim901(node)
+        self.errors += _get_sim905(node)
         self.generic_visit(node)
 
     def visit_With(self, node: ast.With) -> Any:

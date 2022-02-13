@@ -943,3 +943,11 @@ def test_sim904():
 a['b'] = 'c'"""
     )
     assert results == {"1:0 SIM904 Initialize dictionary 'a' directly"}
+
+
+def test_sim905():
+    results = _results("""domains = "de com net org".split()""")
+    assert results == {
+        '1:10 SIM905 Use \'["de", "com", "net", "org"]\' '
+        "instead of '\"de com net org\".split()'"
+    }
