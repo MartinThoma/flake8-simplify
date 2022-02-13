@@ -948,5 +948,6 @@ a['b'] = 'c'"""
 def test_sim905():
     results = _results("""domains = "de com net org".split()""")
     assert results == {
-        '1:10 SIM905 Use \'["de", "com", "net", "org"]\' instead of \'"de com net org".split()\''
+        '1:10 SIM905 Use \'["de", "com", "net", "org"]\' '
+        "instead of '\"de com net org\".split()'"
     }
