@@ -14,7 +14,7 @@ cffi==1.15.0
     # via cryptography
 cfgv==3.3.1
     # via pre-commit
-charset-normalizer==2.0.11
+charset-normalizer==2.0.12
     # via requests
 click==8.0.3
     # via pip-tools
@@ -28,13 +28,13 @@ distlib==0.3.4
     # via virtualenv
 docutils==0.18.1
     # via readme-renderer
-filelock==3.4.2
+filelock==3.5.1
     # via virtualenv
-identify==2.4.9
+identify==2.4.10
     # via pre-commit
 idna==3.3
     # via requests
-importlib-metadata==4.10.1
+importlib-metadata==4.11.1
     # via
     #   click
     #   keyring
@@ -84,7 +84,7 @@ pygments==2.11.2
     # via readme-renderer
 pyparsing==3.0.7
     # via packaging
-pytest==7.0.0
+pytest==7.0.1
     # via
     #   -r requirements/dev.in
     #   pytest-cov
@@ -122,7 +122,7 @@ tqdm==4.62.3
     # via twine
 twine==3.8.0
     # via -r requirements/dev.in
-typing-extensions==4.0.1
+typing-extensions==4.1.1
     # via importlib-metadata
 urllib3==1.26.8
     # via
