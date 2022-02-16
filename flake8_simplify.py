@@ -1887,7 +1887,12 @@ def _get_sim904(node: ast.Assign) -> List[Tuple[int, int, str]]:
         and n2.targets[0].value.id == node.targets[0].id
     ):
         return errors
+
     dict_name = to_source(node.targets[0])
+    # Capture cases where the assigned value uses another dictionary value
+    if expression_uses_variable(n2.value, dict_name):
+        return errors
+
     errors.append(
         (
             node.lineno,
@@ -1896,6 +1901,14 @@ def _get_sim904(node: ast.Assign) -> List[Tuple[int, int, str]]:
         )
     )
     return errors
+
+
+def expression_uses_variable(expr: ast.expr, var: str) -> bool:
+    if var in to_source(expr):
+        # This is WAY too broad, but it's better to have false-negatives
+        # than false-positives
+        return True
+    return False
 
 
 def _get_sim905(node: ast.Call) -> List[Tuple[int, int, str]]:
