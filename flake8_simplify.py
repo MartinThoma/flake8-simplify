@@ -2,6 +2,7 @@
 import ast
 import itertools
 import json
+import logging
 import sys
 from collections import defaultdict
 from typing import (
@@ -18,6 +19,8 @@ from typing import (
 
 # Third party
 import astor
+
+logger = logging.getLogger(__name__)
 
 
 class UnaryOp(ast.UnaryOp):
@@ -108,9 +111,10 @@ SIM401 = (
     "SIM401 Use '{value} = {dict}.get({key}, {default_value})' "
     "instead of an if-block"
 )
-SIM901 = "SIM901 Use '{better}' instead of '{current}'"
+SIM901 = "SIM901 Use '{expected}' instead of '{actual}'"
 SIM904 = "SIM904 Initialize dictionary '{dict_name}' directly"
 SIM905 = "SIM905 Use '{expected}' instead of '{actual}'"
+SIM906 = "SIM906 Use '{expected}' instead of '{actual}'"
 
 # ast.Constant in Python 3.8, ast.NameConstant in Python 3.6 and 3.7
 BOOL_CONST_TYPES = (ast.Constant, ast.NameConstant)
@@ -1828,14 +1832,14 @@ def _get_sim901(node: ast.Call) -> List[Tuple[int, int, str]]:
     ):
         return errors
 
-    current = to_source(node)
-    better = to_source(node.args[0])
+    actual = to_source(node)
+    expected = to_source(node.args[0])
 
     errors.append(
         (
             node.lineno,
             node.col_offset,
-            SIM901.format(current=current, better=better),
+            SIM901.format(actual=actual, expected=expected),
         )
     )
     return errors
@@ -1937,6 +1941,68 @@ def _get_sim905(node: ast.Call) -> List[Tuple[int, int, str]]:
     return errors
 
 
+def _get_sim906(node: ast.Call) -> List[Tuple[int, int, str]]:
+    errors: List[Tuple[int, int, str]] = []
+    if not (
+        isinstance(node.func, ast.Attribute)
+        and isinstance(node.func.value, ast.Attribute)
+        and isinstance(node.func.value.value, ast.Name)
+        and node.func.value.value.id == "os"
+        and node.func.value.attr == "path"
+        and node.func.attr == "join"
+        and len(node.args) == 2
+        and any(
+            (
+                isinstance(arg, ast.Call)
+                and isinstance(arg.func, ast.Attribute)
+                and isinstance(arg.func.value, ast.Attribute)
+                and isinstance(arg.func.value.value, ast.Name)
+                and arg.func.value.value.id == "os"
+                and arg.func.value.attr == "path"
+                and arg.func.attr == "join"
+            )
+            for arg in node.args
+        )
+    ):
+        return errors
+
+    def get_os_path_join_args(node: ast.Call) -> List[str]:
+        names: List[str] = []
+        for arg in node.args:
+            if (
+                isinstance(arg, ast.Call)
+                and isinstance(arg.func, ast.Attribute)
+                and isinstance(arg.func.value, ast.Attribute)
+                and isinstance(arg.func.value.value, ast.Name)
+                and arg.func.value.value.id == "os"
+                and arg.func.value.attr == "path"
+                and arg.func.attr == "join"
+            ):
+                names = names + get_os_path_join_args(arg)
+            elif isinstance(arg, ast.Name):
+                names.append(arg.id)
+            elif isinstance(arg, ast.Str):
+                names.append(f"'{arg.s}'")
+            else:
+                logger.debug(
+                    f"Unexpexted os.path.join arg: {arg} -- {to_source(arg)}"
+                )
+        return names
+
+    names = get_os_path_join_args(node)
+
+    actual = to_source(node)
+    expected = f"os.path.join({', '.join(names)})"
+    errors.append(
+        (
+            node.lineno,
+            node.col_offset,
+            SIM906.format(actual=actual, expected=expected),
+        )
+    )
+    return errors
+
+
 class Visitor(ast.NodeVisitor):
     def __init__(self) -> None:
         self.errors: List[Tuple[int, int, str]] = []
@@ -1949,6 +2015,7 @@ class Visitor(ast.NodeVisitor):
         self.errors += _get_sim115(Call(node))
         self.errors += _get_sim901(node)
         self.errors += _get_sim905(node)
+        self.errors += _get_sim906(node)
         self.generic_visit(node)
 
     def visit_With(self, node: ast.With) -> Any:
