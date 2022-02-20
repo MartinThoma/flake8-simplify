@@ -9,7 +9,7 @@ from flake8_simplify.utils import to_source
 SIM112 = "SIM112 Use '{expected}' instead of '{original}'"
 
 
-def _get_sim112(node: ast.Expr) -> List[Tuple[int, int, str]]:
+def get_sim112(node: ast.Expr) -> List[Tuple[int, int, str]]:
     """
     Find non-capitalized calls to environment variables.
 

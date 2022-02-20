@@ -15,7 +15,7 @@ SIM207 = "SIM207 Use '{a} < {b}' instead of 'not ({a} >= {b})'"
 SIM208 = "SIM208 Use '{a}' instead of 'not (not {a})'"
 
 
-def _get_sim201(node: UnaryOp) -> List[Tuple[int, int, str]]:
+def get_sim201(node: UnaryOp) -> List[Tuple[int, int, str]]:
     """
     Get a list of all calls where an unary 'not' is used for an equality.
     """
@@ -41,7 +41,7 @@ def _get_sim201(node: UnaryOp) -> List[Tuple[int, int, str]]:
     return errors
 
 
-def _get_sim202(node: UnaryOp) -> List[Tuple[int, int, str]]:
+def get_sim202(node: UnaryOp) -> List[Tuple[int, int, str]]:
     """
     Get a list of all calls where an unary 'not' is used for an quality.
     """
@@ -67,7 +67,7 @@ def _get_sim202(node: UnaryOp) -> List[Tuple[int, int, str]]:
     return errors
 
 
-def _get_sim203(node: UnaryOp) -> List[Tuple[int, int, str]]:
+def get_sim203(node: UnaryOp) -> List[Tuple[int, int, str]]:
     """
     Get a list of all calls where an unary 'not' is used for an in-check.
     """
@@ -93,7 +93,7 @@ def _get_sim203(node: UnaryOp) -> List[Tuple[int, int, str]]:
     return errors
 
 
-def _get_sim204(node: UnaryOp) -> List[Tuple[int, int, str]]:
+def get_sim204(node: UnaryOp) -> List[Tuple[int, int, str]]:
     """Get a list of all calls of the type "not (a < b)"."""
     errors: List[Tuple[int, int, str]] = []
     if (
@@ -116,7 +116,7 @@ def _get_sim204(node: UnaryOp) -> List[Tuple[int, int, str]]:
     return errors
 
 
-def _get_sim205(node: UnaryOp) -> List[Tuple[int, int, str]]:
+def get_sim205(node: UnaryOp) -> List[Tuple[int, int, str]]:
     """Get a list of all calls of the type "not (a <= b)"."""
     errors: List[Tuple[int, int, str]] = []
     if (
@@ -139,7 +139,7 @@ def _get_sim205(node: UnaryOp) -> List[Tuple[int, int, str]]:
     return errors
 
 
-def _get_sim206(node: UnaryOp) -> List[Tuple[int, int, str]]:
+def get_sim206(node: UnaryOp) -> List[Tuple[int, int, str]]:
     """Get a list of all calls of the type "not (a > b)"."""
     errors: List[Tuple[int, int, str]] = []
     if (
@@ -162,7 +162,7 @@ def _get_sim206(node: UnaryOp) -> List[Tuple[int, int, str]]:
     return errors
 
 
-def _get_sim207(node: UnaryOp) -> List[Tuple[int, int, str]]:
+def get_sim207(node: UnaryOp) -> List[Tuple[int, int, str]]:
     """Get a list of all calls of the type "not (a >= b)"."""
     errors: List[Tuple[int, int, str]] = []
     if (
@@ -185,7 +185,7 @@ def _get_sim207(node: UnaryOp) -> List[Tuple[int, int, str]]:
     return errors
 
 
-def _get_sim208(node: ast.UnaryOp) -> List[Tuple[int, int, str]]:
+def get_sim208(node: ast.UnaryOp) -> List[Tuple[int, int, str]]:
     """Get a list of all calls of the type "not (not a)"."""
     errors: List[Tuple[int, int, str]] = []
     if (

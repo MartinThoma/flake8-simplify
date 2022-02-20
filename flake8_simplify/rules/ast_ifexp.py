@@ -13,7 +13,7 @@ SIM212 = (
 )
 
 
-def _get_sim210(node: ast.IfExp) -> List[Tuple[int, int, str]]:
+def get_sim210(node: ast.IfExp) -> List[Tuple[int, int, str]]:
     """Get a list of all calls of the type "True if a else False"."""
     errors: List[Tuple[int, int, str]] = []
     if (
@@ -28,7 +28,7 @@ def _get_sim210(node: ast.IfExp) -> List[Tuple[int, int, str]]:
     return errors
 
 
-def _get_sim211(node: ast.IfExp) -> List[Tuple[int, int, str]]:
+def get_sim211(node: ast.IfExp) -> List[Tuple[int, int, str]]:
     """Get a list of all calls of the type "False if a else True"."""
     errors: List[Tuple[int, int, str]] = []
     if (
@@ -43,7 +43,7 @@ def _get_sim211(node: ast.IfExp) -> List[Tuple[int, int, str]]:
     return errors
 
 
-def _get_sim212(node: ast.IfExp) -> List[Tuple[int, int, str]]:
+def get_sim212(node: ast.IfExp) -> List[Tuple[int, int, str]]:
     """
     Get a list of all calls of the type "b if not a else a".
 

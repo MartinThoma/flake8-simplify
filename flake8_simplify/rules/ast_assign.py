@@ -8,7 +8,7 @@ from flake8_simplify.utils import expression_uses_variable, to_source
 SIM904 = "SIM904 Initialize dictionary '{dict_name}' directly"
 
 
-def _get_sim904(node: ast.Assign) -> List[Tuple[int, int, str]]:
+def get_sim904(node: ast.Assign) -> List[Tuple[int, int, str]]:
     """
     Assign values to dictionary directly at initialization.
 

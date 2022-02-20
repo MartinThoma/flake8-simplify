@@ -25,7 +25,7 @@ SIM401 = (
 )
 
 
-def _get_sim102(node: ast.If) -> List[Tuple[int, int, str]]:
+def get_sim102(node: ast.If) -> List[Tuple[int, int, str]]:
     """Get a list of all nested if-statements without else-blocks."""
     errors: List[Tuple[int, int, str]] = []
 
@@ -52,7 +52,7 @@ def _get_sim102(node: ast.If) -> List[Tuple[int, int, str]]:
     return errors
 
 
-def _get_sim103(node: ast.If) -> List[Tuple[int, int, str]]:
+def get_sim103(node: ast.If) -> List[Tuple[int, int, str]]:
     """
     Get a list of all calls that wrap a condition to return a bool.
 
@@ -101,7 +101,7 @@ def _get_sim103(node: ast.If) -> List[Tuple[int, int, str]]:
     return errors
 
 
-def _get_sim106(node: ast.If) -> List[Tuple[int, int, str]]:
+def get_sim106(node: ast.If) -> List[Tuple[int, int, str]]:
     """
     Get a list of all calls where an exception is raised in else.
 
@@ -164,7 +164,7 @@ def _get_sim106(node: ast.If) -> List[Tuple[int, int, str]]:
     return errors
 
 
-def _get_sim108(node: ast.If) -> List[Tuple[int, int, str]]:
+def get_sim108(node: ast.If) -> List[Tuple[int, int, str]]:
     """
     Get a list of all if-elses which could be a ternary operator assignment.
 
@@ -212,7 +212,7 @@ def _get_sim108(node: ast.If) -> List[Tuple[int, int, str]]:
     return errors
 
 
-def _get_sim114(node: ast.If) -> List[Tuple[int, int, str]]:
+def get_sim114(node: ast.If) -> List[Tuple[int, int, str]]:
     """
     Find same bodys.
 
@@ -262,7 +262,7 @@ def _get_sim114(node: ast.If) -> List[Tuple[int, int, str]]:
     return errors
 
 
-def _get_sim116(node: ast.If) -> List[Tuple[int, int, str]]:
+def get_sim116(node: ast.If) -> List[Tuple[int, int, str]]:
     """
     Find places where 3 or more consecutive if-statements with direct returns.
 
@@ -350,7 +350,7 @@ def _get_sim116(node: ast.If) -> List[Tuple[int, int, str]]:
     return errors
 
 
-def _get_sim401(node: ast.If) -> List[Tuple[int, int, str]]:
+def get_sim401(node: ast.If) -> List[Tuple[int, int, str]]:
     """
     Get all calls that should use default values for dictionary access.
 

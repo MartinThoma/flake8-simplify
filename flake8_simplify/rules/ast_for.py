@@ -16,7 +16,7 @@ SIM111 = "SIM111 Use 'return all({check} for {target} in {iterable})'"
 SIM113 = "SIM113 Use enumerate instead of '{variable}'"
 
 
-def _get_sim104(node: ast.For) -> List[Tuple[int, int, str]]:
+def get_sim104(node: ast.For) -> List[Tuple[int, int, str]]:
     """
     Get a list of all "iterate and yield" patterns.
 
@@ -60,7 +60,7 @@ def _get_sim104(node: ast.For) -> List[Tuple[int, int, str]]:
     return errors
 
 
-def _get_sim110_sim111(node: ast.For) -> List[Tuple[int, int, str]]:
+def get_sim110_sim111(node: ast.For) -> List[Tuple[int, int, str]]:
     """
     Check if any / all could be used.
 
@@ -131,7 +131,7 @@ def _get_sim110_sim111(node: ast.For) -> List[Tuple[int, int, str]]:
     return errors
 
 
-def _get_sim113(node: ast.For) -> List[Tuple[int, int, str]]:
+def get_sim113(node: ast.For) -> List[Tuple[int, int, str]]:
     """
     Find loops in which "enumerate" should be used.
 

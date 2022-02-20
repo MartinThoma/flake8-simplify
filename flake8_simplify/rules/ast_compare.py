@@ -13,7 +13,7 @@ SIM300 = (
 )
 
 
-def _get_sim118(node: ast.Compare) -> List[Tuple[int, int, str]]:
+def get_sim118(node: ast.Compare) -> List[Tuple[int, int, str]]:
     """
     Get a list of all usages of "key in dict.keys()"
 
@@ -64,7 +64,7 @@ def _get_sim118(node: ast.Compare) -> List[Tuple[int, int, str]]:
     return errors
 
 
-def _get_sim300(node: ast.Compare) -> List[Tuple[int, int, str]]:
+def get_sim300(node: ast.Compare) -> List[Tuple[int, int, str]]:
     """
     Get a list of all Yoda conditions.
 

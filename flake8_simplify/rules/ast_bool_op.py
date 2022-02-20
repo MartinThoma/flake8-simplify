@@ -22,7 +22,7 @@ SIM222 = "SIM222 Use 'True' instead of '... or True'"
 SIM223 = "SIM223 Use 'False' instead of '... and False'"
 
 
-def _get_sim101(
+def get_sim101(
     node: ast.BoolOp,
 ) -> List[Tuple[int, int, str]]:
     """Get a positions where the duplicate isinstance problem appears."""
@@ -35,7 +35,7 @@ def _get_sim101(
     return errors
 
 
-def _get_sim109(node: ast.BoolOp) -> List[Tuple[int, int, str]]:
+def get_sim109(node: ast.BoolOp) -> List[Tuple[int, int, str]]:
     """
     Check if multiple equalities with the same value are combined via "or".
 
@@ -90,7 +90,7 @@ def _get_sim109(node: ast.BoolOp) -> List[Tuple[int, int, str]]:
     return errors
 
 
-def _get_sim220(node: ast.BoolOp) -> List[Tuple[int, int, str]]:
+def get_sim220(node: ast.BoolOp) -> List[Tuple[int, int, str]]:
     """
     Get a list of all calls of the type "a and not a".
 
@@ -131,7 +131,7 @@ def _get_sim220(node: ast.BoolOp) -> List[Tuple[int, int, str]]:
     return errors
 
 
-def _get_sim221(node: ast.BoolOp) -> List[Tuple[int, int, str]]:
+def get_sim221(node: ast.BoolOp) -> List[Tuple[int, int, str]]:
     """
     Get a list of all calls of the type "a or not a".
 
@@ -172,7 +172,7 @@ def _get_sim221(node: ast.BoolOp) -> List[Tuple[int, int, str]]:
     return errors
 
 
-def _get_sim222(node: ast.BoolOp) -> List[Tuple[int, int, str]]:
+def get_sim222(node: ast.BoolOp) -> List[Tuple[int, int, str]]:
     """
     Get a list of all calls of the type "... or True".
 
@@ -198,7 +198,7 @@ def _get_sim222(node: ast.BoolOp) -> List[Tuple[int, int, str]]:
     return errors
 
 
-def _get_sim223(node: ast.BoolOp) -> List[Tuple[int, int, str]]:
+def get_sim223(node: ast.BoolOp) -> List[Tuple[int, int, str]]:
     """
     Get a list of all calls of the type "... and False".
 

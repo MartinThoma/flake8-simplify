@@ -15,7 +15,7 @@ SIM906 = "SIM906 Use '{expected}' instead of '{actual}'"
 logger = logging.getLogger(__name__)
 
 
-def _get_sim115(node: Call) -> List[Tuple[int, int, str]]:
+def get_sim115(node: Call) -> List[Tuple[int, int, str]]:
     """
     Find places where open() is called without a context handler.
 
@@ -57,7 +57,7 @@ def _get_sim115(node: Call) -> List[Tuple[int, int, str]]:
 # Experimental rules
 
 
-def _get_sim901(node: ast.Call) -> List[Tuple[int, int, str]]:
+def get_sim901(node: ast.Call) -> List[Tuple[int, int, str]]:
     """
     Get a list of all calls of the type "bool(comparison)".
 
@@ -95,7 +95,7 @@ def _get_sim901(node: ast.Call) -> List[Tuple[int, int, str]]:
     return errors
 
 
-def _get_sim905(node: ast.Call) -> List[Tuple[int, int, str]]:
+def get_sim905(node: ast.Call) -> List[Tuple[int, int, str]]:
     errors: List[Tuple[int, int, str]] = []
     if not (
         isinstance(node.func, ast.Attribute)
@@ -121,7 +121,7 @@ def _get_sim905(node: ast.Call) -> List[Tuple[int, int, str]]:
     return errors
 
 
-def _get_sim906(node: ast.Call) -> List[Tuple[int, int, str]]:
+def get_sim906(node: ast.Call) -> List[Tuple[int, int, str]]:
     errors: List[Tuple[int, int, str]] = []
     if not (
         isinstance(node.func, ast.Attribute)

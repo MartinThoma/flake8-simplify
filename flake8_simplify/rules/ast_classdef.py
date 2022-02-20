@@ -8,7 +8,7 @@ SIM120 = (
 )
 
 
-def _get_sim119(node: ast.ClassDef) -> List[Tuple[int, int, str]]:
+def get_sim119(node: ast.ClassDef) -> List[Tuple[int, int, str]]:
     """
     Get a list of all classes that should be dataclasses"
 
@@ -89,7 +89,7 @@ def _get_sim119(node: ast.ClassDef) -> List[Tuple[int, int, str]]:
     return errors
 
 
-def _get_sim120(node: ast.ClassDef) -> List[Tuple[int, int, str]]:
+def get_sim120(node: ast.ClassDef) -> List[Tuple[int, int, str]]:
     """
     Get a list of all classes that inherit from object.
     """

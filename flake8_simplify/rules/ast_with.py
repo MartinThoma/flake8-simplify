@@ -8,7 +8,7 @@ from flake8_simplify.utils import to_source
 SIM117 = "SIM117 Use '{merged_with}' instead of multiple with statements"
 
 
-def _get_sim117(node: ast.With) -> List[Tuple[int, int, str]]:
+def get_sim117(node: ast.With) -> List[Tuple[int, int, str]]:
     """
     Find multiple with-statements with same scope.
 
