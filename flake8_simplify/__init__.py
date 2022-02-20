@@ -2,7 +2,7 @@
 import ast
 import logging
 import sys
-from typing import Any, Dict, Generator, List, Tuple, Type
+from typing import Any, Generator, List, Tuple, Type
 
 # First party
 from flake8_simplify.rules.ast_assign import _get_sim904
