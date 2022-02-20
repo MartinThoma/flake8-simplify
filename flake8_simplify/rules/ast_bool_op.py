@@ -11,16 +11,6 @@ from flake8_simplify.utils import (
     to_source,
 )
 
-SIM101 = (
-    "SIM101 Multiple isinstance-calls which can be merged into a single "
-    "call for variable '{var}'"
-)
-SIM109 = "SIM109 Use '{value} in {values}' instead of '{or_op}'"
-SIM220 = "SIM220 Use 'False' instead of '{a} and not {a}'"
-SIM221 = "SIM221 Use 'True' instead of '{a} or not {a}'"
-SIM222 = "SIM222 Use 'True' instead of '... or True'"
-SIM223 = "SIM223 Use 'False' instead of '... and False'"
-
 
 def get_sim101(
     node: ast.BoolOp,
@@ -30,8 +20,12 @@ def get_sim101(
     if not isinstance(node.op, ast.Or):
         return errors
 
+    RULE = (
+        "SIM101 Multiple isinstance-calls which can be merged into a single "
+        "call for variable '{var}'"
+    )
     for var in _get_duplicated_isinstance_call_by_node(node):
-        errors.append((node.lineno, node.col_offset, SIM101.format(var=var)))
+        errors.append((node.lineno, node.col_offset, RULE.format(var=var)))
     return errors
 
 
@@ -73,6 +67,7 @@ def get_sim109(node: ast.BoolOp) -> List[Tuple[int, int, str]]:
             and isinstance(eq.comparators[0], ast.Name)
         ):
             id2vals[eq.left.id].append(eq.comparators[0])
+    RULE = "SIM109 Use '{value} in {values}' instead of '{or_op}'"
     for value, values in id2vals.items():
         if len(values) == 1:
             continue
@@ -80,7 +75,7 @@ def get_sim109(node: ast.BoolOp) -> List[Tuple[int, int, str]]:
             (
                 node.lineno,
                 node.col_offset,
-                SIM109.format(
+                RULE.format(
                     or_op=to_source(node),
                     value=value,
                     values=f"({to_source(ast.Tuple(elts=values))})",
@@ -120,13 +115,12 @@ def get_sim220(node: ast.BoolOp) -> List[Tuple[int, int, str]]:
     if len(negated_expressions) == 0:
         return errors
 
+    RULE = "SIM220 Use 'False' instead of '{a} and not {a}'"
     for negated_expression in negated_expressions:
         for non_negated_expression in non_negated_expressions:
             if is_same_expression(negated_expression, non_negated_expression):
                 a = to_source(negated_expression)
-                errors.append(
-                    (node.lineno, node.col_offset, SIM220.format(a=a))
-                )
+                errors.append((node.lineno, node.col_offset, RULE.format(a=a)))
                 return errors
     return errors
 
@@ -161,13 +155,12 @@ def get_sim221(node: ast.BoolOp) -> List[Tuple[int, int, str]]:
     if len(negated_expressions) == 0:
         return errors
 
+    RULE = "SIM221 Use 'True' instead of '{a} or not {a}'"
     for negated_expression in negated_expressions:
         for non_negated_expression in non_negated_expressions:
             if is_same_expression(negated_expression, non_negated_expression):
                 a = to_source(negated_expression)
-                errors.append(
-                    (node.lineno, node.col_offset, SIM221.format(a=a))
-                )
+                errors.append((node.lineno, node.col_offset, RULE.format(a=a)))
                 return errors
     return errors
 
@@ -191,9 +184,10 @@ def get_sim222(node: ast.BoolOp) -> List[Tuple[int, int, str]]:
     if not (isinstance(node.op, ast.Or)):
         return errors
 
+    RULE = "SIM222 Use 'True' instead of '... or True'"
     for exp in node.values:
         if isinstance(exp, BOOL_CONST_TYPES) and exp.value is True:
-            errors.append((node.lineno, node.col_offset, SIM222))
+            errors.append((node.lineno, node.col_offset, RULE))
             return errors
     return errors
 
@@ -217,8 +211,9 @@ def get_sim223(node: ast.BoolOp) -> List[Tuple[int, int, str]]:
     if not (isinstance(node.op, ast.And)):
         return errors
 
+    RULE = "SIM223 Use 'False' instead of '... and False'"
     for exp in node.values:
         if isinstance(exp, BOOL_CONST_TYPES) and exp.value is False:
-            errors.append((node.lineno, node.col_offset, SIM223))
+            errors.append((node.lineno, node.col_offset, RULE))
             return errors
     return errors
