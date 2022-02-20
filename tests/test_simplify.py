@@ -6,7 +6,8 @@ from typing import Iterable, Set
 import pytest
 
 # First party
-from flake8_simplify import Plugin, get_if_body_pairs
+from flake8_simplify import Plugin
+from flake8_simplify.utils import get_if_body_pairs
 
 
 def _results(code: str) -> Set[str]:

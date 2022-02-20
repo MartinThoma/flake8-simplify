@@ -3,6 +3,10 @@ maint:
 	pip-compile -U requirements/lint.in
 	pip-compile -U requirements/dev.in
 
+lint:
+	mypy flake8_simplify --strict
+	flake8 .
+
 upload:
 	make clean
 	python setup.py sdist bdist_wheel && twine upload dist/*
