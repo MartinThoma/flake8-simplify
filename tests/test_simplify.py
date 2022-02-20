@@ -989,3 +989,26 @@ def test_sim905():
         '1:10 SIM905 Use \'["de", "com", "net", "org"]\' '
         "instead of '\"de com net org\".split()'"
     }
+
+
+@pytest.mark.parametrize(
+    ("s", "msg"),
+    (
+        # Credits to Skylion007 for the following example
+        # https://github.com/MartinThoma/flake8-simplify/issues/101
+        (
+            "os.path.join(a,os.path.join(b,c))",
+            "1:0 SIM906 Use 'os.path.join(a, b, c)' "
+            "instead of 'os.path.join(a, os.path.join(b, c))'",
+        ),
+        (
+            "os.path.join(a,os.path.join('b',c))",
+            "1:0 SIM906 Use 'os.path.join(a, 'b', c)' "
+            "instead of 'os.path.join(a, os.path.join('b', c))'",
+        ),
+    ),
+    ids=["base", "str-arg"],
+)
+def test_sim906(s, msg):
+    results = _results(s)
+    assert results == {msg}

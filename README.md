@@ -50,6 +50,7 @@ Python-specific rules:
 * `SIM120` ![](https://shields.io/badge/-legacyfix-inactive): Use 'class FooBar:' instead of 'class FooBar(object):' ([example](#SIM120))
 * `SIM124`: Reserved for [SIM904](#sim904) once it's stable
 * `SIM125`: Reserved for [SIM905](#sim905) once it's stable
+* `SIM126`: Reserved for [SIM906](#sim906) once it's stable
 
 Simplifying Comparations:
 
@@ -96,6 +97,7 @@ Current experimental rules:
 * `SIM901`: Use comparisons directly instead of wrapping them in a `bool(...)` call ([example](#SIM901))
 * `SIM904`: Assign values to dictionary directly at initialization ([example](#SIM904))
 * [`SIM905`](https://github.com/MartinThoma/flake8-simplify/issues/86): Split string directly if only constants are used ([example](#SIM905))
+* [`SIM906`](https://github.com/MartinThoma/flake8-simplify/issues/101): Merge nested os.path.join calls ([example](#SIM906))
 
 ## Disabling Rules
 
@@ -580,4 +582,19 @@ domains = "de com net org".split()
 
 # Good
 domains = ["de", "com", "net", "org"]
+```
+
+### SIM906
+
+This rule will be renamed to `SIM126` after its 6-month trial period is over.
+Please report any issues you encounter with this rule!
+
+The trial period starts on 20th of February and will end on 20th of September 2022.
+
+```python
+# Bad
+os.path.join(a, os.path.join(b, c))
+
+# Good
+os.path.join(a, b, c)
 ```
