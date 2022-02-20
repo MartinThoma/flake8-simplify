@@ -30,7 +30,7 @@ jobs:
         pip install .
     - name: Test with mypy
       run: |
-        mypy .
+        mypy flake8_simplify
     - name: Test with flake8
       run: |
         flake8 .
