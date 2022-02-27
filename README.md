@@ -81,7 +81,7 @@ General Code Style:
 
 * `SIM102`: Use a single if-statement instead of nested if-statements ([example](#SIM102))
 * [`SIM103`](https://github.com/MartinThoma/flake8-simplify/issues/3): Return the boolean condition directly ([example](#SIM103))
-* [`SIM106`](https://github.com/MartinThoma/flake8-simplify/issues/8): Handle error-cases first ([example](#SIM106))
+* [`SIM106`](https://github.com/MartinThoma/flake8-simplify/issues/8): Handle error-cases first ([example](#SIM106)). This rule was removed due to too many false-positives.
 * [`SIM112`](https://github.com/MartinThoma/flake8-simplify/issues/19): Use CAPITAL environment variables ([example](#SIM112))
 
 **Experimental rules:**
