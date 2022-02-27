@@ -276,36 +276,48 @@ def test_sim112_get_with_default():
 
 def test_sim113():
     ret = _results(
-        """for el in iterable:
+        """
+idx = 0
+for el in iterable:
     idx += 1"""
     )
-    assert ret == {"2:4 SIM113 Use enumerate instead of 'idx'"}
+    assert ret == {"2:0 SIM113 Use enumerate instead of 'idx'"}
 
 
-def test_sim113_false_positive():
-    ret = _results(
+@pytest.mark.parametrize(
+    "s",
+    (
         """for x in xs:
-    cm[x] += 1"""
-    )
-    assert ret == set()
-
-
-def test_sim113_false_positive_add_string():
-    ret = _results(
+    cm[x] += 1""",
         r"""for line in read_list(redis_conn, storage_key):
-    line += '\n'"""
-    )
-    assert ret == set()
-
-
-def test_sim113_false_positive_continue():
-    ret = _results(
+    line += '\n'""",
         """even_numbers = 0
 for el in range(100):
     if el % 2 == 1:
         continue
-    even_numbers += 1"""
-    )
+    even_numbers += 1""",
+        # The following two examples (double-loop and while-loop) were
+        # contributed by Skylion007 via
+        # https://github.com/MartinThoma/flake8-simplify/issues/25
+        """count = 0
+for foo in foos:
+    for bar in bars:
+        count +=1""",
+        """epoch, i = np.load(resume_file)
+while epochs < TOTAL_EPOCHS:
+    for b in batches:
+        i+=1""",
+    ),
+    ids=(
+        "augment-dict",
+        "add-string",
+        "continue",
+        "double-loop",
+        "while-loop",
+    ),
+)
+def test_sim113_false_positive(s):
+    ret = _results(s)
     assert ret == set()
 
 

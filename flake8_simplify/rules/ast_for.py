@@ -140,7 +140,7 @@ def get_sim113(node: ast.For) -> List[Tuple[int, int, str]]:
                 Expr(
                     value=Constant(value=Ellipsis, kind=None),
                 ),
-                AugAssign(
+                AugAssign( -- agument and assign, aka "+= 1"
                     target=Name(id='idx', ctx=Store()),
                     op=Add(),
                     value=Constant(value=1, kind=None),
@@ -150,11 +150,12 @@ def get_sim113(node: ast.For) -> List[Tuple[int, int, str]]:
             type_comment=None,
         ),
     """
-    RULE = "SIM113 Use enumerate instead of '{variable}'"
     errors: List[Tuple[int, int, str]] = []
     variable_candidates = []
     if body_contains_continue(node.body):
         return errors
+
+    # Find variables that might just count the iteration of the current loop
     for expression in node.body:
         if (
             isinstance(expression, ast.AugAssign)
@@ -162,13 +163,32 @@ def get_sim113(node: ast.For) -> List[Tuple[int, int, str]]:
             and isinstance(expression.target, ast.Name)
         ):
             variable_candidates.append(expression.target)
+    str_candidates = [to_source(x) for x in variable_candidates]
 
-    for candidate in variable_candidates:
+    older_siblings = []
+    for older_sibling in node.parent.body:  # type: ignore
+        if older_sibling is node:
+            break
+        older_siblings.append(older_sibling)
+
+    matches = [
+        n.targets[0]
+        for n in older_siblings
+        if isinstance(n, ast.Assign)
+        and len(n.targets) == 1
+        and isinstance(n.targets[0], ast.Name)
+        and to_source(n.targets[0]) in str_candidates
+    ]
+    if len(matches) == 0:
+        return errors
+
+    for match in matches:
+        variable = to_source(match)
         errors.append(
             (
-                candidate.lineno,
-                candidate.col_offset,
-                RULE.format(variable=to_source(candidate)),
+                match.lineno,
+                match.col_offset,
+                f"SIM113 Use enumerate instead of '{variable}'",
             )
         )
     return errors
