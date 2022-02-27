@@ -37,6 +37,7 @@ from flake8_simplify.rules.ast_if import (
     get_sim401,
 )
 from flake8_simplify.rules.ast_ifexp import get_sim210, get_sim211, get_sim212
+from flake8_simplify.rules.ast_subscript import get_sim907
 from flake8_simplify.rules.ast_try import get_sim105, get_sim107
 from flake8_simplify.rules.ast_unary_op import (
     get_sim201,
@@ -107,6 +108,10 @@ class Visitor(ast.NodeVisitor):
         self.errors += get_sim104(node)
         self.errors += get_sim110_sim111(node)
         self.errors += get_sim113(node)
+        self.generic_visit(node)
+
+    def visit_Subscript(self, node: ast.Subscript) -> None:
+        self.errors += get_sim907(node)
         self.generic_visit(node)
 
     def visit_Try(self, node: ast.Try) -> None:

@@ -51,6 +51,7 @@ Python-specific rules:
 * `SIM124`: Reserved for [SIM904](#sim904) once it's stable
 * `SIM125`: Reserved for [SIM905](#sim905) once it's stable
 * `SIM126`: Reserved for [SIM906](#sim906) once it's stable
+* `SIM127`: Reserved for [SIM907](#sim907) once it's stable
 
 Simplifying Comparations:
 
@@ -597,4 +598,20 @@ os.path.join(a, os.path.join(b, c))
 
 # Good
 os.path.join(a, b, c)
+```
+
+### SIM907
+
+This rule will be renamed to `SIM127` after its 6-month trial period is over.
+Please report any issues you encounter with this rule!
+
+```python
+# Bad
+def foo(a: Union[int, None]) -> Union[int, None]:
+    return a
+
+
+# Good
+def foo(a: Optional[int]) -> Optional[int]:
+    return a
 ```
