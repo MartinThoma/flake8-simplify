@@ -165,7 +165,7 @@ def add_meta(root: ast.AST, level: int = 0) -> None:
     previous_sibling = None
     for node in ast.iter_child_nodes(root):
         if level == 0:
-            node.parent = None  # type: ignore
+            node.parent = root  # type: ignore
         node.previous_sibling = previous_sibling  # type: ignore
         node.next_sibling = None  # type: ignore
         if previous_sibling:
