@@ -4,7 +4,7 @@ Release History
 ### 0.18.0
 Released on 20.02.2022
 
-New rules:
+New rules since 0.17.0:
 
 * SIM906: Merge nested os.path.join calls
 
