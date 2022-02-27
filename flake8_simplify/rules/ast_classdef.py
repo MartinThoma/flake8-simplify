@@ -89,7 +89,10 @@ def get_sim120(node: ast.ClassDef) -> List[Tuple[int, int, str]]:
     """
     Get a list of all classes that inherit from object.
     """
-    RULE = "SIM120 Use 'class {classname}:' instead of 'class {classname}(object):'"
+    RULE = (
+        "SIM120 Use 'class {classname}:' "
+        "instead of 'class {classname}(object):'"
+    )
     errors: List[Tuple[int, int, str]] = []
     if not (
         len(node.bases) == 1
