@@ -112,47 +112,6 @@ except:
     assert ret == {"1:0 SIM105 Use 'contextlib.suppress(Exception)'"}
 
 
-def test_sim106():
-    ret = _results(
-        """if cond:
-    a
-    b
-    c
-else:
-    raise Exception"""
-    )
-    assert ret == {"1:0 SIM106 Handle error-cases first"}
-
-
-@pytest.mark.parametrize(
-    "s",
-    (
-        """if image_extension in ['.jpg', '.jpeg']:
-    return 'JPEG'
-elif image_extension in ['.png']:
-    return 'PNG'
-else:
-    raise ValueError("Unknwon image extension {image extension}")""",
-        """if image_extension in ['.jpg', '.jpeg']:
-    return 'JPEG'
-elif image_extension in ['.png']:
-    return 'PNG'
-else:
-    logger.error("Unknwon image extension {image extension}")
-    raise ValueError("Unknwon image extension {image extension}")""",
-        """if cond:
-    raise Exception
-else:
-    raise Exception""",
-    ),
-    ids=["ValueError", "ValueError-with-logging", "TwoExceptions"],
-)
-def test_sim106_false_positive(s):
-    ret = _results(s)
-    for el in ret:
-        assert "SIM106" not in el
-
-
 def test_sim107():
     ret = _results(
         """def foo():
