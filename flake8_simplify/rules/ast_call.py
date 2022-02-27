@@ -7,11 +7,6 @@ from typing import List, Tuple
 # First party
 from flake8_simplify.utils import Call, to_source
 
-SIM115 = "SIM115 Use context handler for opening files"
-SIM901 = "SIM901 Use '{expected}' instead of '{actual}'"
-SIM905 = "SIM905 Use '{expected}' instead of '{actual}'"
-SIM906 = "SIM906 Use '{expected}' instead of '{actual}'"
-
 logger = logging.getLogger(__name__)
 
 
@@ -43,6 +38,7 @@ def get_sim115(node: Call) -> List[Tuple[int, int, str]]:
             ),
         ),
     """
+    RULE = "SIM115 Use context handler for opening files"
     errors: List[Tuple[int, int, str]] = []
     if not (
         isinstance(node.func, ast.Name)
@@ -50,7 +46,7 @@ def get_sim115(node: Call) -> List[Tuple[int, int, str]]:
         and not isinstance(node.parent, ast.withitem)
     ):
         return errors
-    errors.append((node.lineno, node.col_offset, SIM115))
+    errors.append((node.lineno, node.col_offset, RULE))
     return errors
 
 
@@ -73,6 +69,7 @@ def get_sim901(node: ast.Call) -> List[Tuple[int, int, str]]:
         keywords=[],
     )
     """
+    RULE = "SIM901 Use '{expected}' instead of '{actual}'"
     errors: List[Tuple[int, int, str]] = []
     if not (
         isinstance(node.func, ast.Name)
@@ -89,13 +86,14 @@ def get_sim901(node: ast.Call) -> List[Tuple[int, int, str]]:
         (
             node.lineno,
             node.col_offset,
-            SIM901.format(actual=actual, expected=expected),
+            RULE.format(actual=actual, expected=expected),
         )
     )
     return errors
 
 
 def get_sim905(node: ast.Call) -> List[Tuple[int, int, str]]:
+    RULE = "SIM905 Use '{expected}' instead of '{actual}'"
     errors: List[Tuple[int, int, str]] = []
     if not (
         isinstance(node.func, ast.Attribute)
@@ -115,13 +113,14 @@ def get_sim905(node: ast.Call) -> List[Tuple[int, int, str]]:
         (
             node.lineno,
             node.col_offset,
-            SIM905.format(expected=expected, actual=actual),
+            RULE.format(expected=expected, actual=actual),
         )
     )
     return errors
 
 
 def get_sim906(node: ast.Call) -> List[Tuple[int, int, str]]:
+    RULE = "SIM906 Use '{expected}' instead of '{actual}'"
     errors: List[Tuple[int, int, str]] = []
     if not (
         isinstance(node.func, ast.Attribute)
@@ -177,7 +176,7 @@ def get_sim906(node: ast.Call) -> List[Tuple[int, int, str]]:
         (
             node.lineno,
             node.col_offset,
-            SIM906.format(actual=actual, expected=expected),
+            RULE.format(actual=actual, expected=expected),
         )
     )
     return errors

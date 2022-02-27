@@ -2,11 +2,6 @@
 import ast
 from typing import List, Tuple
 
-SIM119 = "SIM119 Use a dataclass for 'class {classname}'"
-SIM120 = (
-    "SIM120 Use 'class {classname}:' instead of 'class {classname}(object):'"
-)
-
 
 def get_sim119(node: ast.ClassDef) -> List[Tuple[int, int, str]]:
     """
@@ -39,6 +34,7 @@ def get_sim119(node: ast.ClassDef) -> List[Tuple[int, int, str]]:
             decorator_list=[Name(id='dataclass', ctx=Load())],
         )
     """
+    RULE = "SIM119 Use a dataclass for 'class {classname}'"
     errors: List[Tuple[int, int, str]] = []
 
     if not (len(node.decorator_list) == 0 and len(node.bases) == 0):
@@ -83,7 +79,7 @@ def get_sim119(node: ast.ClassDef) -> List[Tuple[int, int, str]]:
         and not has_complex_statements
     ):
         errors.append(
-            (node.lineno, node.col_offset, SIM119.format(classname=node.name))
+            (node.lineno, node.col_offset, RULE.format(classname=node.name))
         )
 
     return errors
@@ -93,6 +89,7 @@ def get_sim120(node: ast.ClassDef) -> List[Tuple[int, int, str]]:
     """
     Get a list of all classes that inherit from object.
     """
+    RULE = "SIM120 Use 'class {classname}:' instead of 'class {classname}(object):'"
     errors: List[Tuple[int, int, str]] = []
     if not (
         len(node.bases) == 1
@@ -101,6 +98,6 @@ def get_sim120(node: ast.ClassDef) -> List[Tuple[int, int, str]]:
     ):
         return errors
     errors.append(
-        (node.lineno, node.col_offset, SIM120.format(classname=node.name))
+        (node.lineno, node.col_offset, RULE.format(classname=node.name))
     )
     return errors

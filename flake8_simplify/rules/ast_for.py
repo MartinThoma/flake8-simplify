@@ -10,11 +10,6 @@ from flake8_simplify.utils import (
     to_source,
 )
 
-SIM104 = "SIM104 Use 'yield from {iterable}'"
-SIM110 = "SIM110 Use 'return any({check} for {target} in {iterable})'"
-SIM111 = "SIM111 Use 'return all({check} for {target} in {iterable})'"
-SIM113 = "SIM113 Use enumerate instead of '{variable}'"
-
 
 def get_sim104(node: ast.For) -> List[Tuple[int, int, str]]:
     """
@@ -40,6 +35,7 @@ def get_sim104(node: ast.For) -> List[Tuple[int, int, str]]:
         ),
 
     """
+    RULE = "SIM104 Use 'yield from {iterable}'"
     errors: List[Tuple[int, int, str]] = []
     if (
         len(node.body) != 1
@@ -55,7 +51,7 @@ def get_sim104(node: ast.For) -> List[Tuple[int, int, str]]:
         return errors
     iterable = to_source(node.iter)
     errors.append(
-        (node.lineno, node.col_offset, SIM104.format(iterable=iterable))
+        (node.lineno, node.col_offset, RULE.format(iterable=iterable))
     )
     return errors
 
@@ -87,6 +83,8 @@ def get_sim110_sim111(node: ast.For) -> List[Tuple[int, int, str]]:
     ),
     Return(value=Constant(value=False, kind=None))
     """
+    SIM110 = "SIM110 Use 'return any({check} for {target} in {iterable})'"
+    SIM111 = "SIM111 Use 'return all({check} for {target} in {iterable})'"
     errors: List[Tuple[int, int, str]] = []
     if not (
         len(node.body) == 1
@@ -152,6 +150,7 @@ def get_sim113(node: ast.For) -> List[Tuple[int, int, str]]:
             type_comment=None,
         ),
     """
+    RULE = "SIM113 Use enumerate instead of '{variable}'"
     errors: List[Tuple[int, int, str]] = []
     variable_candidates = []
     if body_contains_continue(node.body):
@@ -169,7 +168,7 @@ def get_sim113(node: ast.For) -> List[Tuple[int, int, str]]:
             (
                 candidate.lineno,
                 candidate.col_offset,
-                SIM113.format(variable=to_source(candidate)),
+                RULE.format(variable=to_source(candidate)),
             )
         )
     return errors

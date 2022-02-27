@@ -6,8 +6,6 @@ from typing import List, Tuple
 from flake8_simplify.constants import STR_TYPES
 from flake8_simplify.utils import to_source
 
-SIM112 = "SIM112 Use '{expected}' instead of '{original}'"
-
 
 def get_sim112(node: ast.Expr) -> List[Tuple[int, int, str]]:
     """
@@ -28,6 +26,7 @@ def get_sim112(node: ast.Expr) -> List[Tuple[int, int, str]]:
             ),
         ),
     """
+    RULE = "SIM112 Use '{expected}' instead of '{original}'"
     errors: List[Tuple[int, int, str]] = []
 
     is_index_call = (
@@ -98,7 +97,7 @@ def get_sim112(node: ast.Expr) -> List[Tuple[int, int, str]]:
         (
             node.lineno,
             node.col_offset,
-            SIM112.format(original=original, expected=expected),
+            RULE.format(original=original, expected=expected),
         )
     )
     return errors

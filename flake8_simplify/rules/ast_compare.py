@@ -6,12 +6,6 @@ from typing import List, Tuple
 from flake8_simplify.constants import AST_CONST_TYPES
 from flake8_simplify.utils import to_source
 
-SIM118 = "SIM118 Use '{el} in {dict}' instead of '{el} in {dict}.keys()'"
-SIM300 = (
-    "SIM300 Use '{right} == {left}' instead of "
-    "'{left} == {right}' (Yoda-conditions)"
-)
-
 
 def get_sim118(node: ast.Compare) -> List[Tuple[int, int, str]]:
     """
@@ -32,6 +26,7 @@ def get_sim118(node: ast.Compare) -> List[Tuple[int, int, str]]:
             ],
         )
     """
+    RULE = "SIM118 Use '{el} in {dict}' instead of '{el} in {dict}.keys()'"
     errors: List[Tuple[int, int, str]] = []
     if not (
         len(node.ops) == 1
@@ -58,7 +53,7 @@ def get_sim118(node: ast.Compare) -> List[Tuple[int, int, str]]:
         (
             node.lineno,
             node.col_offset,
-            SIM118.format(el=key_str, dict=dict_str),
+            RULE.format(el=key_str, dict=dict_str),
         )
     )
     return errors
@@ -74,6 +69,11 @@ def get_sim300(node: ast.Compare) -> List[Tuple[int, int, str]]:
                 comparators=[Name(id='i_am', ctx=Load())],
             )
     """
+
+    RULE = (
+        "SIM300 Use '{right} == {left}' instead of "
+        "'{left} == {right}' (Yoda-conditions)"
+    )
     errors: List[Tuple[int, int, str]] = []
     if not (
         isinstance(node.left, AST_CONST_TYPES)
@@ -85,6 +85,6 @@ def get_sim300(node: ast.Compare) -> List[Tuple[int, int, str]]:
     left = to_source(node.left)
     right = to_source(node.comparators[0])
     errors.append(
-        (node.lineno, node.col_offset, SIM300.format(left=left, right=right))
+        (node.lineno, node.col_offset, RULE.format(left=left, right=right))
     )
     return errors

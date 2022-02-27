@@ -5,8 +5,6 @@ from typing import List, Tuple
 # First party
 from flake8_simplify.utils import expression_uses_variable, to_source
 
-SIM904 = "SIM904 Initialize dictionary '{dict_name}' directly"
-
 
 def get_sim904(node: ast.Assign) -> List[Tuple[int, int, str]]:
     """
@@ -41,6 +39,7 @@ def get_sim904(node: ast.Assign) -> List[Tuple[int, int, str]]:
             ),
         ]
     """
+    RULE = "SIM904 Initialize dictionary '{dict_name}' directly"
     errors: List[Tuple[int, int, str]] = []
     n2 = node.next_sibling  # type: ignore
     if not (
@@ -64,7 +63,7 @@ def get_sim904(node: ast.Assign) -> List[Tuple[int, int, str]]:
         (
             node.lineno,
             node.col_offset,
-            SIM904.format(dict_name=dict_name),
+            RULE.format(dict_name=dict_name),
         )
     )
     return errors

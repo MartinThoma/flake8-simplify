@@ -5,8 +5,6 @@ from typing import List, Tuple
 # First party
 from flake8_simplify.utils import to_source
 
-SIM117 = "SIM117 Use '{merged_with}' instead of multiple with statements"
-
 
 def get_sim117(node: ast.With) -> List[Tuple[int, int, str]]:
     """
@@ -50,6 +48,7 @@ def get_sim117(node: ast.With) -> List[Tuple[int, int, str]]:
             type_comment=None,
         ),
     """
+    SIM117 = "SIM117 Use '{merged_with}' instead of multiple with statements"
     errors: List[Tuple[int, int, str]] = []
     if not (len(node.body) == 1 and isinstance(node.body[0], ast.With)):
         return errors

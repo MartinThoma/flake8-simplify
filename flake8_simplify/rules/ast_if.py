@@ -6,27 +6,10 @@ from typing import Any, Dict, List, Optional, Tuple
 from flake8_simplify.constants import AST_CONST_TYPES, BOOL_CONST_TYPES
 from flake8_simplify.utils import get_if_body_pairs, is_body_same, to_source
 
-SIM102 = "SIM102 Use a single if-statement instead of nested if-statements"
-SIM103 = "SIM103 Return the condition {cond} directly"
-SIM106 = "SIM106 Handle error-cases first"
-SIM108 = (
-    "SIM108 Use ternary operator "
-    "'{assign} = {body} if {cond} else {orelse}' "
-    "instead of if-else-block"
-)
-SIM114 = "SIM114 Use logical or (({cond1}) or ({cond2})) and a single body"
-SIM116 = (
-    "SIM116 Use a dictionary lookup instead of 3+ if/elif-statements: "
-    "return {ret}"
-)
-SIM401 = (
-    "SIM401 Use '{value} = {dict}.get({key}, {default_value})' "
-    "instead of an if-block"
-)
-
 
 def get_sim102(node: ast.If) -> List[Tuple[int, int, str]]:
     """Get a list of all nested if-statements without else-blocks."""
+    SIM102 = "SIM102 Use a single if-statement instead of nested if-statements"
     errors: List[Tuple[int, int, str]] = []
 
     # ## Pattern 1
@@ -78,6 +61,7 @@ def get_sim103(node: ast.If) -> List[Tuple[int, int, str]]:
         ),
 
     """
+    SIM103 = "SIM103 Return the condition {cond} directly"
     errors: List[Tuple[int, int, str]] = []
     if (
         len(node.body) != 1
@@ -133,6 +117,7 @@ def get_sim106(node: ast.If) -> List[Tuple[int, int, str]]:
             ],
         )
     """
+    SIM106 = "SIM106 Handle error-cases first"
     errors: List[Tuple[int, int, str]] = []
     just_one = (
         len(node.orelse) == 1
@@ -186,6 +171,11 @@ def get_sim108(node: ast.If) -> List[Tuple[int, int, str]]:
             ],
         ),
     """
+    SIM108 = (
+        "SIM108 Use ternary operator "
+        "'{assign} = {body} if {cond} else {orelse}' "
+        "instead of if-else-block"
+    )
     errors: List[Tuple[int, int, str]] = []
     if not (
         len(node.body) == 1
@@ -238,6 +228,7 @@ def get_sim114(node: ast.If) -> List[Tuple[int, int, str]]:
             ],
         ),
     """
+    SIM114 = "SIM114 Use logical or (({cond1}) or ({cond2})) and a single body"
     errors: List[Tuple[int, int, str]] = []
     if_body_pairs = get_if_body_pairs(node)
     error_pairs = []
@@ -271,6 +262,10 @@ def get_sim116(node: ast.If) -> List[Tuple[int, int, str]]:
     * Each if-statement must just have a "return"
     * Else must also just have a return
     """
+    SIM116 = (
+        "SIM116 Use a dictionary lookup instead of 3+ if/elif-statements: "
+        "return {ret}"
+    )
     errors: List[Tuple[int, int, str]] = []
     if not (
         isinstance(node.test, ast.Compare)
@@ -426,6 +421,10 @@ def get_sim401(node: ast.If) -> List[Tuple[int, int, str]]:
         )
 
     """
+    SIM401 = (
+        "SIM401 Use '{value} = {dict}.get({key}, {default_value})' "
+        "instead of an if-block"
+    )
     errors: List[Tuple[int, int, str]] = []
     is_pattern_1 = (
         len(node.body) == 1

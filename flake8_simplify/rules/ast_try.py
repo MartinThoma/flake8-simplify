@@ -5,11 +5,8 @@ from typing import List, Tuple
 # First party
 from flake8_simplify.utils import to_source
 
-SIM105 = "SIM105 Use 'contextlib.suppress({exception})'"
-SIM107 = "SIM107 Don't use return in try/except and finally"
 
-
-def _get_sim105(node: ast.Try) -> List[Tuple[int, int, str]]:
+def get_sim105(node: ast.Try) -> List[Tuple[int, int, str]]:
     """
     Get a list of all "try-except-pass" patterns.
 
@@ -43,6 +40,7 @@ def _get_sim105(node: ast.Try) -> List[Tuple[int, int, str]]:
 
 
     """
+    SIM105 = "SIM105 Use 'contextlib.suppress({exception})'"
     errors: List[Tuple[int, int, str]] = []
     if (
         len(node.body) != 1
@@ -63,10 +61,11 @@ def _get_sim105(node: ast.Try) -> List[Tuple[int, int, str]]:
     return errors
 
 
-def _get_sim107(node: ast.Try) -> List[Tuple[int, int, str]]:
+def get_sim107(node: ast.Try) -> List[Tuple[int, int, str]]:
     """
     Get a list of all calls where try/except and finally have 'return'.
     """
+    SIM107 = "SIM107 Don't use return in try/except and finally"
     errors: List[Tuple[int, int, str]] = []
 
     try_has_return = False
