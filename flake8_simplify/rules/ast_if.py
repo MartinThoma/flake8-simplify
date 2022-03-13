@@ -9,7 +9,7 @@ from flake8_simplify.utils import get_if_body_pairs, is_body_same, to_source
 
 def get_sim102(node: ast.If) -> List[Tuple[int, int, str]]:
     """Get a list of all nested if-statements without else-blocks."""
-    SIM102 = "SIM102 Use a single if-statement instead of nested if-statements"
+    RULE = "SIM102 Use a single if-statement instead of nested if-statements"
     errors: List[Tuple[int, int, str]] = []
 
     # ## Pattern 1
@@ -31,7 +31,17 @@ def get_sim102(node: ast.If) -> List[Tuple[int, int, str]]:
 
     if not is_pattern_1:
         return errors
-    errors.append((node.lineno, node.col_offset, SIM102))
+    is_main_check = (
+        isinstance(node.test, ast.Compare)
+        and isinstance(node.test.left, ast.Name)
+        and node.test.left.id == "__name__"
+        and len(node.test.comparators) == 1
+        and isinstance(node.test.comparators[0], ast.Str)
+        and node.test.comparators[0].s == "__main__"
+    )
+    if is_main_check:
+        return errors
+    errors.append((node.lineno, node.col_offset, RULE))
     return errors
 
 

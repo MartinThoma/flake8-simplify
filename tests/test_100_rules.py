@@ -54,13 +54,20 @@ def test_sim102_not_active1():
     assert ret == set()
 
 
-def test_sim102_not_active2():
-    ret = _results(
+@pytest.mark.parametrize(
+    "s",
+    (
+        """if __name__ == "__main__":
+    if foo(): ...""",
         """if a:
     d
     if b:
-        c"""
-    )
+        c""",
+    ),
+    ids=("__main__", "intermediate-statement"),
+)
+def test_sim102_should_not_trigger(s):
+    ret = _results(s)
     assert ret == set()
 
 
