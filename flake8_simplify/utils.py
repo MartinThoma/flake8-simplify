@@ -21,6 +21,8 @@ class UnaryOp(ast.UnaryOp):
 
 
 class Call(ast.Call):
+    """For mypy so that it knows that added attributes exist."""
+
     def __init__(self, orig: ast.Call) -> None:
         self.func = orig.func
         self.args = orig.args
@@ -28,7 +30,26 @@ class Call(ast.Call):
         # For all ast.*:
         self.lineno = orig.lineno
         self.col_offset = orig.col_offset
+
+        # Added attributes
         self.parent: ast.Expr = orig.parent  # type: ignore
+
+
+class For(ast.For):
+    """For mypy so that it knows that added attributes exist."""
+
+    def __init__(self, orig: ast.For) -> None:
+        self.target = orig.target
+        self.iter = orig.iter
+        self.body = orig.body
+        self.orelse = orig.orelse
+        # For all ast.*:
+        self.lineno = orig.lineno
+        self.col_offset = orig.col_offset
+
+        # Added attributes
+        self.parent: ast.AST = orig.parent  # type: ignore
+        self.previous_sibling = orig.previous_sibling  # type: ignore
 
 
 def to_source(

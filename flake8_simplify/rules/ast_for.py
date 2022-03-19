@@ -5,6 +5,7 @@ from typing import List, Tuple
 # First party
 from flake8_simplify.constants import BOOL_CONST_TYPES
 from flake8_simplify.utils import (
+    For,
     body_contains_continue,
     is_constant_increase,
     to_source,
@@ -129,7 +130,7 @@ def get_sim110_sim111(node: ast.For) -> List[Tuple[int, int, str]]:
     return errors
 
 
-def get_sim113(node: ast.For) -> List[Tuple[int, int, str]]:
+def get_sim113(node: For) -> List[Tuple[int, int, str]]:
     """
     Find loops in which "enumerate" should be used.
 
@@ -182,13 +183,17 @@ def get_sim113(node: ast.For) -> List[Tuple[int, int, str]]:
     if len(matches) == 0:
         return errors
 
+    sibling = node.previous_sibling
+    while sibling is not None:
+        sibling = sibling.previous_sibling
+
     for match in matches:
         variable = to_source(match)
         errors.append(
             (
                 match.lineno,
                 match.col_offset,
-                f"SIM113 Use enumerate instead of '{variable}'",
+                f"SIM113 Use enumerate for '{variable}'",
             )
         )
     return errors
