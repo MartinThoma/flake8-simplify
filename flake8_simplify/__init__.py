@@ -42,10 +42,6 @@ from flake8_simplify.rules.ast_unary_op import (
     get_sim201,
     get_sim202,
     get_sim203,
-    get_sim204,
-    get_sim205,
-    get_sim206,
-    get_sim207,
     get_sim208,
 )
 from flake8_simplify.rules.ast_with import get_sim117
@@ -119,10 +115,6 @@ class Visitor(ast.NodeVisitor):
         self.errors += get_sim201(node)
         self.errors += get_sim202(node)
         self.errors += get_sim203(node)
-        self.errors += get_sim204(node)
-        self.errors += get_sim205(node)
-        self.errors += get_sim206(node)
-        self.errors += get_sim207(node)
         self.errors += get_sim208(node)
         self.generic_visit(node)
 
