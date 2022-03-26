@@ -288,7 +288,17 @@ idx = 0
 for el in iterable:
     idx += 1"""
     )
-    assert ret == {"2:0 SIM113 Use enumerate instead of 'idx'"}
+    assert ret == {"2:0 SIM113 Use enumerate for 'idx'"}
+
+
+def test_sim113_false_positive2():
+    ret = _results(
+        """nb_points = 0
+for line in lines:
+    for point in line:
+        nb_points += 1"""
+    )
+    assert ret == set()
 
 
 @pytest.mark.parametrize(

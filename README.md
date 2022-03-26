@@ -57,10 +57,10 @@ Simplifying Comparations:
 * `SIM201`: Use 'a != b' instead of 'not a == b' ([example](#SIM201))
 * `SIM202`: Use 'a == b' instead of 'not a != b' ([example](#SIM202))
 * `SIM203`: Use 'a not in b' instead of 'not (a in b)' ([example](#SIM203))
-* `SIM204`: Use 'a >= b' instead of 'not (a < b)' ([example](#SIM204))
-* `SIM205`: Use 'a > b' instead of 'not (a <= b)' ([example](#SIM205))
-* `SIM206`: Use 'a <= b' instead of 'not (a > b)' ([example](#SIM206))
-* `SIM207`: Use 'a < b' instead of 'not (a <= b)' ([example](#SIM207))
+* `SIM204`: Moved to [flake8-scream](https://github.com/MartinThoma/flake8-scream) due to [issue 116](https://github.com/MartinThoma/flake8-simplify/issues/116)
+* `SIM205`: Moved to [flake8-scream](https://github.com/MartinThoma/flake8-scream) due to [issue 116](https://github.com/MartinThoma/flake8-simplify/issues/116)
+* `SIM206`: Moved to [flake8-scream](https://github.com/MartinThoma/flake8-scream) due to [issue 116](https://github.com/MartinThoma/flake8-simplify/issues/116)
+* `SIM207`: Moved to [flake8-scream](https://github.com/MartinThoma/flake8-scream) due to [issue 116](https://github.com/MartinThoma/flake8-simplify/issues/116)
 * `SIM208`: Use 'a' instead of 'not (not a)' ([example](#SIM208))
 * `SIM210`: Use 'bool(a)' instead of 'True if a else False' ([example](#SIM210))
 * `SIM211`: Use 'not a' instead of 'False if a else True' ([example](#SIM211))
@@ -394,45 +394,6 @@ not a in b
 a not in b
 ```
 
-### SIM204
-
-```python
-# Bad
-not a < b
-
-# Good
-a >= b
-```
-
-### SIM205
-
-```python
-# Bad
-not a <= b
-
-# Good
-a > b
-```
-
-### SIM206
-
-```python
-# Bad
-not a > b
-
-# Good
-a <= b
-```
-
-### SIM207
-
-```python
-# Bad
-not a >= b
-
-# Good
-a < b
-```
 
 ### SIM208
 

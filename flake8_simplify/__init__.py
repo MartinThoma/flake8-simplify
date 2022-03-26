@@ -42,14 +42,10 @@ from flake8_simplify.rules.ast_unary_op import (
     get_sim201,
     get_sim202,
     get_sim203,
-    get_sim204,
-    get_sim205,
-    get_sim206,
-    get_sim207,
     get_sim208,
 )
 from flake8_simplify.rules.ast_with import get_sim117
-from flake8_simplify.utils import Call, UnaryOp
+from flake8_simplify.utils import Call, For, UnaryOp
 
 logger = logging.getLogger(__name__)
 
@@ -106,7 +102,7 @@ class Visitor(ast.NodeVisitor):
     def visit_For(self, node: ast.For) -> None:
         self.errors += get_sim104(node)
         self.errors += get_sim110_sim111(node)
-        self.errors += get_sim113(node)
+        self.errors += get_sim113(For(node))
         self.generic_visit(node)
 
     def visit_Try(self, node: ast.Try) -> None:
@@ -119,10 +115,6 @@ class Visitor(ast.NodeVisitor):
         self.errors += get_sim201(node)
         self.errors += get_sim202(node)
         self.errors += get_sim203(node)
-        self.errors += get_sim204(node)
-        self.errors += get_sim205(node)
-        self.errors += get_sim206(node)
-        self.errors += get_sim207(node)
         self.errors += get_sim208(node)
         self.generic_visit(node)
 
