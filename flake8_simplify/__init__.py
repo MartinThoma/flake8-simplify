@@ -5,7 +5,7 @@ import sys
 from typing import Any, Generator, List, Tuple, Type
 
 # First party
-from flake8_simplify.rules.ast_assign import get_sim904
+from flake8_simplify.rules.ast_assign import get_sim904, get_sim909
 from flake8_simplify.rules.ast_bool_op import (
     get_sim101,
     get_sim109,
@@ -68,6 +68,7 @@ class Visitor(ast.NodeVisitor):
 
     def visit_Assign(self, node: ast.Assign) -> Any:
         self.errors += get_sim904(node)
+        self.errors += get_sim909(node)
         self.generic_visit(node)
 
     def visit_Call(self, node: ast.Call) -> Any:

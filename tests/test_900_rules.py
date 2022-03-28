@@ -193,3 +193,47 @@ if "some_key" in some_dict:
         "2:0 SIM908 Use 'some_dict.get(\"some_key\")' instead of "
         '\'if "some_key" in some_dict: some_dict["some_key"]\''
     }
+
+
+@pytest.mark.parametrize(
+    ("s", "msg"),
+    (
+        # Credits to Ryan Delaney for the following two example
+        # https://github.com/MartinThoma/flake8-simplify/issues/114
+        (
+            "foo = foo",
+            "1:0 SIM909 Remove reflexive assignment 'foo = foo'",
+        ),
+        (
+            "foo = foo = 42",
+            "1:0 SIM909 Remove reflexive assignment 'foo = foo = 42'",
+        ),
+        (
+            "foo = bar = foo = 42",
+            "1:0 SIM909 Remove reflexive assignment 'foo = bar = foo = 42'",
+        ),
+        (
+            "n, m = n, m",
+            "1:0 SIM909 Remove reflexive assignment 'n, m = n, m'",
+        ),
+        (
+            "a['foo'] = a['foo']",
+            "1:0 SIM909 Remove reflexive assignment 'a['foo'] = a['foo']'",
+        ),
+    ),
+    ids=["simple", "double", "multiple", "tuple", "dict"],
+)
+def test_sim909(s, msg):
+    results = _results(s)
+    assert results == {msg}
+
+
+@pytest.mark.parametrize(
+    ("s"),
+    ("n, m = m, n", "foo = 'foo'"),
+    ids=["tuple-switch", "variable"],
+)
+def test_sim909_false_positives(s):
+    results = _results(s)
+    for result in results:
+        assert "SIM909" not in result

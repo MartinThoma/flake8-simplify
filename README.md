@@ -87,6 +87,7 @@ General Code Style:
 * [`SIM112`](https://github.com/MartinThoma/flake8-simplify/issues/19): Use CAPITAL environment variables ([example](#SIM112))
 * `SIM122`: Reserved for SIM902 once it's stable
 * `SIM123`: Reserved for SIM903 once it's stable
+* `SIM124`: Reserved for SIM909 once it's stable
 
 **Experimental rules:**
 
@@ -630,4 +631,27 @@ if "some_key" in some_dict:
 
 # Good
 name = some_dict.get("some_key", "some_default")
+```
+
+### SIM909
+
+Thank you Ryan Delaney for the idea!
+
+The trial period starts on 28th of March and will end on 28th of September 2022.
+
+```python
+# Bad
+foo = foo
+
+# Good: Nothing. Reflexive assignments have no purpose.
+```
+
+or
+
+```python
+# Bad
+foo = foo = 42
+
+# Good
+foo = 42
 ```
