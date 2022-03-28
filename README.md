@@ -46,7 +46,7 @@ Python-specific rules:
 * [`SIM115`](https://github.com/MartinThoma/flake8-simplify/issues/17): Use context handler for opening files ([example](#SIM115))
 * [`SIM116`](https://github.com/MartinThoma/flake8-simplify/issues/31): Use a dictionary instead of many if/else equality checks ([example](#SIM116))
 * [`SIM117`](https://github.com/MartinThoma/flake8-simplify/issues/35): Merge with-statements that use the same scope ([example](#SIM117))
-* [`SIM119`](https://github.com/MartinThoma/flake8-simplify/issues/37) ![](https://shields.io/badge/-legacyfix-inactive): Use dataclasses for data containers ([example](#SIM119))
+* `SIM119`: ![](https://img.shields.io/badge/-removed-lightgrey) Moved to [flake8-scream](https://github.com/MartinThoma/flake8-scream) due to [issue 63](https://github.com/MartinThoma/flake8-simplify/issues/63)
 * `SIM120` ![](https://shields.io/badge/-legacyfix-inactive): Use 'class FooBar:' instead of 'class FooBar(object):' ([example](#SIM120))
 * `SIM121`: Reserved for [SIM908](#sim908) once it's stable
 * `SIM124`: Reserved for [SIM904](#sim904) once it's stable
@@ -340,22 +340,6 @@ key in a_dict
 
 Thank you for pointing this one out, [Aaron Gokaslan](https://github.com/Skylion007)!
 
-### SIM119
-
-Dataclasses were introduced with [PEP 557](https://www.python.org/dev/peps/pep-0557/)
-in Python 3.7. The main reason not to use dataclasses is to support legacy Python versions.
-
-Dataclasses create a lot of the boilerplate code for you:
-
-* `__init__`
-* `__eq__`
-* `__hash__`
-* `__str__`
-* `__repr__`
-
-A lot of projects use them:
-
-* [black](https://github.com/psf/black/blob/master/src/black/__init__.py#L1472)
 
 ### SIM120
 
