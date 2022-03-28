@@ -291,6 +291,45 @@ def get_sim116(node: ast.If) -> List[Tuple[int, int, str]]:
     return errors
 
 
+def get_sim121(node: ast.If) -> List[Tuple[int, int, str]]:
+    """
+    Get all if-blocks which only check if a key is in a dictionary.
+    """
+    SIM121 = (
+        "SIM121 Use '{dictname}.get({key})' instead of "
+        "'if {key} in {dictname}: {dictname}[{key}]'"
+    )
+    errors: List[Tuple[int, int, str]] = []
+    if not (
+        isinstance(node.test, ast.Compare)
+        and len(node.test.ops) == 1
+        and isinstance(node.test.ops[0], ast.In)
+        and len(node.body) == 1
+        and len(node.orelse) == 0
+    ):
+        return errors
+    # We might still be left with a check if a value is in a list or in the body
+    # the developer might remove the element from the list
+    # We need to have a look at the body
+    if not (
+        isinstance(node.body[0], ast.Assign)
+        and isinstance(node.body[0].value, ast.Subscript)
+        and len(node.body[0].targets) == 1
+        and isinstance(node.body[0].targets[0], ast.Name)
+    ):
+        return errors
+    key = to_source(node.test.left)
+    dictname = to_source(node.test.comparators[0])
+    errors.append(
+        (
+            node.lineno,
+            node.col_offset,
+            SIM121.format(key=key, dictname=dictname),
+        )
+    )
+    return errors
+
+
 def get_sim401(node: ast.If) -> List[Tuple[int, int, str]]:
     """
     Get all calls that should use default values for dictionary access.
