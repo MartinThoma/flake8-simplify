@@ -181,3 +181,15 @@ def test_sim907():
     assert results == {
         "1:11 SIM907 Use 'Optional[int]' instead of 'Union[int, None]'"
     }
+
+
+def test_sim908():
+    results = _results(
+        """name = "some_default"
+if "some_key" in some_dict:
+    name = some_dict["some_key"]"""
+    )
+    assert results == {
+        "2:0 SIM908 Use 'some_dict.get(\"some_key\")' instead of "
+        '\'if "some_key" in some_dict: some_dict["some_key"]\''
+    }

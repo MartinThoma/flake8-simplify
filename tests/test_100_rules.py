@@ -568,15 +568,3 @@ def test_sim120():
     assert results == {
         "1:0 SIM120 Use 'class FooBar:' instead of 'class FooBar(object):'"
     }
-
-
-def test_sim121():
-    results = _results(
-        """name = "some_default"
-if "some_key" in some_dict:
-    name = some_dict["some_key"]"""
-    )
-    assert results == {
-        "2:0 SIM121 Use 'some_dict.get(\"some_key\")' instead of "
-        '\'if "some_key" in some_dict: some_dict["some_key"]\''
-    }

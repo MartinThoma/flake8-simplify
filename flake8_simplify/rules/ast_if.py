@@ -291,12 +291,12 @@ def get_sim116(node: ast.If) -> List[Tuple[int, int, str]]:
     return errors
 
 
-def get_sim121(node: ast.If) -> List[Tuple[int, int, str]]:
+def get_sim908(node: ast.If) -> List[Tuple[int, int, str]]:
     """
     Get all if-blocks which only check if a key is in a dictionary.
     """
-    SIM121 = (
-        "SIM121 Use '{dictname}.get({key})' instead of "
+    RULE = (
+        "SIM908 Use '{dictname}.get({key})' instead of "
         "'if {key} in {dictname}: {dictname}[{key}]'"
     )
     errors: List[Tuple[int, int, str]] = []
@@ -324,7 +324,7 @@ def get_sim121(node: ast.If) -> List[Tuple[int, int, str]]:
         (
             node.lineno,
             node.col_offset,
-            SIM121.format(key=key, dictname=dictname),
+            RULE.format(key=key, dictname=dictname),
         )
     )
     return errors

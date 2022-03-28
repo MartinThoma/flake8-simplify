@@ -48,7 +48,7 @@ Python-specific rules:
 * [`SIM117`](https://github.com/MartinThoma/flake8-simplify/issues/35): Merge with-statements that use the same scope ([example](#SIM117))
 * [`SIM119`](https://github.com/MartinThoma/flake8-simplify/issues/37) ![](https://shields.io/badge/-legacyfix-inactive): Use dataclasses for data containers ([example](#SIM119))
 * `SIM120` ![](https://shields.io/badge/-legacyfix-inactive): Use 'class FooBar:' instead of 'class FooBar(object):' ([example](#SIM120))
-* [`SIM121`](https://github.com/MartinThoma/flake8-simplify/issues/50): Use `.get(key)` instead of `if key in dict`: dict[key]` ([example](#SIM121))
+* `SIM121`: Reserved for [SIM908](#sim908) once it's stable
 * `SIM124`: Reserved for [SIM904](#sim904) once it's stable
 * `SIM125`: Reserved for [SIM905](#sim905) once it's stable
 * `SIM126`: Reserved for [SIM906](#sim906) once it's stable
@@ -371,17 +371,6 @@ class FooBar:
 
 Both notations are equivalent in Python 3, but the second one is shorter.
 
-### SIM121
-
-```python
-# Bad
-name = "some_default"
-if "some_key" in some_dict:
-    name = some_dict["some_key"]
-
-# Good
-name = some_dict.get("some_key", "some_default")
-```
 
 ### SIM201
 
@@ -613,6 +602,8 @@ os.path.join(a, b, c)
 This rule will be renamed to `SIM127` after its 6-month trial period is over.
 Please report any issues you encounter with this rule!
 
+The trial period starts on 28th of March and will end on 28th of September 2022.
+
 ```python
 # Bad
 def foo(a: Union[int, None]) -> Union[int, None]:
@@ -622,4 +613,21 @@ def foo(a: Union[int, None]) -> Union[int, None]:
 # Good
 def foo(a: Optional[int]) -> Optional[int]:
     return a
+```
+
+### SIM908
+
+This rule will be renamed to `SIM121` after its 6-month trial period is over.
+Please report any issues you encounter with this rule!
+
+The trial period starts on 28th of March and will end on 28th of September 2022.
+
+```python
+# Bad
+name = "some_default"
+if "some_key" in some_dict:
+    name = some_dict["some_key"]
+
+# Good
+name = some_dict.get("some_key", "some_default")
 ```
