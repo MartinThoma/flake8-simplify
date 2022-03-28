@@ -275,6 +275,11 @@ def get_sim116(node: ast.If) -> List[Tuple[int, int, str]]:
             and len(child.orelse) <= 1
         ):
             return errors
+        return_call = child.body[0]
+        assert isinstance(return_call, ast.Return), "hint for mypy"
+        if isinstance(return_call.value, ast.Call):
+            # See https://github.com/MartinThoma/flake8-simplify/issues/113
+            return errors
         key: Any
         if isinstance(child.test.comparators[0], ast.Str):
             key = child.test.comparators[0].s

@@ -430,6 +430,21 @@ else:
     }
 
 
+def test_sim116_false_positive():
+    ret = _results(
+        """if a == "foo":
+    return "bar"
+elif a == "bar":
+    return baz()
+elif a == "boo":
+    return "ooh"
+else:
+    return 42"""
+    )
+    for el in ret:
+        assert "SIM116" not in el
+
+
 def test_sim117():
     ret = _results(
         """with A() as a:
