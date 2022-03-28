@@ -1,6 +1,30 @@
 Release History
 ===============
 
+### 0.19.0
+Released on 28.03.2022
+
+New rules:
+
+* SIM902: Use keyword-argument instead of magic boolean
+* SIM903: Use keyword-argument instead of magic number
+* SIM907: Use Optional[Type] instead of Union[Type, None]
+* SIM908: Use ".get" instead of "if X in dict: dict[X]"
+* SIM909: Avoid reflexive assignments
+
+Removed rules due to false-positives:
+
+* SIM119: Hinting to dataclasses in a proper way is hard
+
+Fixed false-positives:
+
+* SIM108: Encourage the use of a terniary operator only when it is
+          actually possible
+* SIM111: Recommending to use all/any only if there is no side-effect after
+          the for-loop
+* SIM116: When a function is called, we cannot simply convert the
+          if-else block to a dictionary
+
 ### 0.18.2
 Released on 26.03.2022
 
