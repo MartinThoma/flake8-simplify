@@ -577,6 +577,6 @@ if "some_key" in some_dict:
     name = some_dict["some_key"]"""
     )
     assert results == {
-        "2:0 SIM121 Use 'some_dict.get(some_key)' istead of "
-        "'if some_key in some_dict: some_dict[some_key]'"
+        "2:0 SIM121 Use 'some_dict.get(\"some_key\")' instead of "
+        '\'if "some_key" in some_dict: some_dict["some_key"]\''
     }
