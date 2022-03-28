@@ -308,8 +308,8 @@ def get_sim121(node: ast.If) -> List[Tuple[int, int, str]]:
         and len(node.orelse) == 0
     ):
         return errors
-    # We might still be left with a check if a value is in a list or in the body
-    # the developer might remove the element from the list
+    # We might still be left with a check if a value is in a list or in
+    # the body the developer might remove the element from the list
     # We need to have a look at the body
     if not (
         isinstance(node.body[0], ast.Assign)
