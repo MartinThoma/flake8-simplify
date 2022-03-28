@@ -25,26 +25,6 @@ def test_sim203_base():
     assert ret == {("1:0 SIM203 Use 'a not in b' instead of 'not a in b'")}
 
 
-def test_sim204_base():
-    ret = _results("not a < b")
-    assert ret == {("1:0 SIM204 Use 'a >= b' instead of 'not (a < b)'")}
-
-
-def test_sim205_base():
-    ret = _results("not a <= b")
-    assert ret == {("1:0 SIM205 Use 'a > b' instead of 'not (a <= b)'")}
-
-
-def test_sim206_base():
-    ret = _results("not a > b")
-    assert ret == {("1:0 SIM206 Use 'a <= b' instead of 'not (a > b)'")}
-
-
-def test_sim207_base():
-    ret = _results("not a >= b")
-    assert ret == {("1:0 SIM207 Use 'a < b' instead of 'not (a >= b)'")}
-
-
 def test_sim208_base():
     ret = _results("not (not a)")
     assert ret == {("1:0 SIM208 Use 'a' instead of 'not (not a)'")}

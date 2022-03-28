@@ -1,6 +1,30 @@
 Release History
 ===============
 
+### 0.18.2
+Released on 26.03.2022
+
+Removed rules due to false-positives:
+
+* SIM204: Use 'a >= b' instead of 'not (a < b)'
+* SIM205: Use 'a > b' instead of 'not (a <= b)'
+* SIM206: Use 'a <= b' instead of 'not (a > b)'
+* SIM207: Use 'a < b' instead of 'not (a <= b)'
+
+Fixed false-positives:
+
+* SIM113: Use enumerate instead of manually incrementing a counter
+
+Maintenance:
+
+* Split a way-too-big module into smaller modules
+
+### 0.18.1
+Released on 24.02.2022
+
+Only distribute the `flake8_simplify` package. `0.18.0` did also distribute
+the `tests` package which caused issues in some systems.
+
 ### 0.18.0
 Released on 20.02.2022
 
