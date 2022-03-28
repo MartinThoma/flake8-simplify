@@ -85,3 +85,13 @@ def test_sim905():
 def test_sim906(s, msg):
     results = _results(s)
     assert results == {msg}
+
+
+def test_sim907():
+    results = _results(
+        """def foo(a: Union[int, None]) -> bool:
+  return a"""
+    )
+    assert results == {
+        "1:11 SIM907 Use 'Optional[int]' instead of 'Union[int, None]'"
+    }
