@@ -4,7 +4,12 @@ from typing import Any, Dict, List, Optional, Tuple
 
 # First party
 from flake8_simplify.constants import AST_CONST_TYPES, BOOL_CONST_TYPES
-from flake8_simplify.utils import get_if_body_pairs, is_body_same, to_source
+from flake8_simplify.utils import (
+    If,
+    get_if_body_pairs,
+    is_body_same,
+    to_source,
+)
 
 
 def get_sim102(node: ast.If) -> List[Tuple[int, int, str]]:
@@ -95,7 +100,7 @@ def get_sim103(node: ast.If) -> List[Tuple[int, int, str]]:
     return errors
 
 
-def get_sim108(node: ast.If) -> List[Tuple[int, int, str]]:
+def get_sim108(node: If) -> List[Tuple[int, int, str]]:
     """
     Get a list of all if-elses which could be a ternary operator assignment.
 
@@ -117,7 +122,7 @@ def get_sim108(node: ast.If) -> List[Tuple[int, int, str]]:
             ],
         ),
     """
-    SIM108 = (
+    RULE = (
         "SIM108 Use ternary operator "
         "'{assign} = {body} if {cond} else {orelse}' "
         "instead of if-else-block"
@@ -125,8 +130,8 @@ def get_sim108(node: ast.If) -> List[Tuple[int, int, str]]:
     errors: List[Tuple[int, int, str]] = []
     if not (
         len(node.body) == 1
-        and len(node.orelse) == 1
         and isinstance(node.body[0], ast.Assign)
+        and len(node.orelse) == 1
         and isinstance(node.orelse[0], ast.Assign)
         and len(node.body[0].targets) == 1
         and len(node.orelse[0].targets) == 1
@@ -135,13 +140,25 @@ def get_sim108(node: ast.If) -> List[Tuple[int, int, str]]:
         and node.body[0].targets[0].id == node.orelse[0].targets[0].id
     ):
         return errors
-    assign = to_source(node.body[0].targets[0])
+
+    target_var = node.body[0].targets[0]
+    assign = to_source(target_var)
+
+    # It's part of a bigger if-elseif block:
+    # https://github.com/MartinThoma/flake8-simplify/issues/115
+    if isinstance(node.parent, ast.If):
+        for n in node.parent.body:
+            if (
+                isinstance(n, ast.Assign)
+                and isinstance(n.targets[0], ast.Name)
+                and n.targets[0].id == target_var.id
+            ):
+                return errors
+
     body = to_source(node.body[0].value)
     cond = to_source(node.test)
     orelse = to_source(node.orelse[0].value)
-    new_code = SIM108.format(
-        assign=assign, body=body, cond=cond, orelse=orelse
-    )
+    new_code = RULE.format(assign=assign, body=body, cond=cond, orelse=orelse)
     if len(new_code) > 79:
         return errors
     errors.append((node.lineno, node.col_offset, new_code))
@@ -308,6 +325,7 @@ def get_sim908(node: ast.If) -> List[Tuple[int, int, str]]:
         and len(node.orelse) == 0
     ):
         return errors
+
     # We might still be left with a check if a value is in a list or in
     # the body the developer might remove the element from the list
     # We need to have a look at the body

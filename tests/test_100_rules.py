@@ -147,6 +147,19 @@ else:
     assert ret == {exp}
 
 
+def test_sim108_false_positive():
+    ret = _results(
+        """if E == 0:
+    M = 3
+elif E == 1:
+    M = 2
+else:
+    M = 0.5"""
+    )
+    for el in ret:
+        assert "SIM108" not in el
+
+
 def test_sim109():
     ret = _results("a == b or a == c")
     assert ret == {
