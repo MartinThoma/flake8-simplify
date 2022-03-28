@@ -97,7 +97,7 @@ def get_sim110_sim111(node: ast.For) -> List[Tuple[int, int, str]]:
         return errors
     if not hasattr(node.body[0].body[0].value, "value"):
         return errors
-    if isinstance(node.next_sibling, ast.Raise):  # type: ignore
+    if not isinstance(node.next_sibling, ast.Return):  # type: ignore
         return errors
     check = to_source(node.body[0].test)
     target = to_source(node.target)

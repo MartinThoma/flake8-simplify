@@ -498,3 +498,15 @@ def test_sim120():
     assert results == {
         "1:0 SIM120 Use 'class FooBar:' instead of 'class FooBar(object):'"
     }
+
+
+def test_sim111_false_positive():
+    results = _results(
+        """for a in my_list:
+  if a == 2:
+    return False
+call_method()
+return True"""
+    )
+    for el in results:
+        assert "SIM111" not in el
