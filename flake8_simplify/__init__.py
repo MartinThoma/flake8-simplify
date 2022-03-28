@@ -17,6 +17,8 @@ from flake8_simplify.rules.ast_bool_op import (
 from flake8_simplify.rules.ast_call import (
     get_sim115,
     get_sim901,
+    get_sim902,
+    get_sim903,
     get_sim905,
     get_sim906,
 )
@@ -70,6 +72,8 @@ class Visitor(ast.NodeVisitor):
     def visit_Call(self, node: ast.Call) -> Any:
         self.errors += get_sim115(Call(node))
         self.errors += get_sim901(node)
+        self.errors += get_sim902(Call(node))
+        self.errors += get_sim903(Call(node))
         self.errors += get_sim905(node)
         self.errors += get_sim906(node)
         self.generic_visit(node)

@@ -84,6 +84,8 @@ General Code Style:
 * [`SIM103`](https://github.com/MartinThoma/flake8-simplify/issues/3): Return the boolean condition directly ([example](#SIM103))
 * [`SIM106`](https://github.com/MartinThoma/flake8-simplify/issues/8): Handle error-cases first ([example](#SIM106)). This rule was removed due to too many false-positives.
 * [`SIM112`](https://github.com/MartinThoma/flake8-simplify/issues/19): Use CAPITAL environment variables ([example](#SIM112))
+* `SIM122`: Reserved for SIM902 once it's stable
+* `SIM123`: Reserved for SIM903 once it's stable
 
 **Experimental rules:**
 
@@ -96,6 +98,8 @@ the code will change to another number.
 Current experimental rules:
 
 * `SIM901`: Use comparisons directly instead of wrapping them in a `bool(...)` call ([example](#SIM901))
+* `SIM902`: Use keyword-argument instead of magic boolean ([example](#SIM902))
+* `SIM903`: Use keyword-argument instead of magic number ([example](#SIM903))
 * `SIM904`: Assign values to dictionary directly at initialization ([example](#SIM904))
 * [`SIM905`](https://github.com/MartinThoma/flake8-simplify/issues/86): Split string directly if only constants are used ([example](#SIM905))
 * [`SIM906`](https://github.com/MartinThoma/flake8-simplify/issues/101): Merge nested os.path.join calls ([example](#SIM906))
@@ -512,6 +516,35 @@ bool(a == b)
 
 # Good
 a == b
+```
+
+### SIM902
+
+This rule will be renamed to `SIM122` after its 6-month trial period is over.
+
+```python
+# Bad
+foo(False)
+bar(True)
+
+# Good
+foo(verbose=False)
+bar(enable_magic=True)
+```
+
+### SIM903
+
+This rule will be renamed to `SIM123` after its 6-month trial period is over.
+Please report any issues you encounter with this rule!
+
+The trial period starts on 12th of February and will end on 12th of September 2022.
+
+```python
+# Bad
+foo(42, 1.234)
+
+# Good
+foo(the_answer=42, flux_compensation=1.234)
 ```
 
 ### SIM904
