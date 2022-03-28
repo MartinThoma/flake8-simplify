@@ -69,7 +69,7 @@ class For(ast.For):
 
 
 def to_source(
-    node: Union[None, ast.expr, ast.Expr, ast.withitem, ast.slice]
+    node: Union[None, ast.expr, ast.Expr, ast.withitem, ast.slice, ast.Assign]
 ) -> str:
     if node is None:
         return "None"

@@ -67,3 +67,47 @@ def get_sim904(node: ast.Assign) -> List[Tuple[int, int, str]]:
         )
     )
     return errors
+
+
+def get_sim909(node: ast.Assign) -> List[Tuple[int, int, str]]:
+    """
+    Avoid reflexive assignments
+
+    Example
+    -------
+    Code:
+        # Bad
+        foo = foo
+
+        # Good: Just remove them
+    Bad AST:
+        [
+            Assign(
+                targets=[Name(id='foo', ctx=Store())],
+                value=Name(id='foo', ctx=Load()),
+                type_comment=None,
+            ),
+        ]
+    """
+    RULE = "SIM909 Remove reflexive assignment '{code}'"
+    errors: List[Tuple[int, int, str]] = []
+
+    names = []
+    if isinstance(node.value, (ast.Name, ast.Subscript, ast.Tuple)):
+        names.append(to_source(node.value))
+    for target in node.targets:
+        names.append(to_source(target))
+
+    if len(names) == len(set(names)):
+        return errors
+
+    code = to_source(node)
+
+    errors.append(
+        (
+            node.lineno,
+            node.col_offset,
+            RULE.format(code=code),
+        )
+    )
+    return errors
