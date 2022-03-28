@@ -35,6 +35,22 @@ class Call(ast.Call):
         self.parent: ast.Expr = orig.parent  # type: ignore
 
 
+class If(ast.If):
+    """For mypy so that it knows that added attributes exist."""
+
+    def __init__(self, orig: ast.If) -> None:
+        self.test = orig.test
+        self.body = orig.body
+        self.orelse = orig.orelse
+
+        # For all ast.*:
+        self.lineno = orig.lineno
+        self.col_offset = orig.col_offset
+
+        # Added attributes
+        self.parent: ast.Expr = orig.parent  # type: ignore
+
+
 class For(ast.For):
     """For mypy so that it knows that added attributes exist."""
 
