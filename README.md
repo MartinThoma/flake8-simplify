@@ -48,16 +48,19 @@ Python-specific rules:
 * [`SIM117`](https://github.com/MartinThoma/flake8-simplify/issues/35): Merge with-statements that use the same scope ([example](#SIM117))
 * [`SIM119`](https://github.com/MartinThoma/flake8-simplify/issues/37) ![](https://shields.io/badge/-legacyfix-inactive): Use dataclasses for data containers ([example](#SIM119))
 * `SIM120` ![](https://shields.io/badge/-legacyfix-inactive): Use 'class FooBar:' instead of 'class FooBar(object):' ([example](#SIM120))
+* `SIM124`: Reserved for [SIM904](#sim904) once it's stable
+* `SIM125`: Reserved for [SIM905](#sim905) once it's stable
+* `SIM126`: Reserved for [SIM906](#sim906) once it's stable
 
 Simplifying Comparations:
 
 * `SIM201`: Use 'a != b' instead of 'not a == b' ([example](#SIM201))
 * `SIM202`: Use 'a == b' instead of 'not a != b' ([example](#SIM202))
 * `SIM203`: Use 'a not in b' instead of 'not (a in b)' ([example](#SIM203))
-* `SIM204`: Use 'a >= b' instead of 'not (a < b)' ([example](#SIM204))
-* `SIM205`: Use 'a > b' instead of 'not (a <= b)' ([example](#SIM205))
-* `SIM206`: Use 'a <= b' instead of 'not (a > b)' ([example](#SIM206))
-* `SIM207`: Use 'a < b' instead of 'not (a <= b)' ([example](#SIM207))
+* `SIM204`: ![](https://img.shields.io/badge/-removed-lightgrey) Moved to [flake8-scream](https://github.com/MartinThoma/flake8-scream) due to [issue 116](https://github.com/MartinThoma/flake8-simplify/issues/116)
+* `SIM205`: ![](https://img.shields.io/badge/-removed-lightgrey) Moved to [flake8-scream](https://github.com/MartinThoma/flake8-scream) due to [issue 116](https://github.com/MartinThoma/flake8-simplify/issues/116)
+* `SIM206`: ![](https://img.shields.io/badge/-removed-lightgrey) Moved to [flake8-scream](https://github.com/MartinThoma/flake8-scream) due to [issue 116](https://github.com/MartinThoma/flake8-simplify/issues/116)
+* `SIM207`: ![](https://img.shields.io/badge/-removed-lightgrey) Moved to [flake8-scream](https://github.com/MartinThoma/flake8-scream) due to [issue 116](https://github.com/MartinThoma/flake8-simplify/issues/116)
 * `SIM208`: Use 'a' instead of 'not (not a)' ([example](#SIM208))
 * `SIM210`: Use 'bool(a)' instead of 'True if a else False' ([example](#SIM210))
 * `SIM211`: Use 'not a' instead of 'False if a else True' ([example](#SIM211))
@@ -66,7 +69,7 @@ Simplifying Comparations:
 * [`SIM221`](https://github.com/MartinThoma/flake8-simplify/issues/6): Use 'True' instead of 'a or not a' ([example](#SIM221))
 * [`SIM222`](https://github.com/MartinThoma/flake8-simplify/issues/6): Use 'True' instead of '... or True' ([example](#SIM222))
 * [`SIM223`](https://github.com/MartinThoma/flake8-simplify/issues/6): Use 'False' instead of '... and False' ([example](#SIM223))
-* [`SIM224`](https://github.com/MartinThoma/flake8-simplify/issues/88): Reserved for SIM901 once it's stable
+* [`SIM224`](https://github.com/MartinThoma/flake8-simplify/issues/88): Reserved for [SIM901](#sim901) once it's stable
 * [`SIM300`](https://github.com/MartinThoma/flake8-simplify/issues/16): Use 'age == 42' instead of '42 == age' ([example](#SIM300))
 
 Simplifying usage of dictionaries:
@@ -78,7 +81,7 @@ General Code Style:
 
 * `SIM102`: Use a single if-statement instead of nested if-statements ([example](#SIM102))
 * [`SIM103`](https://github.com/MartinThoma/flake8-simplify/issues/3): Return the boolean condition directly ([example](#SIM103))
-* [`SIM106`](https://github.com/MartinThoma/flake8-simplify/issues/8): Handle error-cases first ([example](#SIM106))
+* [`SIM106`](https://github.com/MartinThoma/flake8-simplify/issues/8): Handle error-cases first ([example](#SIM106)). This rule was removed due to too many false-positives.
 * [`SIM112`](https://github.com/MartinThoma/flake8-simplify/issues/19): Use CAPITAL environment variables ([example](#SIM112))
 * `SIM122`: Reserved for SIM902 once it's stable
 * `SIM123`: Reserved for SIM903 once it's stable
@@ -96,6 +99,9 @@ Current experimental rules:
 * `SIM901`: Use comparisons directly instead of wrapping them in a `bool(...)` call ([example](#SIM901))
 * `SIM902`: Use keyword-argument instead of magic boolean ([example](#SIM902))
 * `SIM903`: Use keyword-argument instead of magic number ([example](#SIM903))
+* `SIM904`: Assign values to dictionary directly at initialization ([example](#SIM904))
+* [`SIM905`](https://github.com/MartinThoma/flake8-simplify/issues/86): Split string directly if only constants are used ([example](#SIM905))
+* [`SIM906`](https://github.com/MartinThoma/flake8-simplify/issues/101): Merge nested os.path.join calls ([example](#SIM906))
 
 ## Disabling Rules
 
@@ -392,45 +398,6 @@ not a in b
 a not in b
 ```
 
-### SIM204
-
-```python
-# Bad
-not a < b
-
-# Good
-a >= b
-```
-
-### SIM205
-
-```python
-# Bad
-not a <= b
-
-# Good
-a > b
-```
-
-### SIM206
-
-```python
-# Bad
-not a > b
-
-# Good
-a <= b
-```
-
-### SIM207
-
-```python
-# Bad
-not a >= b
-
-# Good
-a < b
-```
 
 ### SIM208
 
@@ -553,9 +520,6 @@ a == b
 ### SIM902
 
 This rule will be renamed to `SIM122` after its 6-month trial period is over.
-Please report any issues you encounter with this rule!
-
-The trial period starts on 12th of February and will end on 12th of September 2022.
 
 ```python
 # Bad
@@ -580,4 +544,51 @@ foo(42, 1.234)
 
 # Good
 foo(the_answer=42, flux_compensation=1.234)
+```
+
+### SIM904
+
+This rule will be renamed to `SIM224` after its 6-month trial period is over.
+Please report any issues you encounter with this rule!
+
+The trial period starts on 12th of February and will end on 12th of September 2022.
+
+
+```python
+# Bad
+a = {}
+a["b"] = "c"
+
+# Good
+a = {"b": "c"}
+```
+
+### SIM905
+
+This rule will be renamed to `SIM225` after its 6-month trial period is over.
+Please report any issues you encounter with this rule!
+
+The trial period starts on 13th of February and will end on 13th of September 2022.
+
+```python
+# Bad
+domains = "de com net org".split()
+
+# Good
+domains = ["de", "com", "net", "org"]
+```
+
+### SIM906
+
+This rule will be renamed to `SIM126` after its 6-month trial period is over.
+Please report any issues you encounter with this rule!
+
+The trial period starts on 20th of February and will end on 20th of September 2022.
+
+```python
+# Bad
+os.path.join(a, os.path.join(b, c))
+
+# Good
+os.path.join(a, b, c)
 ```
