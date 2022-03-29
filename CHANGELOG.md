@@ -1,6 +1,14 @@
 Release History
 ===============
 
+### 0.19.2
+Released on 29.03.2022
+
+Removed rules due to false-positives:
+
+* SIM903: Positional-only parameters cannot be identified in the AST
+* SIM909: Class attribute assignments are not reflexive assignements
+
 ### 0.19.1
 Released on 29.03.2022
 
