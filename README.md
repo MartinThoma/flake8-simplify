@@ -85,7 +85,7 @@ General Code Style:
 * [`SIM103`](https://github.com/MartinThoma/flake8-simplify/issues/3): Return the boolean condition directly ([example](#SIM103))
 * [`SIM106`](https://github.com/MartinThoma/flake8-simplify/issues/8): Handle error-cases first ([example](#SIM106)). This rule was removed due to too many false-positives.
 * [`SIM112`](https://github.com/MartinThoma/flake8-simplify/issues/19): Use CAPITAL environment variables ([example](#SIM112))
-* `SIM122`: Reserved for SIM902 once it's stable
+* `SIM122` / SIM902: ![](https://img.shields.io/badge/-removed-lightgrey) Moved to [flake8-scream](https://github.com/MartinThoma/flake8-scream) due to [issue 125](https://github.com/MartinThoma/flake8-simplify/issues/125)
 * `SIM123`: Reserved for SIM903 once it's stable
 * `SIM124`: Reserved for SIM909 once it's stable
 
@@ -100,7 +100,6 @@ the code will change to another number.
 Current experimental rules:
 
 * `SIM901`: Use comparisons directly instead of wrapping them in a `bool(...)` call ([example](#SIM901))
-* `SIM902`: Use keyword-argument instead of magic boolean ([example](#SIM902))
 * `SIM903`: Use keyword-argument instead of magic number ([example](#SIM903))
 * `SIM904`: Assign values to dictionary directly at initialization ([example](#SIM904))
 * [`SIM905`](https://github.com/MartinThoma/flake8-simplify/issues/86): Split string directly if only constants are used ([example](#SIM905))
@@ -508,19 +507,7 @@ bool(a == b)
 a == b
 ```
 
-### SIM902
 
-This rule will be renamed to `SIM122` after its 6-month trial period is over.
-
-```python
-# Bad
-foo(False)
-bar(True)
-
-# Good
-foo(verbose=False)
-bar(enable_magic=True)
-```
 
 ### SIM903
 
