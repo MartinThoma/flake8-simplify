@@ -92,44 +92,6 @@ def get_sim901(node: ast.Call) -> List[Tuple[int, int, str]]:
     return errors
 
 
-def get_sim902(node: Call) -> List[Tuple[int, int, str]]:
-    """Find bare boolean function arguments."""
-    SIM902 = (
-        "SIM902 Use keyword-argument instead of magic boolean for '{func}'"
-    )
-    errors: List[Tuple[int, int, str]] = []
-
-    if isinstance(node.func, ast.Attribute):
-        call_name = node.func.attr
-    elif isinstance(node.func, ast.Name):
-        call_name = node.func.id
-    else:
-        logger.debug(f"Unknown call type: {type(node.func)}")
-        return errors
-
-    nb_args = len(node.args)
-
-    if call_name in ["partial", "min", "max"] or call_name.startswith("_"):
-        return errors
-
-    has_bare_bool = any(
-        isinstance(call_arg, (ast.Constant, ast.NameConstant))
-        and (call_arg.value is True or call_arg.value is False)
-        for call_arg in node.args
-    )
-
-    is_setter = call_name.lower().startswith("set") and nb_args <= 2
-    is_exception = isinstance(node.func, ast.Attribute) and node.func.attr in [
-        "get"
-    ]
-    if has_bare_bool and not (is_exception or is_setter):
-        source = to_source(node)
-        errors.append(
-            (node.lineno, node.col_offset, SIM902.format(func=source))
-        )
-    return errors
-
-
 def get_sim903(node: Call) -> List[Tuple[int, int, str]]:
     """Find bare numeric function arguments."""
     SIM903 = "SIM903 Use keyword-argument instead of magic number for '{func}'"
