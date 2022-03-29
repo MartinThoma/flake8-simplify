@@ -105,8 +105,8 @@ Current experimental rules:
 * `SIM904`: Assign values to dictionary directly at initialization ([example](#SIM904))
 * [`SIM905`](https://github.com/MartinThoma/flake8-simplify/issues/86): Split string directly if only constants are used ([example](#SIM905))
 * [`SIM906`](https://github.com/MartinThoma/flake8-simplify/issues/101): Merge nested os.path.join calls ([example](#SIM906))
-* [`SIM907`](https://github.com/MartinThoma/flake8-simplify/issues/64): Use Optional[Type] instead of Union[Type, None]
-* [`SIM908`](https://github.com/MartinThoma/flake8-simplify/issues/50): Use dict.get(key)
+* [`SIM907`](https://github.com/MartinThoma/flake8-simplify/issues/64): Use Optional[Type] instead of Union[Type, None] ([example](#SIM907))
+* [`SIM908`](https://github.com/MartinThoma/flake8-simplify/issues/50): Use dict.get(key) ([example](#SIM908))
 
 ## Disabling Rules
 
