@@ -68,6 +68,22 @@ class For(ast.For):
         self.previous_sibling = orig.previous_sibling  # type: ignore
 
 
+class Assign(ast.Assign):
+    """For mypy so that it knows that added attributes exist."""
+
+    def __init__(self, orig: ast.Assign) -> None:
+        self.targets = orig.targets
+        self.value = orig.value
+        # For all ast.*:
+        self.orig = orig
+        self.lineno = orig.lineno
+        self.col_offset = orig.col_offset
+
+        # Added attributes
+        self.parent: ast.AST = orig.parent  # type: ignore
+        self.previous_sibling = orig.previous_sibling  # type: ignore
+
+
 def to_source(
     node: Union[None, ast.expr, ast.Expr, ast.withitem, ast.slice, ast.Assign]
 ) -> str:

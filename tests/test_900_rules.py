@@ -163,8 +163,19 @@ def test_sim909(s, msg):
 
 @pytest.mark.parametrize(
     ("s"),
-    ("n, m = m, n", "foo = 'foo'"),
-    ids=["tuple-switch", "variable"],
+    (
+        "n, m = m, n",
+        "foo = 'foo'",
+        # Credits to Sondre Lillebø Gundersen for the following example
+        # https://github.com/MartinThoma/flake8-simplify/issues/129
+        """database = Database(url=url)
+metadata = sqlalchemy.MetaData()
+
+class BaseMeta:
+    metadata = metadata
+    database = database""",
+    ),
+    ids=["tuple-switch", "variable", "class-attributes"],
 )
 def test_sim909_false_positives(s):
     results = _results(s)

@@ -47,7 +47,7 @@ from flake8_simplify.rules.ast_unary_op import (
     get_sim208,
 )
 from flake8_simplify.rules.ast_with import get_sim117
-from flake8_simplify.utils import Call, For, If, UnaryOp
+from flake8_simplify.utils import Assign, Call, For, If, UnaryOp
 
 logger = logging.getLogger(__name__)
 
@@ -66,7 +66,7 @@ class Visitor(ast.NodeVisitor):
 
     def visit_Assign(self, node: ast.Assign) -> Any:
         self.errors += get_sim904(node)
-        self.errors += get_sim909(node)
+        self.errors += get_sim909(Assign(node))
         self.generic_visit(node)
 
     def visit_Call(self, node: ast.Call) -> Any:
