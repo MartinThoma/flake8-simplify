@@ -341,6 +341,12 @@ def get_sim908(node: ast.If) -> List[Tuple[int, int, str]]:
         and isinstance(node.body[0].targets[0], ast.Name)
     ):
         return errors
+
+    test_var = node.test.left
+    slice_var = node.body[0].value.slice
+    if to_source(slice_var) != to_source(test_var):
+        return errors
+
     key = to_source(node.test.left)
     dictname = to_source(node.test.comparators[0])
     errors.append(

@@ -155,6 +155,25 @@ if "some_key" in some_dict:
 
 
 @pytest.mark.parametrize(
+    "s",
+    (
+        # Credits to jonyscathe for this example:
+        # https://github.com/MartinThoma/flake8-simplify/issues/126
+        """if "." in resistance:
+    # Swap '.' with suffix
+    resistance = resistance.replace(".", resistance[-1])[:-1]""",
+        """if "." in iterable:
+    iterable = iterable[:-1]""",
+    ),
+    ids=("issue-125", "issue-125-simplified"),
+)
+def test_sim908_false_positive(s):
+    results = _results(s)
+    for el in results:
+        assert "SIM908" not in el
+
+
+@pytest.mark.parametrize(
     ("s", "msg"),
     (
         # Credits to Ryan Delaney for the following two example
