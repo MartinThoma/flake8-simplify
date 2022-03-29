@@ -49,7 +49,6 @@ Python-specific rules:
 * `SIM119`: ![](https://img.shields.io/badge/-removed-lightgrey) Moved to [flake8-scream](https://github.com/MartinThoma/flake8-scream) due to [issue 63](https://github.com/MartinThoma/flake8-simplify/issues/63)
 * `SIM120` ![](https://shields.io/badge/-legacyfix-inactive): Use 'class FooBar:' instead of 'class FooBar(object):' ([example](#SIM120))
 * `SIM121`: Reserved for [SIM908](#sim908) once it's stable
-* `SIM124`: Reserved for [SIM904](#sim904) once it's stable
 * `SIM125`: Reserved for [SIM905](#sim905) once it's stable
 * `SIM126`: Reserved for [SIM906](#sim906) once it's stable
 * `SIM127`: Reserved for [SIM907](#sim907) once it's stable
@@ -100,12 +99,12 @@ the code will change to another number.
 Current experimental rules:
 
 * `SIM901`: Use comparisons directly instead of wrapping them in a `bool(...)` call ([example](#SIM901))
-
 * `SIM904`: Assign values to dictionary directly at initialization ([example](#SIM904))
 * [`SIM905`](https://github.com/MartinThoma/flake8-simplify/issues/86): Split string directly if only constants are used ([example](#SIM905))
 * [`SIM906`](https://github.com/MartinThoma/flake8-simplify/issues/101): Merge nested os.path.join calls ([example](#SIM906))
 * [`SIM907`](https://github.com/MartinThoma/flake8-simplify/issues/64): Use Optional[Type] instead of Union[Type, None] ([example](#SIM907))
 * [`SIM908`](https://github.com/MartinThoma/flake8-simplify/issues/50): Use dict.get(key) ([example](#SIM908))
+* [`SIM909`](https://github.com/MartinThoma/flake8-simplify/issues/114): Avoid reflexive assignments ([example](#SIM909))
 
 ## Disabling Rules
 
@@ -593,6 +592,9 @@ name = some_dict.get("some_key", "some_default")
 ### SIM909
 
 Thank you Ryan Delaney for the idea!
+
+This rule will be renamed to `SIM124` after its 6-month trial period is over.
+Please report any issues you encounter with this rule!
 
 The trial period starts on 28th of March and will end on 28th of September 2022.
 

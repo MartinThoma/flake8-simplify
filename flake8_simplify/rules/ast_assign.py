@@ -3,7 +3,7 @@ import ast
 from typing import List, Tuple
 
 # First party
-from flake8_simplify.utils import expression_uses_variable, to_source
+from flake8_simplify.utils import Assign, expression_uses_variable, to_source
 
 
 def get_sim904(node: ast.Assign) -> List[Tuple[int, int, str]]:
@@ -69,7 +69,7 @@ def get_sim904(node: ast.Assign) -> List[Tuple[int, int, str]]:
     return errors
 
 
-def get_sim909(node: ast.Assign) -> List[Tuple[int, int, str]]:
+def get_sim909(node: Assign) -> List[Tuple[int, int, str]]:
     """
     Avoid reflexive assignments
 
@@ -101,7 +101,10 @@ def get_sim909(node: ast.Assign) -> List[Tuple[int, int, str]]:
     if len(names) == len(set(names)):
         return errors
 
-    code = to_source(node)
+    if isinstance(node.parent, ast.ClassDef):
+        return errors
+
+    code = to_source(node.orig)
 
     errors.append(
         (
