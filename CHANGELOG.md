@@ -1,6 +1,14 @@
 Release History
 ===============
 
+### 0.19.1
+Released on 29.03.2022
+
+Removed rules due to false-positives:
+
+* SIM902: Positional-only parameters cannot be identified in the AST
+* SIM908: Ensure that the assigned name is equal to the name in the if.test
+
 ### 0.19.0
 Released on 28.03.2022
 
