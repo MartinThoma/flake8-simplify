@@ -51,7 +51,7 @@ def get_sim104(node: ast.For) -> List[Tuple[int, int, str]]:
 
     parent = getattr(node, "parent", None)
     while (parent
-           and getattr(parent, "parent", None)
+           and hasattr(parent, "parent")
            and parent.parent is not parent
            and not isinstance(parent, ast.AsyncFunctionDef)):
         parent = getattr(parent, "parent", None)
