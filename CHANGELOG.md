@@ -1,6 +1,12 @@
 Release History
 ===============
 
+### 0.19.3
+Released on 28.07.2022
+
+* SIM104: Remove false-positives in case the loop is not a direct child of
+          an async function (#147) by @wyuenho
+
 ### 0.19.2
 Released on 29.03.2022
 
