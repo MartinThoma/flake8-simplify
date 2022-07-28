@@ -99,6 +99,17 @@ def test_s104_async_generator_false_positive():
         assert "SIM104" not in el
 
 
+def test_s104_async_generator_false_positive_2():
+    ret = _results(
+        """async def items():
+    with open('/etc/passwd') as f:
+        for line in f:
+            yield line"""
+    )
+    for el in ret:
+        assert "SIM104" not in el
+
+
 def test_sim105():
     ret = _results(
         """try:
