@@ -53,7 +53,7 @@ Python-specific rules:
 * `SIM126`: Reserved for [SIM906](#sim906) once it's stable
 * `SIM127`: Reserved for [SIM907](#sim907) once it's stable
 
-Simplifying Comparations:
+Simplifying Comparisons:
 
 * `SIM201`: Use 'a != b' instead of 'not a == b' ([example](#SIM201))
 * `SIM202`: Use 'a == b' instead of 'not a != b' ([example](#SIM202))
