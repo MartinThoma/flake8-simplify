@@ -149,7 +149,7 @@ def get_sim113(node: For) -> List[Tuple[int, int, str]]:
                 Expr(
                     value=Constant(value=Ellipsis, kind=None),
                 ),
-                AugAssign( -- agument and assign, aka "+= 1"
+                AugAssign( -- argument and assign, aka "+= 1"
                     target=Name(id='idx', ctx=Store()),
                     op=Add(),
                     value=Constant(value=1, kind=None),
