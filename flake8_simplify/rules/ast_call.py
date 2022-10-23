@@ -164,7 +164,7 @@ def get_sim906(node: ast.Call) -> List[Tuple[int, int, str]]:
                 names.append(f"'{arg.s}'")
             else:
                 logger.debug(
-                    f"Unexpexted os.path.join arg: {arg} -- {to_source(arg)}"
+                    f"Unexpected os.path.join arg: {arg} -- {to_source(arg)}"
                 )
         return names
 

@@ -28,7 +28,7 @@ def get_sim102(node: ast.If) -> List[Tuple[int, int, str]]:
         and node.body[0].orelse == []
     )
     # ## Pattern 2
-    # if a: < irrelvant for here
+    # if a: < irrelevant for here
     #     pass
     # elif b:  <--- this is treated like a nested block
     #     if c: <---
