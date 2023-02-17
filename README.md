@@ -65,7 +65,7 @@ Simplifying Comparisons:
 * `SIM208`: Use 'a' instead of 'not (not a)' ([example](#SIM208))
 * `SIM210`: Use 'bool(a)' instead of 'True if a else False' ([example](#SIM210))
 * `SIM211`: Use 'not a' instead of 'False if a else True' ([example](#SIM211))
-* [`SIM212`](https://github.com/MartinThoma/flake8-simplify/issues/6): Use 'a if a else b' instead of 'b if not a else a' ([example](#SIM212))
+* [`SIM212`](https://github.com/MartinThoma/flake8-simplify/issues/6): Use 'a or b' instead of 'b if not a else a' ([example](#SIM212))
 * [`SIM220`](https://github.com/MartinThoma/flake8-simplify/issues/6): Use 'False' instead of 'a and not a' ([example](#SIM220))
 * [`SIM221`](https://github.com/MartinThoma/flake8-simplify/issues/6): Use 'True' instead of 'a or not a' ([example](#SIM221))
 * [`SIM222`](https://github.com/MartinThoma/flake8-simplify/issues/6): Use 'True' instead of '... or True' ([example](#SIM222))
@@ -425,7 +425,7 @@ not a
 b if not a else a
 
 # Good
-a if a else b
+a or b
 ```
 
 ### SIM220

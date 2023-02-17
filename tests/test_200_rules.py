@@ -47,7 +47,7 @@ def test_sim211_base():
 def test_sim212_base():
     ret = _results("b if not a else a")
     assert ret == {
-        ("1:0 SIM212 Use 'a if a else b' instead of 'b if not a else a'")
+        ("1:0 SIM212 Use 'a or b' instead of 'b if not a else a'")
     }
 
 

@@ -52,9 +52,7 @@ def get_sim212(node: ast.IfExp) -> List[Tuple[int, int, str]]:
         orelse=Name(id='a', ctx=Load()),
     )
     """
-    SIM212 = (
-        "SIM212 Use '{a} if {a} else {b}' instead of '{b} if not {a} else {a}'"
-    )
+    SIM212 = "SIM212 Use '{a} or {b}' instead of '{b} if not {a} else {a}'"
     errors: List[Tuple[int, int, str]] = []
     if not (
         isinstance(node.test, ast.UnaryOp)
