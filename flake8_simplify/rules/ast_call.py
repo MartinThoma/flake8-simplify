@@ -5,6 +5,7 @@ import logging
 from typing import List, Tuple
 
 # First party
+from flake8_simplify.constants import BOOL_CONST_TYPES
 from flake8_simplify.utils import Call, to_source
 
 logger = logging.getLogger(__name__)
@@ -215,7 +216,7 @@ def get_sim910(node: Call) -> List[Tuple[int, int, str]]:
     # check the argument value
     if not (
         len(node.args) == 2
-        and isinstance(node.args[1], ast.Constant)
+        and isinstance(node.args[1], BOOL_CONST_TYPES)
         and node.args[1].value is None
     ):
         return errors
