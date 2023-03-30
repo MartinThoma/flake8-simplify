@@ -1,0 +1,5 @@
+[flake8]
+ignore = E203, W503, PT007
+exclude = build/*
+per-file-ignores =
+    tests/*: ASS001
