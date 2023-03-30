@@ -9,10 +9,9 @@ lint:
 
 upload:
 	make clean
-	python setup.py sdist bdist_wheel && twine upload dist/*
+	flit publish
 
 clean:
-	python setup.py clean --all
 	pyclean .
 	rm -rf *.pyc build dist tests/reports docs/build .pytest_cache .tox .coverage html/
 

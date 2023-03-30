@@ -1,8 +1,8 @@
+flit
 junit2html
 pip-tools
 pre-commit
 pytest
 pytest-cov
 pytest-timeout
-twine
 wheel
