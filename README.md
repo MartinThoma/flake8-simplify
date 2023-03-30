@@ -105,6 +105,7 @@ Current experimental rules:
 * [`SIM907`](https://github.com/MartinThoma/flake8-simplify/issues/64): Use Optional[Type] instead of Union[Type, None] ([example](#SIM907))
 * [`SIM908`](https://github.com/MartinThoma/flake8-simplify/issues/50): Use dict.get(key) ([example](#SIM908))
 * [`SIM909`](https://github.com/MartinThoma/flake8-simplify/issues/114): Avoid reflexive assignments ([example](#SIM909))
+* [`SIM910`](https://github.com/MartinThoma/flake8-simplify/issues/171): Avoid to use `dict.get(key, None)` ([example](#SIM910))
 
 ## Disabling Rules
 
@@ -613,4 +614,14 @@ foo = foo = 42
 
 # Good
 foo = 42
+```
+
+### SIM910
+
+```python
+# Bad
+dict.get(key, None)
+
+# Good
+dict.get(key)
 ```

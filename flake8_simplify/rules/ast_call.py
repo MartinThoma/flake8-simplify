@@ -5,6 +5,7 @@ import logging
 from typing import List, Tuple
 
 # First party
+from flake8_simplify.constants import BOOL_CONST_TYPES
 from flake8_simplify.utils import Call, to_source
 
 logger = logging.getLogger(__name__)
@@ -172,6 +173,58 @@ def get_sim906(node: ast.Call) -> List[Tuple[int, int, str]]:
 
     actual = to_source(node)
     expected = f"os.path.join({', '.join(names)})"
+    errors.append(
+        (
+            node.lineno,
+            node.col_offset,
+            RULE.format(actual=actual, expected=expected),
+        )
+    )
+    return errors
+
+
+def get_sim910(node: Call) -> List[Tuple[int, int, str]]:
+    """
+    Get a list of all usages of "dict.get(key, None)"
+
+    Example AST
+    -----------
+        Expr(
+            value=Call(
+                func=Attribute(
+                    value=Name(id='a_dict', ctx=Load()),
+                    attr='get',
+                    ctx=Load()
+                ),
+                args=[
+                    Name(id='key', ctx=Load()),
+                    Constant(value=None)
+                ],
+                keywords=[]
+            ),
+        ),
+    """
+    RULE = "SIM910 Use '{expected}' instead of '{actual}'"
+    errors: List[Tuple[int, int, str]] = []
+    if not (
+        isinstance(node.func, ast.Attribute)
+        and node.func.attr == "get"
+        and isinstance(node.func.ctx, ast.Load)
+    ):
+        return errors
+
+    # check the argument value
+    if not (
+        len(node.args) == 2
+        and isinstance(node.args[1], BOOL_CONST_TYPES)
+        and node.args[1].value is None
+    ):
+        return errors
+
+    actual = to_source(node)
+    func = to_source(node.func)
+    key = to_source(node.args[0])
+    expected = f"{func}({key})"
     errors.append(
         (
             node.lineno,

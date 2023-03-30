@@ -181,3 +181,26 @@ def test_sim909_false_positives(s):
     results = _results(s)
     for result in results:
         assert "SIM909" not in result
+
+
+@pytest.mark.parametrize(
+    ("s", "msg"),
+    (
+        (
+            "d.get(key, None)",
+            "1:0 SIM910 Use 'd.get(key)' instead of 'd.get(key, None)'",
+        ),
+        (
+            "d.get('key', None)",
+            "1:0 SIM910 Use 'd.get(\"key\")' instead of 'd.get('key', None)'",
+        ),
+        (
+            "d.get(key)",
+            None,
+        ),
+    ),
+)
+def test_sim910(s, msg):
+    expected = {msg} if msg is not None else set()
+    results = _results(s)
+    assert results == expected
