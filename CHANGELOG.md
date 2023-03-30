@@ -1,6 +1,13 @@
 Release History
 ===============
 
+### 0.20.0
+Release on 30.03.2023
+
+New rules:
+
+* SIM910: dict.get(key, None) → dict.get(key)
+
 ### 0.19.3
 Released on 28.07.2022
 
