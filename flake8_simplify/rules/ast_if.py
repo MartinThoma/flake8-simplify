@@ -441,13 +441,17 @@ def get_sim401(node: ast.If) -> List[Tuple[int, int, str]]:
     )
     errors: List[Tuple[int, int, str]] = []
     is_pattern_1 = (
+        # if-block
         len(node.body) == 1
         and isinstance(node.body[0], ast.Assign)
         and len(node.body[0].targets) == 1
         and isinstance(node.body[0].value, ast.Subscript)
+        # else-block
         and len(node.orelse) == 1
         and isinstance(node.orelse[0], ast.Assign)
         and len(node.orelse[0].targets) == 1
+        and isinstance(node.orelse[0].value, (ast.Name, ast.Constant))
+        # if condition
         and isinstance(node.test, ast.Compare)
         and len(node.test.ops) == 1
         and isinstance(node.test.ops[0], ast.In)
@@ -456,11 +460,17 @@ def get_sim401(node: ast.If) -> List[Tuple[int, int, str]]:
 
     # just like pattern_1, but using NotIn and reversing if/else
     is_pattern_2 = (
+        # if-block
         len(node.body) == 1
         and isinstance(node.body[0], ast.Assign)
+        and len(node.body[0].targets) == 1
+        and isinstance(node.body[0].value, (ast.Name, ast.Constant))
+        # else-block
         and len(node.orelse) == 1
         and isinstance(node.orelse[0], ast.Assign)
+        and len(node.orelse[0].targets) == 1
         and isinstance(node.orelse[0].value, ast.Subscript)
+        # if condition
         and isinstance(node.test, ast.Compare)
         and len(node.test.ops) == 1
         and isinstance(node.test.ops[0], ast.NotIn)
