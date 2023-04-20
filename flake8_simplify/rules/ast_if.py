@@ -441,28 +441,40 @@ def get_sim401(node: ast.If) -> List[Tuple[int, int, str]]:
     )
     errors: List[Tuple[int, int, str]] = []
     is_pattern_1 = (
+        # if-block
         len(node.body) == 1
         and isinstance(node.body[0], ast.Assign)
         and len(node.body[0].targets) == 1
         and isinstance(node.body[0].value, ast.Subscript)
+        # else-block
         and len(node.orelse) == 1
         and isinstance(node.orelse[0], ast.Assign)
         and len(node.orelse[0].targets) == 1
+        and isinstance(node.orelse[0].value, (ast.Name, ast.Constant))
+        # if condition
         and isinstance(node.test, ast.Compare)
         and len(node.test.ops) == 1
         and isinstance(node.test.ops[0], ast.In)
+        and len(node.test.comparators) == 1
     )
 
     # just like pattern_1, but using NotIn and reversing if/else
     is_pattern_2 = (
+        # if-block
         len(node.body) == 1
         and isinstance(node.body[0], ast.Assign)
+        and len(node.body[0].targets) == 1
+        and isinstance(node.body[0].value, (ast.Name, ast.Constant))
+        # else-block
         and len(node.orelse) == 1
         and isinstance(node.orelse[0], ast.Assign)
+        and len(node.orelse[0].targets) == 1
         and isinstance(node.orelse[0].value, ast.Subscript)
+        # if condition
         and isinstance(node.test, ast.Compare)
         and len(node.test.ops) == 1
         and isinstance(node.test.ops[0], ast.NotIn)
+        and len(node.test.comparators) == 1
     )
     if is_pattern_1:
         assert isinstance(node.test, ast.Compare)
@@ -471,7 +483,10 @@ def get_sim401(node: ast.If) -> List[Tuple[int, int, str]]:
         assert isinstance(node.orelse[0], ast.Assign)
         key = node.test.left
         if to_source(key) != to_source(node.body[0].value.slice):
-            return errors  # second part of pattern 1
+            return errors  # key in condition diff from key in subscript
+        container = node.test.comparators[0]
+        if to_source(container) != to_source(node.body[0].value.value):
+            return errors  # two different containers
         assign_to_if_body = node.body[0].targets[0]
         assign_to_else = node.orelse[0].targets[0]
         if to_source(assign_to_if_body) != to_source(assign_to_else):
@@ -490,7 +505,10 @@ def get_sim401(node: ast.If) -> List[Tuple[int, int, str]]:
         assert isinstance(node.orelse[0].value, ast.Subscript)
         key = node.test.left
         if to_source(key) != to_source(node.orelse[0].value.slice):
-            return errors  # second part of pattern 1
+            return errors  # key in condition diff from key in subscript
+        container = node.test.comparators[0]
+        if to_source(container) != to_source(node.orelse[0].value.value):
+            return errors  # two different containers
         dict_name = node.test.comparators[0]
         default_value = node.body[0].value
         value_node = node.body[0].targets[0]

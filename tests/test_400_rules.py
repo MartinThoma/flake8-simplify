@@ -57,9 +57,9 @@ else:
 
 def test_sim401_positive_msg_issue84_example1():
     """
-    This is a regression test for the SIM401 message.
-
-    The original issue #84 was reported by jonyscathe. Thank you 🤗
+    Issue #84 was reported by jonyscathe. Thank you 🤗
+    But the fallback code can raise a KeyError, if the keys are mutually
+    exclusive, so no warning can be issued.
     """
     ret = _results(
         """if "last_name" in test_dict:
@@ -67,17 +67,9 @@ def test_sim401_positive_msg_issue84_example1():
 else:
     name = test_dict["first_name"]"""
     )
-    has_sim401 = False
-    expected_proposal = (
-        'Use \'name = test_dict.get("last_name", '
-        "test_dict['first_name'])' instead of an if-block"
-    )
-    for el in ret:
-        if "SIM401" in el:
-            msg = el.split("SIM401")[1].strip()
-            has_sim401 = True
-            assert msg == expected_proposal
-    assert has_sim401
+
+    has_sim401 = [el for el in ret if "SIM401" in el]
+    assert not has_sim401, has_sim401
 
 
 def test_sim401_positive_msg_issue84_example2():
@@ -129,3 +121,120 @@ else:
             has_sim401 = True
             assert msg == expected_proposal
     assert has_sim401
+
+
+def test_sim401_mismatch_container_positive():
+    """
+    Issue 177
+    """
+    ret = _results(
+        """if key in container_1:
+    retval = other[key]
+else:
+    retval  = 1"""
+    )
+    has_sim401 = [el for el in ret if "SIM401" in el]
+    assert not has_sim401, has_sim401
+
+
+def test_sim401_mismatch_container_negative():
+    """
+    Issue 177
+    """
+    ret = _results(
+        """if key not in container_1:
+    retval  = 1
+else:
+    retval = other[key]"""
+    )
+    has_sim401 = [el for el in ret if "SIM401" in el]
+    assert not has_sim401, has_sim401
+
+
+def test_sim401_mismatch_varkey_positive():
+    """
+    Issue 177
+    """
+    ret = _results(
+        """if key in container:
+    retval = container[other_key]
+else:
+    retval  = 1"""
+    )
+    has_sim401 = [el for el in ret if "SIM401" in el]
+    assert not has_sim401, has_sim401
+
+
+def test_sim401_mismatch_varkey_negative():
+    """
+    Issue 177
+    """
+    ret = _results(
+        """if key not in container:
+    retval  = 1
+else:
+    retval = container[other_key]"""
+    )
+    has_sim401 = [el for el in ret if "SIM401" in el]
+    assert not has_sim401, has_sim401
+
+
+def test_sim401_mismatch_constkey_positive():
+    """
+    Issue 177
+    """
+    ret = _results(
+        """if 1 in container:
+    retval = container[2]
+else:
+    retval  = 1"""
+    )
+    has_sim401 = [el for el in ret if "SIM401" in el]
+    assert not has_sim401, has_sim401
+
+
+def test_sim401_mismatch_constkey_negative():
+    """
+    Issue 177
+    """
+    ret = _results(
+        """if 1 not in container:
+    retval  = 1
+else:
+    retval = container[2]"""
+    )
+    has_sim401 = [el for el in ret if "SIM401" in el]
+    assert not has_sim401, has_sim401
+
+
+def test_sim401_ignore_complex_fallback_1():
+    ret = _results(
+        """if 1 in container:
+    retval = container[1]
+else:
+    retval = container["key_probably_not_found"]"""
+    )
+    has_sim401 = [el for el in ret if "SIM401" in el]
+    assert not has_sim401, has_sim401
+
+
+def test_sim401_ignore_complex_fallback_2():
+    ret = _results(
+        """if 1 in container:
+    retval = container[1]
+else:
+    retval = obj.getter"""
+    )
+    has_sim401 = [el for el in ret if "SIM401" in el]
+    assert not has_sim401, has_sim401
+
+
+def test_sim401_ignore_complex_fallback_3():
+    ret = _results(
+        """if 1 in container:
+    retval = container[1]
+else:
+    retval = fn_call()"""
+    )
+    has_sim401 = [el for el in ret if "SIM401" in el]
+    assert not has_sim401, has_sim401
