@@ -129,3 +129,87 @@ else:
             has_sim401 = True
             assert msg == expected_proposal
     assert has_sim401
+
+
+def test_sim401_mismatch_container_positive():
+    """
+    Issue 177
+    """
+    ret = _results(
+        """if key in container_1:
+    retval = other[key]
+else:
+    retval  = 1"""
+    )
+    has_sim401 = [el for el in ret if "SIM401" in el]
+    assert not has_sim401, has_sim401
+
+
+def test_sim401_mismatch_container_negative():
+    """
+    Issue 177
+    """
+    ret = _results(
+        """if key not in container_1:
+    retval  = 1
+else:
+    retval = other[key]"""
+    )
+    has_sim401 = [el for el in ret if "SIM401" in el]
+    assert not has_sim401, has_sim401
+
+
+def test_sim401_mismatch_varkey_positive():
+    """
+    Issue 177
+    """
+    ret = _results(
+        """if key in container:
+    retval = container[other_key]
+else:
+    retval  = 1"""
+    )
+    has_sim401 = [el for el in ret if "SIM401" in el]
+    assert not has_sim401, has_sim401
+
+
+def test_sim401_mismatch_varkey_negative():
+    """
+    Issue 177
+    """
+    ret = _results(
+        """if key not in container:
+    retval  = 1
+else:
+    retval = container[other_key]"""
+    )
+    has_sim401 = [el for el in ret if "SIM401" in el]
+    assert not has_sim401, has_sim401
+
+
+def test_sim401_mismatch_constkey_positive():
+    """
+    Issue 177
+    """
+    ret = _results(
+        """if 1 in container:
+    retval = container[2]
+else:
+    retval  = 1"""
+    )
+    has_sim401 = [el for el in ret if "SIM401" in el]
+    assert not has_sim401, has_sim401
+
+
+def test_sim401_mismatch_constkey_negative():
+    """
+    Issue 177
+    """
+    ret = _results(
+        """if 1 not in container:
+    retval  = 1
+else:
+    retval = container[2]"""
+    )
+    has_sim401 = [el for el in ret if "SIM401" in el]
+    assert not has_sim401, has_sim401
