@@ -1,6 +1,3 @@
-# Core Library
-from typing import Optional, Set
-
 # Third party
 import pytest
 
