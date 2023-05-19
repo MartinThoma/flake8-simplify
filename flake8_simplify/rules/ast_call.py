@@ -233,3 +233,67 @@ def get_sim910(node: Call) -> List[Tuple[int, int, str]]:
         )
     )
     return errors
+
+
+def get_sim911(node: ast.AST) -> List[Tuple[int, int, str]]:
+    """
+    Find nodes representing the expression "zip(_.keys(), _.values())".
+
+    Returns a list of tuples containing the line number and column offset
+    of each identified node.
+
+    Expr(
+        value=Call(
+            func=Name(id='zip', ctx=Load()),
+            args=[
+                Call(
+                    func=Attribute(
+                        value=Name(id='_', ctx=Load()),
+                        attr='keys',
+                        ctx=Load()),
+                    args=[],
+                    keywords=[]),
+                Call(
+                    func=Attribute(
+                        value=Name(id='_', ctx=Load()),
+                        attr='values',
+                        ctx=Load()),
+                    args=[],
+                    keywords=[])],
+            keywords=[
+                keyword(
+                    arg='strict',
+                    value=Constant(value=False))
+                ]
+            )
+        )
+    """
+    RULE = "SIM911 Use '{name}.items()' instead of 'zip({name}.keys(),{name}.values())'"
+    errors: List[Tuple[int, int, str]] = []
+
+    if isinstance(node, ast.Call):
+        if (
+            isinstance(node.func, ast.Name)
+            and node.func.id == "zip"
+            and len(node.args) == 2
+        ):
+            first_arg, second_arg = node.args
+            if (
+                isinstance(first_arg, ast.Call)
+                and isinstance(first_arg.func, ast.Attribute)
+                and isinstance(first_arg.func.value, ast.Name)
+                and first_arg.func.attr == "keys"
+                and isinstance(second_arg, ast.Call)
+                and isinstance(second_arg.func, ast.Attribute)
+                and isinstance(second_arg.func.value, ast.Name)
+                and second_arg.func.attr == "values"
+                and first_arg.func.value.id == second_arg.func.value.id
+            ):
+                errors.append(
+                    (
+                        node.lineno,
+                        node.col_offset,
+                        RULE.format(name=first_arg.func.value.id),
+                    )
+                )
+    return errors

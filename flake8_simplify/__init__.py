@@ -20,6 +20,7 @@ from flake8_simplify.rules.ast_call import (
     get_sim905,
     get_sim906,
     get_sim910,
+    get_sim911,
 )
 from flake8_simplify.rules.ast_classdef import get_sim120
 from flake8_simplify.rules.ast_compare import get_sim118, get_sim300
@@ -76,6 +77,7 @@ class Visitor(ast.NodeVisitor):
         self.errors += get_sim905(node)
         self.errors += get_sim906(node)
         self.errors += get_sim910(Call(node))
+        self.errors += get_sim911(node)
         self.generic_visit(node)
 
     def visit_With(self, node: ast.With) -> Any:

@@ -1,3 +1,6 @@
+# Core Library
+from typing import Optional, Set
+
 # Third party
 import pytest
 
@@ -204,3 +207,34 @@ def test_sim910(s, msg):
     expected = {msg} if msg is not None else set()
     results = _results(s)
     assert results == expected
+
+
+@pytest.mark.parametrize(
+    ("s", "expected"),
+    (
+        (
+            "zip(d.keys(), d.values())",
+            {
+                "1:0 SIM911 Use 'd.items()' instead of 'zip(d.keys(), d.values())'"
+            },
+        ),
+        (
+            "zip(d.keys(), d.keys())",
+            None,
+        ),
+        (
+            "zip(d1.keys(), d2.values())",
+            None,
+        ),
+        (
+            "zip(d1.keys(), values)",
+            None,
+        ),
+        (
+            "zip(keys, values)",
+            None,
+        ),
+    ),
+)
+def test_sim911(s: str, expected: Optional[Set]):
+    assert _results(s) == (expected or set())
