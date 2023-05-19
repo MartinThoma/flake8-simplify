@@ -236,5 +236,5 @@ def test_sim910(s, msg):
         ),
     ),
 )
-def test_sim911(s: str, expected: Optional[Set]):
+def test_sim911(s, expected):
     assert _results(s) == (expected or set())
