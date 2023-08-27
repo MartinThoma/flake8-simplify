@@ -50,10 +50,12 @@ def get_sim104(node: ast.For) -> List[Tuple[int, int, str]]:
         return errors
 
     parent = getattr(node, "parent", None)
-    while (parent
-           and hasattr(parent, "parent")
-           and parent.parent is not parent
-           and not isinstance(parent, ast.AsyncFunctionDef)):
+    while (
+        parent
+        and hasattr(parent, "parent")
+        and parent.parent is not parent
+        and not isinstance(parent, ast.AsyncFunctionDef)
+    ):
         parent = getattr(parent, "parent", None)
 
     if isinstance(parent, ast.AsyncFunctionDef):  # type: ignore
