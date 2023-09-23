@@ -29,10 +29,10 @@ classifiers = [
     "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3 :: Only",
-    "Programming Language :: Python :: 3.7",
     "Programming Language :: Python :: 3.8",
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
     "Topic :: Software Development",
     "Framework :: Flake8",
 ]
@@ -57,7 +57,7 @@ namespaces = false
 
 [tool.black]
 line-length = 79
-target-version = ['py37']
+target-version = ['py38']
 
 [tool.mutmut]
 backup = "False"
