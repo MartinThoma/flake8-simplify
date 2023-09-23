@@ -274,29 +274,28 @@ def get_sim911(node: ast.AST) -> List[Tuple[int, int, str]]:
     )
     errors: List[Tuple[int, int, str]] = []
 
-    if isinstance(node, ast.Call):
+    if isinstance(node, ast.Call) and (
+        isinstance(node.func, ast.Name)
+        and node.func.id == "zip"
+        and len(node.args) == 2
+    ):
+        first_arg, second_arg = node.args
         if (
-            isinstance(node.func, ast.Name)
-            and node.func.id == "zip"
-            and len(node.args) == 2
+            isinstance(first_arg, ast.Call)
+            and isinstance(first_arg.func, ast.Attribute)
+            and isinstance(first_arg.func.value, ast.Name)
+            and first_arg.func.attr == "keys"
+            and isinstance(second_arg, ast.Call)
+            and isinstance(second_arg.func, ast.Attribute)
+            and isinstance(second_arg.func.value, ast.Name)
+            and second_arg.func.attr == "values"
+            and first_arg.func.value.id == second_arg.func.value.id
         ):
-            first_arg, second_arg = node.args
-            if (
-                isinstance(first_arg, ast.Call)
-                and isinstance(first_arg.func, ast.Attribute)
-                and isinstance(first_arg.func.value, ast.Name)
-                and first_arg.func.attr == "keys"
-                and isinstance(second_arg, ast.Call)
-                and isinstance(second_arg.func, ast.Attribute)
-                and isinstance(second_arg.func.value, ast.Name)
-                and second_arg.func.attr == "values"
-                and first_arg.func.value.id == second_arg.func.value.id
-            ):
-                errors.append(
-                    (
-                        node.lineno,
-                        node.col_offset,
-                        RULE.format(name=first_arg.func.value.id),
-                    )
+            errors.append(
+                (
+                    node.lineno,
+                    node.col_offset,
+                    RULE.format(name=first_arg.func.value.id),
                 )
+            )
     return errors
