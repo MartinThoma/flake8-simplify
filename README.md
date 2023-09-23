@@ -77,6 +77,7 @@ Simplifying usage of dictionaries:
 
 * [`SIM401`](https://github.com/MartinThoma/flake8-simplify/issues/72): Use 'a_dict.get(key, "default_value")' instead of an if-block ([example](#SIM401))
 * [`SIM118`](https://github.com/MartinThoma/flake8-simplify/issues/40): Use 'key in dict' instead of 'key in dict.keys()' ([example](#SIM118))
+* `SIM119` Reserved for [SIM911](#sim911) once it's stable
 
 General Code Style:
 
@@ -106,6 +107,7 @@ Current experimental rules:
 * [`SIM908`](https://github.com/MartinThoma/flake8-simplify/issues/50): Use dict.get(key) ([example](#SIM908))
 * [`SIM909`](https://github.com/MartinThoma/flake8-simplify/issues/114): Avoid reflexive assignments ([example](#SIM909))
 * [`SIM910`](https://github.com/MartinThoma/flake8-simplify/issues/171): Avoid to use `dict.get(key, None)` ([example](#SIM910))
+* [`SIM911`](https://github.com/MartinThoma/flake8-simplify/issues/161): Avoid using `zip(dict.keys(), dict.values())` ([example](#SIM911))
 
 ## Disabling Rules
 
