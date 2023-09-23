@@ -138,3 +138,5 @@ tests/reports/
 *.code-workspace
 
 html/
+
+.envrc
