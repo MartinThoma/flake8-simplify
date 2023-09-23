@@ -6,7 +6,7 @@ requires = [
 
 [project]
 name = "flake8_simplify"
-version = "0.20.0"
+version = "0.21.0"
 description = "flake8 plugin which checks for code that can be simplified"
 keywords = [
   "flake8",

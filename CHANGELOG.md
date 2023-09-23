@@ -1,6 +1,13 @@
 Release History
 ===============
 
+### 0.21.0
+Release on 23.09.2023
+
+New rules:
+
+* SIM911: zip(dict.keys(), dict.values()) → dict.items()
+
 ### 0.20.0
 Release on 30.03.2023
 
