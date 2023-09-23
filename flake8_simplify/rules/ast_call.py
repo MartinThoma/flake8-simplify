@@ -268,7 +268,10 @@ def get_sim911(node: ast.AST) -> List[Tuple[int, int, str]]:
             )
         )
     """
-    RULE = "SIM911 Use '{name}.items()' instead of 'zip({name}.keys(),{name}.values())'"
+    RULE = (
+        "SIM911 Use '{name}.items()' instead of "
+        "'zip({name}.keys(), {name}.values())'"
+    )
     errors: List[Tuple[int, int, str]] = []
 
     if isinstance(node, ast.Call):
