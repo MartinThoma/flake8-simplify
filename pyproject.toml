@@ -14,7 +14,7 @@ keywords = [
 license = {text = "MIT"}
 maintainers = [{name = "Martin Thoma", email = "info@martin-thoma.de"}]
 authors = [{name = "Martin Thoma", email = "info@martin-thoma.de"}]
-requires-python = ">=3.8"
+requires-python = ">=3.6.1"
 dependencies = [
   "astor>=0.1",
   "flake8>=3.7",
