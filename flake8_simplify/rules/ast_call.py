@@ -161,7 +161,7 @@ def get_sim906(node: ast.Call) -> List[Tuple[int, int, str]]:
                 names = names + get_os_path_join_args(arg)
             elif isinstance(arg, ast.Name):
                 names.append(arg.id)
-           elif isinstance(arg, ast.Constant) and isinstance(arg.value, str):
+            elif isinstance(arg, ast.Constant) and isinstance(arg.value, str):
                 names.append(f"'{arg.s}'")
             else:
                 logger.debug(
