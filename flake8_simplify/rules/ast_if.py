@@ -255,7 +255,7 @@ def get_sim116(node: ast.If) -> List[Tuple[int, int, str]]:
         key_value_pairs = {node.test.comparators[0].value: value}
     elif isinstance(node.test.comparators[0], ast.Constant) and isinstance(node.test.comparators[0].value, (int, float, complex)):
         key_value_pairs = {
-            node.test.comparators[0].n: to_source(node.body[0].value)
+            node.test.comparators[0].value: to_source(node.body[0].value)
         }
     else:
         key_value_pairs = {
