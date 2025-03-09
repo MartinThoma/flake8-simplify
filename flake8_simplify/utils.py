@@ -182,7 +182,7 @@ def get_if_body_pairs(node: ast.If) -> List[Tuple[ast.expr, List[ast.stmt]]]:
 def is_constant_increase(expr: ast.AugAssign) -> bool:
     return isinstance(expr.op, ast.Add) and (
         (isinstance(expr.value, ast.Constant) and expr.value.value == 1)
-        or (isinstance(expr.value, ast.Num) and expr.value.n == 1)
+        or (isinstance(expr.value, ast.Constant) and isinstance(expr.value.value, (int, float, complex)) and expr.value.value == 1)
     )
 
 

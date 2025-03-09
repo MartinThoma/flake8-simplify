@@ -5,9 +5,7 @@ name: Unit Tests
 
 on:
   push:
-    branches: [ master ]
   pull_request:
-    branches: [ master ]
 
 jobs:
   build:
@@ -15,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: [3.8, 3.9, "3.10", 3.11, 3.12]
+        python-version: [3.8, 3.9, "3.10", 3.11, 3.12, "3.14-dev"]
 
     steps:
     - uses: actions/checkout@v4
