@@ -42,7 +42,7 @@ def get_sim102(node: ast.If) -> List[Tuple[int, int, str]]:
         and node.test.left.id == "__name__"
         and len(node.test.comparators) == 1
         and isinstance(node.test.comparators[0], ast.Constant) and isinstance(node.test.comparators[0].value, str)
-        and node.test.comparators[0].s == "__main__"
+        and node.test.comparators[0].value == "__main__"
     )
     if is_main_check:
         return errors
@@ -252,7 +252,7 @@ def get_sim116(node: ast.If) -> List[Tuple[int, int, str]]:
         value = to_source(node.body[0].value)
         if value[0] == '"' and value[-1] == '"':
             value = value[1:-1]
-        key_value_pairs = {node.test.comparators[0].s: value}
+        key_value_pairs = {node.test.comparators[0].value: value}
     elif isinstance(node.test.comparators[0], ast.Constant) and isinstance(node.test.comparators[0].value, (int, float, complex)):
         key_value_pairs = {
             node.test.comparators[0].n: to_source(node.body[0].value)
@@ -282,9 +282,9 @@ def get_sim116(node: ast.If) -> List[Tuple[int, int, str]]:
             return errors
         key: Any
         if isinstance(child.test.comparators[0], ast.Constant) and isinstance(child.test.comparators[0].value, str):
-            key = child.test.comparators[0].s
+            key = child.test.comparators[0].value
         elif isinstance(child.test.comparators[0], ast.Constant) and isinstance(child.test.comparators[0].value, (int, float, complex)):
-            key = child.test.comparators[0].n
+            key = child.test.comparators[0].value
         else:
             key = child.test.comparators[0].value
 
