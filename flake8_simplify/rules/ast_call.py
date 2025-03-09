@@ -106,7 +106,7 @@ def get_sim905(node: ast.Call) -> List[Tuple[int, int, str]]:
     if isinstance(node.func.value, ast.Constant):
         value = node.func.value.value
     else:
-        value = node.func.value.s
+        value = node.func.value.value
 
     expected = json.dumps(value.split())
     actual = to_source(node.func.value) + ".split()"
@@ -162,7 +162,7 @@ def get_sim906(node: ast.Call) -> List[Tuple[int, int, str]]:
             elif isinstance(arg, ast.Name):
                 names.append(arg.id)
             elif isinstance(arg, ast.Constant) and isinstance(arg.value, str):
-                names.append(f"'{arg.s}'")
+                names.append(f"'{arg.value}'")
             else:
                 logger.debug(
                     f"Unexpected os.path.join arg: {arg} -- {to_source(arg)}"
