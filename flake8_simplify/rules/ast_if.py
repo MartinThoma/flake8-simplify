@@ -135,9 +135,9 @@ def get_sim108(node: If) -> List[Tuple[int, int, str]]:
         and isinstance(node.orelse[0], ast.Assign)
         and len(node.body[0].targets) == 1
         and len(node.orelse[0].targets) == 1
-        and isinstance(node.body[0].targets[0], ast.Name)
-        and isinstance(node.orelse[0].targets[0], ast.Name)
-        and node.body[0].targets[0].id == node.orelse[0].targets[0].id
+        and isinstance(node.body[0].targets[0], (ast.Name, ast.Attribute))
+        and isinstance(node.orelse[0].targets[0], (ast.Name, ast.Attribute))
+        and ast.unparse(node.body[0].targets[0]) == ast.unparse(node.orelse[0].targets[0])
     ):
         return errors
 
