@@ -30,17 +30,10 @@ elif b:
     if c:
         d"""
     )
-    assert ret in [
-        {  # Python 3.7+
-            "3:0 SIM102 Use a single if-statement instead of "
-            "nested if-statements"
-        },
-        {
-            # Python 3.6
-            "3:5 SIM102 Use a single if-statement instead of "
-            "nested if-statements"
-        },
-    ]
+    assert ret == {
+        "3:0 SIM102 Use a single if-statement instead of "
+        "nested if-statements"
+    }
 
 
 def test_sim102_not_active1():
