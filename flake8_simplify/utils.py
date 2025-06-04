@@ -4,9 +4,6 @@ import itertools
 from collections import defaultdict
 from typing import DefaultDict, List, Tuple, Union
 
-# Third party
-import astor
-
 
 # The following types were created to help mypy understand that there is a
 # "parent" attribute on the ast.AST nodes.
@@ -89,7 +86,7 @@ def to_source(
 ) -> str:
     if node is None:
         return "None"
-    source: str = astor.to_source(node).strip()
+    source: str = ast.unparse(node).strip()
     source = strip_parenthesis(source)
     source = strip_triple_quotes(source)
     source = use_double_quotes(source)

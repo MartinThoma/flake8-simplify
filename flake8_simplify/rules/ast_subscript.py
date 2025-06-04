@@ -27,13 +27,7 @@ def get_sim907(node: ast.Subscript) -> List[Tuple[int, int, str]]:
     if not (isinstance(node.value, ast.Name) and node.value.id == "Union"):
         return errors
 
-    if isinstance(node.slice, ast.Index) and isinstance(
-        node.slice.value, ast.Tuple  # type: ignore
-    ):
-        # Python 3.8
-        tuple_var = node.slice.value  # type: ignore
-    elif isinstance(node.slice, ast.Tuple):
-        # Python 3.9+
+    if isinstance(node.slice, ast.Tuple):
         tuple_var = node.slice
     else:
         return errors
