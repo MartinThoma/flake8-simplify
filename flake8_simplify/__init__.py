@@ -1,7 +1,6 @@
 # Core Library
 import ast
 import logging
-import sys
 from typing import Any, Generator, List, Tuple, Type
 
 # First party
@@ -54,12 +53,8 @@ from flake8_simplify.utils import Assign, Call, For, If, UnaryOp
 logger = logging.getLogger(__name__)
 
 
-if sys.version_info < (3, 8):  # pragma: no cover (<PY38)
-    # Third party
-    import importlib_metadata
-else:  # pragma: no cover (PY38+)
-    # Core Library
-    import importlib.metadata as importlib_metadata
+# Core Library
+import importlib.metadata as importlib_metadata
 
 
 class Visitor(ast.NodeVisitor):
