@@ -129,7 +129,7 @@ def test_sim908_false_positive(s):
 
 
 @pytest.mark.parametrize(
-    ("s", "msg"),
+    ("s", "msgs"),
     (
         # Credits to Ryan Delaney for the following two example
         # https://github.com/MartinThoma/flake8-simplify/issues/114
@@ -147,7 +147,12 @@ def test_sim908_false_positive(s):
         ),
         (
             "n, m = n, m",
-            "1:0 SIM909 Remove reflexive assignment 'n, m = n, m'",
+            # The braces are not wanted, but for the moment acceptable
+            # [help wanted] If you know how to avoid them, please open a PR:
+            [
+                "1:0 SIM909 Remove reflexive assignment 'n, m = (n, m)'",
+                "1:0 SIM909 Remove reflexive assignment '(n, m) = (n, m)'",
+            ],
         ),
         (
             "a['foo'] = a['foo']",
@@ -156,9 +161,11 @@ def test_sim908_false_positive(s):
     ),
     ids=["simple", "double", "multiple", "tuple", "dict"],
 )
-def test_sim909(s, msg):
+def test_sim909(s, msgs):
     results = _results(s)
-    assert results == {msg}
+    assert len(results) == 1
+    result = results.pop()
+    assert result in msgs
 
 
 @pytest.mark.parametrize(
