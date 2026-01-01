@@ -41,7 +41,8 @@ def get_sim102(node: ast.If) -> List[Tuple[int, int, str]]:
         and isinstance(node.test.left, ast.Name)
         and node.test.left.id == "__name__"
         and len(node.test.comparators) == 1
-        and isinstance(node.test.comparators[0], ast.Constant) and isinstance(node.test.comparators[0].value, str)
+        and isinstance(node.test.comparators[0], ast.Constant)
+        and isinstance(node.test.comparators[0].value, str)
         and node.test.comparators[0].value == "__main__"
     )
     if is_main_check:
@@ -248,12 +249,16 @@ def get_sim116(node: ast.If) -> List[Tuple[int, int, str]]:
     assert isinstance(child, ast.If), "hint for mypy"
     else_value: Optional[str] = None
     key_value_pairs: Dict[Any, Any]
-    if isinstance(node.test.comparators[0], ast.Constant) and isinstance(node.test.comparators[0].value, str):
+    if isinstance(node.test.comparators[0], ast.Constant) and isinstance(
+        node.test.comparators[0].value, str
+    ):
         value = to_source(node.body[0].value)
         if value[0] == '"' and value[-1] == '"':
             value = value[1:-1]
         key_value_pairs = {node.test.comparators[0].value: value}
-    elif isinstance(node.test.comparators[0], ast.Constant) and isinstance(node.test.comparators[0].value, (int, float, complex)):
+    elif isinstance(node.test.comparators[0], ast.Constant) and isinstance(
+        node.test.comparators[0].value, (int, float, complex)
+    ):
         key_value_pairs = {
             node.test.comparators[0].value: to_source(node.body[0].value)
         }
@@ -280,13 +285,7 @@ def get_sim116(node: ast.If) -> List[Tuple[int, int, str]]:
         if isinstance(return_call.value, ast.Call):
             # See https://github.com/MartinThoma/flake8-simplify/issues/113
             return errors
-        key: Any
-        if isinstance(child.test.comparators[0], ast.Constant) and isinstance(child.test.comparators[0].value, str):
-            key = child.test.comparators[0].value
-        elif isinstance(child.test.comparators[0], ast.Constant) and isinstance(child.test.comparators[0].value, (int, float, complex)):
-            key = child.test.comparators[0].value
-        else:
-            key = child.test.comparators[0].value
+        key = child.test.comparators[0].value
 
         value = to_source(child.body[0].value)
         if value[0] == '"' and value[-1] == '"':

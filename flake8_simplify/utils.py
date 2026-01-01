@@ -85,7 +85,7 @@ class Assign(ast.Assign):
 
 
 def to_source(
-    node: Union[None, ast.expr, ast.Expr, ast.withitem, ast.slice, ast.Assign]
+    node: Union[None, ast.expr, ast.Expr, ast.withitem, ast.slice, ast.Assign],
 ) -> str:
     if node is None:
         return "None"
@@ -182,7 +182,11 @@ def get_if_body_pairs(node: ast.If) -> List[Tuple[ast.expr, List[ast.stmt]]]:
 def is_constant_increase(expr: ast.AugAssign) -> bool:
     return isinstance(expr.op, ast.Add) and (
         (isinstance(expr.value, ast.Constant) and expr.value.value == 1)
-        or (isinstance(expr.value, ast.Constant) and isinstance(expr.value.value, (int, float, complex)) and expr.value.value == 1)
+        or (
+            isinstance(expr.value, ast.Constant)
+            and isinstance(expr.value.value, (int, float, complex))
+            and expr.value.value == 1
+        )
     )
 
 

@@ -99,7 +99,8 @@ def get_sim905(node: ast.Call) -> List[Tuple[int, int, str]]:
     if not (
         isinstance(node.func, ast.Attribute)
         and node.func.attr == "split"
-        and isinstance(node.func.value, ast.Constant) and isinstance(node.func.value.value, str)
+        and isinstance(node.func.value, ast.Constant)
+        and isinstance(node.func.value.value, str)
     ):
         return errors
 
