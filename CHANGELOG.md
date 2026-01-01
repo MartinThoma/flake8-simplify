@@ -1,6 +1,20 @@
 Release History
 ===============
 
+### 0.30.0
+Release on 01.01.2025
+
+BREAKING CHANGE:
+
+* Deprecated support for Python 3.6, 3.7 and 3.8. Minimum supported
+  Python version is now 3.9.
+
+Other changes:
+
+* Added support for Python 3.13
+* Removed dependency on `astor`
+
+
 ### 0.21.0
 Release on 23.09.2023
 
