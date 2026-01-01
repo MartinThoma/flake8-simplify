@@ -6,7 +6,7 @@ requires = [
 
 [project]
 name = "flake8_simplify"
-version = "0.22.0"
+version = "0.30.0"
 description = "flake8 plugin which checks for code that can be simplified"
 keywords = [
   "flake8",
@@ -14,11 +14,9 @@ keywords = [
 license = {text = "MIT"}
 maintainers = [{name = "Martin Thoma", email = "info@martin-thoma.de"}]
 authors = [{name = "Martin Thoma", email = "info@martin-thoma.de"}]
-requires-python = ">=3.6.1"
+requires-python = ">=3.9.0"
 dependencies = [
-  "astor>=0.1",
   "flake8>=3.7",
-  'importlib-metadata>=0.9; python_version < "3.8"',
 ]
 classifiers = [
     "Development Status :: 4 - Beta",
@@ -29,7 +27,6 @@ classifiers = [
     "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3 :: Only",
-    "Programming Language :: Python :: 3.8",
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
@@ -59,7 +56,7 @@ namespaces = false
 
 [tool.black]
 line-length = 79
-target-version = ['py38']
+target-version = ['py39']
 
 [tool.mutmut]
 backup = "False"

@@ -31,15 +31,10 @@ elif b:
         d"""
     )
     assert ret in [
-        {  # Python 3.7+
+        {
             "3:0 SIM102 Use a single if-statement instead of "
             "nested if-statements"
-        },
-        {
-            # Python 3.6
-            "3:5 SIM102 Use a single if-statement instead of "
-            "nested if-statements"
-        },
+        }
     ]
 
 
