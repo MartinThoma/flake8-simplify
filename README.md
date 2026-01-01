@@ -15,7 +15,7 @@ Install with `pip`:
 pip install flake8-simplify
 ```
 
-Python 3.9 to 3.13 are supported.
+Python 3.9 to 3.14 are supported.
 
 
 ## Usage
