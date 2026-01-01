@@ -163,7 +163,9 @@ def test_sim908_false_positive(s):
 )
 def test_sim909(s, msgs):
     results = _results(s)
-    assert results in msgs
+    assert len(results) == 1
+    result = results.pop()
+    assert result in msgs
 
 
 @pytest.mark.parametrize(
