@@ -285,19 +285,7 @@ def get_sim116(node: ast.If) -> List[Tuple[int, int, str]]:
         if isinstance(return_call.value, ast.Call):
             # See https://github.com/MartinThoma/flake8-simplify/issues/113
             return errors
-        key: Any
-        if isinstance(child.test.comparators[0], ast.Constant) and isinstance(
-            child.test.comparators[0].value, str
-        ):
-            key = child.test.comparators[0].value
-        elif isinstance(
-            child.test.comparators[0], ast.Constant
-        ) and isinstance(
-            child.test.comparators[0].value, (int, float, complex)
-        ):
-            key = child.test.comparators[0].value
-        else:
-            key = child.test.comparators[0].value
+        key = child.test.comparators[0].value
 
         value = to_source(child.body[0].value)
         if value[0] == '"' and value[-1] == '"':
