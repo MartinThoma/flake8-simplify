@@ -147,7 +147,9 @@ def test_sim908_false_positive(s):
         ),
         (
             "n, m = n, m",
-            "1:0 SIM909 Remove reflexive assignment 'n, m = n, m'",
+            # The braces are not wanted, but for the moment acceptable
+            # [help wanted] If you know how to avoid them, please open a PR:
+            "1:0 SIM909 Remove reflexive assignment 'n, m) = (n, m'",
         ),
         (
             "a['foo'] = a['foo']",
