@@ -87,32 +87,8 @@ def to_source(
     if node is None:
         return "None"
     source: str = ast.unparse(node).strip()
-    if isinstance(node, ast.expr):
-        source = strip_redundant_parens_expr(source, node)
     source = strip_triple_quotes(source)
     source = use_double_quotes(source)
-    return source
-
-
-def strip_redundant_parens_expr(source: str, node: ast.expr) -> str:
-    # Parentheses around tuples are NEVER redundant
-    if isinstance(node, ast.Tuple):
-        return source
-
-    # Lambdas must keep parentheses in many contexts
-    if isinstance(node, ast.Lambda):
-        return source
-
-    # Generator / comprehension safety
-    if isinstance(
-        node, (ast.GeneratorExp, ast.ListComp, ast.DictComp, ast.SetComp)
-    ):
-        return source
-
-    # Safe to remove ONE outer pair
-    if source.startswith("(") and source.endswith(")"):
-        return source[1:-1]
-
     return source
 
 
