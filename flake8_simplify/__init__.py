@@ -1,10 +1,9 @@
-# Core Library
 import ast
+import importlib.metadata as importlib_metadata
 import logging
-import sys
-from typing import Any, Generator, List, Tuple, Type
+from collections.abc import Generator
+from typing import Any
 
-# First party
 from flake8_simplify.rules.ast_assign import get_sim904, get_sim909
 from flake8_simplify.rules.ast_bool_op import (
     get_sim101,
@@ -54,17 +53,9 @@ from flake8_simplify.utils import Assign, Call, For, If, UnaryOp
 logger = logging.getLogger(__name__)
 
 
-if sys.version_info < (3, 8):  # pragma: no cover (<PY38)
-    # Third party
-    import importlib_metadata
-else:  # pragma: no cover (PY38+)
-    # Core Library
-    import importlib.metadata as importlib_metadata
-
-
 class Visitor(ast.NodeVisitor):
     def __init__(self) -> None:
-        self.errors: List[Tuple[int, int, str]] = []
+        self.errors: list[tuple[int, int, str]] = []
 
     def visit_Assign(self, node: ast.Assign) -> Any:
         self.errors += get_sim904(node)
@@ -153,7 +144,7 @@ class Plugin:
     def __init__(self, tree: ast.AST):
         self._tree = tree
 
-    def run(self) -> Generator[Tuple[int, int, str, Type[Any]], None, None]:
+    def run(self) -> Generator[tuple[int, int, str, type[Any]], None, None]:
         visitor = Visitor()
 
         # Add parent

@@ -1,8 +1,5 @@
-# Core Library
 import ast
-from typing import List, Tuple
 
-# First party
 from flake8_simplify.constants import BOOL_CONST_TYPES
 from flake8_simplify.utils import (
     For,
@@ -12,7 +9,7 @@ from flake8_simplify.utils import (
 )
 
 
-def get_sim104(node: ast.For) -> List[Tuple[int, int, str]]:
+def get_sim104(node: ast.For) -> list[tuple[int, int, str]]:
     """
     Get a list of all "iterate and yield" patterns.
 
@@ -37,7 +34,7 @@ def get_sim104(node: ast.For) -> List[Tuple[int, int, str]]:
 
     """
     RULE = "SIM104 Use 'yield from {iterable}'"
-    errors: List[Tuple[int, int, str]] = []
+    errors: list[tuple[int, int, str]] = []
     if (
         len(node.body) != 1
         or not isinstance(node.body[0], ast.Expr)
@@ -67,7 +64,7 @@ def get_sim104(node: ast.For) -> List[Tuple[int, int, str]]:
     return errors
 
 
-def get_sim110_sim111(node: ast.For) -> List[Tuple[int, int, str]]:
+def get_sim110_sim111(node: ast.For) -> list[tuple[int, int, str]]:
     """
     Check if any / all could be used.
 
@@ -96,7 +93,7 @@ def get_sim110_sim111(node: ast.For) -> List[Tuple[int, int, str]]:
     """
     SIM110 = "SIM110 Use 'return any({check} for {target} in {iterable})'"
     SIM111 = "SIM111 Use 'return all({check} for {target} in {iterable})'"
-    errors: List[Tuple[int, int, str]] = []
+    errors: list[tuple[int, int, str]] = []
     if not (
         len(node.body) == 1
         and isinstance(node.body[0], ast.If)
@@ -140,7 +137,7 @@ def get_sim110_sim111(node: ast.For) -> List[Tuple[int, int, str]]:
     return errors
 
 
-def get_sim113(node: For) -> List[Tuple[int, int, str]]:
+def get_sim113(node: For) -> list[tuple[int, int, str]]:
     """
     Find loops in which "enumerate" should be used.
 
@@ -161,7 +158,7 @@ def get_sim113(node: For) -> List[Tuple[int, int, str]]:
             type_comment=None,
         ),
     """
-    errors: List[Tuple[int, int, str]] = []
+    errors: list[tuple[int, int, str]] = []
     variable_candidates = []
     if body_contains_continue(node.body):
         return errors

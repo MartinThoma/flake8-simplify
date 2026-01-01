@@ -86,3 +86,13 @@ module = [
 [tool.pytest.ini_options]
 addopts = "--doctest-modules --cov=. --cov-report html:tests/reports/coverage-html --cov-report term-missing --ignore=docs/ --durations=3 --timeout=30"
 doctest_encoding = "utf-8"
+
+[tool.ruff]
+line-length = 79
+
+[tool.ruff.lint]
+select = ["E", "F", "I"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["flake8_simplify"]
+combine-as-imports = true

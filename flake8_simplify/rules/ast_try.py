@@ -1,12 +1,9 @@
-# Core Library
 import ast
-from typing import List, Tuple
 
-# First party
 from flake8_simplify.utils import to_source
 
 
-def get_sim105(node: ast.Try) -> List[Tuple[int, int, str]]:
+def get_sim105(node: ast.Try) -> list[tuple[int, int, str]]:
     """
     Get a list of all "try-except-pass" patterns.
 
@@ -41,7 +38,7 @@ def get_sim105(node: ast.Try) -> List[Tuple[int, int, str]]:
 
     """
     SIM105 = "SIM105 Use 'contextlib.suppress({exception})'"
-    errors: List[Tuple[int, int, str]] = []
+    errors: list[tuple[int, int, str]] = []
     if (
         len(node.body) != 1
         or len(node.handlers) != 1
@@ -61,12 +58,12 @@ def get_sim105(node: ast.Try) -> List[Tuple[int, int, str]]:
     return errors
 
 
-def get_sim107(node: ast.Try) -> List[Tuple[int, int, str]]:
+def get_sim107(node: ast.Try) -> list[tuple[int, int, str]]:
     """
     Get a list of all calls where try/except and finally have 'return'.
     """
     SIM107 = "SIM107 Don't use return in try/except and finally"
-    errors: List[Tuple[int, int, str]] = []
+    errors: list[tuple[int, int, str]] = []
 
     try_has_return = False
     for stmt in node.body:

@@ -348,13 +348,11 @@ Thank you for pointing this one out, [Aaron Gokaslan](https://github.com/Skylion
 
 ```python
 # Bad
-class FooBar(object):
-    ...
+class FooBar(object): ...
 
 
 # Good
-class FooBar:
-    ...
+class FooBar: ...
 ```
 
 Both notations are equivalent in Python 3, but the second one is shorter.
