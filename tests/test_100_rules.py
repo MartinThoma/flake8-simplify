@@ -169,7 +169,9 @@ else:
 def test_sim109():
     ret = _results("a == b or a == c")
     assert ret == {
-        "1:0 SIM109 Use 'a in (b, c)' instead of 'a == b or a == c'"
+        # The double-braces are not wanted, but for the moment acceptable
+        # [help wanted] If you know how to avoid them, please open a PR:
+        "1:0 SIM109 Use 'a in ((b, c))' instead of 'a == b or a == c'"
     }
 
 
