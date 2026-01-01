@@ -1,17 +1,14 @@
-# Core Library
 import ast
 import json
 import logging
-from typing import List, Tuple
 
-# First party
 from flake8_simplify.constants import BOOL_CONST_TYPES
 from flake8_simplify.utils import Call, to_source
 
 logger = logging.getLogger(__name__)
 
 
-def get_sim115(node: Call) -> List[Tuple[int, int, str]]:
+def get_sim115(node: Call) -> list[tuple[int, int, str]]:
     """
     Find places where open() is called without a context handler.
 
@@ -40,7 +37,7 @@ def get_sim115(node: Call) -> List[Tuple[int, int, str]]:
         ),
     """
     RULE = "SIM115 Use context handler for opening files"
-    errors: List[Tuple[int, int, str]] = []
+    errors: list[tuple[int, int, str]] = []
     if not (
         isinstance(node.func, ast.Name)
         and node.func.id == "open"
@@ -54,7 +51,7 @@ def get_sim115(node: Call) -> List[Tuple[int, int, str]]:
 # Experimental rules
 
 
-def get_sim901(node: ast.Call) -> List[Tuple[int, int, str]]:
+def get_sim901(node: ast.Call) -> list[tuple[int, int, str]]:
     """
     Get a list of all calls of the type "bool(comparison)".
 
@@ -71,7 +68,7 @@ def get_sim901(node: ast.Call) -> List[Tuple[int, int, str]]:
     )
     """
     RULE = "SIM901 Use '{expected}' instead of '{actual}'"
-    errors: List[Tuple[int, int, str]] = []
+    errors: list[tuple[int, int, str]] = []
     if not (
         isinstance(node.func, ast.Name)
         and node.func.id == "bool"
@@ -93,9 +90,9 @@ def get_sim901(node: ast.Call) -> List[Tuple[int, int, str]]:
     return errors
 
 
-def get_sim905(node: ast.Call) -> List[Tuple[int, int, str]]:
+def get_sim905(node: ast.Call) -> list[tuple[int, int, str]]:
     RULE = "SIM905 Use '{expected}' instead of '{actual}'"
-    errors: List[Tuple[int, int, str]] = []
+    errors: list[tuple[int, int, str]] = []
     if not (
         isinstance(node.func, ast.Attribute)
         and node.func.attr == "split"
@@ -121,9 +118,9 @@ def get_sim905(node: ast.Call) -> List[Tuple[int, int, str]]:
     return errors
 
 
-def get_sim906(node: ast.Call) -> List[Tuple[int, int, str]]:
+def get_sim906(node: ast.Call) -> list[tuple[int, int, str]]:
     RULE = "SIM906 Use '{expected}' instead of '{actual}'"
-    errors: List[Tuple[int, int, str]] = []
+    errors: list[tuple[int, int, str]] = []
     if not (
         isinstance(node.func, ast.Attribute)
         and isinstance(node.func.value, ast.Attribute)
@@ -147,8 +144,8 @@ def get_sim906(node: ast.Call) -> List[Tuple[int, int, str]]:
     ):
         return errors
 
-    def get_os_path_join_args(node: ast.Call) -> List[str]:
-        names: List[str] = []
+    def get_os_path_join_args(node: ast.Call) -> list[str]:
+        names: list[str] = []
         for arg in node.args:
             if (
                 isinstance(arg, ast.Call)
@@ -184,7 +181,7 @@ def get_sim906(node: ast.Call) -> List[Tuple[int, int, str]]:
     return errors
 
 
-def get_sim910(node: Call) -> List[Tuple[int, int, str]]:
+def get_sim910(node: Call) -> list[tuple[int, int, str]]:
     """
     Get a list of all usages of "dict.get(key, None)"
 
@@ -206,7 +203,7 @@ def get_sim910(node: Call) -> List[Tuple[int, int, str]]:
         ),
     """
     RULE = "SIM910 Use '{expected}' instead of '{actual}'"
-    errors: List[Tuple[int, int, str]] = []
+    errors: list[tuple[int, int, str]] = []
     if not (
         isinstance(node.func, ast.Attribute)
         and node.func.attr == "get"
@@ -236,7 +233,7 @@ def get_sim910(node: Call) -> List[Tuple[int, int, str]]:
     return errors
 
 
-def get_sim911(node: ast.AST) -> List[Tuple[int, int, str]]:
+def get_sim911(node: ast.AST) -> list[tuple[int, int, str]]:
     """
     Find nodes representing the expression "zip(_.keys(), _.values())".
 
@@ -273,7 +270,7 @@ def get_sim911(node: ast.AST) -> List[Tuple[int, int, str]]:
         "SIM911 Use '{name}.items()' instead of "
         "'zip({name}.keys(), {name}.values())'"
     )
-    errors: List[Tuple[int, int, str]] = []
+    errors: list[tuple[int, int, str]] = []
 
     if isinstance(node, ast.Call) and (
         isinstance(node.func, ast.Name)

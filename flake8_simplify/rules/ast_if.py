@@ -1,8 +1,6 @@
-# Core Library
 import ast
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Optional
 
-# First party
 from flake8_simplify.constants import AST_CONST_TYPES, BOOL_CONST_TYPES
 from flake8_simplify.utils import (
     If,
@@ -12,10 +10,10 @@ from flake8_simplify.utils import (
 )
 
 
-def get_sim102(node: ast.If) -> List[Tuple[int, int, str]]:
+def get_sim102(node: ast.If) -> list[tuple[int, int, str]]:
     """Get a list of all nested if-statements without else-blocks."""
     RULE = "SIM102 Use a single if-statement instead of nested if-statements"
-    errors: List[Tuple[int, int, str]] = []
+    errors: list[tuple[int, int, str]] = []
 
     # ## Pattern 1
     # if a: <---
@@ -51,7 +49,7 @@ def get_sim102(node: ast.If) -> List[Tuple[int, int, str]]:
     return errors
 
 
-def get_sim103(node: ast.If) -> List[Tuple[int, int, str]]:
+def get_sim103(node: ast.If) -> list[tuple[int, int, str]]:
     """
     Get a list of all calls that wrap a condition to return a bool.
 
@@ -78,7 +76,7 @@ def get_sim103(node: ast.If) -> List[Tuple[int, int, str]]:
 
     """
     SIM103 = "SIM103 Return the condition {cond} directly"
-    errors: List[Tuple[int, int, str]] = []
+    errors: list[tuple[int, int, str]] = []
     if (
         len(node.body) != 1
         or not isinstance(node.body[0], ast.Return)
@@ -101,7 +99,7 @@ def get_sim103(node: ast.If) -> List[Tuple[int, int, str]]:
     return errors
 
 
-def get_sim108(node: If) -> List[Tuple[int, int, str]]:
+def get_sim108(node: If) -> list[tuple[int, int, str]]:
     """
     Get a list of all if-elses which could be a ternary operator assignment.
 
@@ -128,7 +126,7 @@ def get_sim108(node: If) -> List[Tuple[int, int, str]]:
         "'{assign} = {body} if {cond} else {orelse}' "
         "instead of if-else-block"
     )
-    errors: List[Tuple[int, int, str]] = []
+    errors: list[tuple[int, int, str]] = []
     if not (
         len(node.body) == 1
         and isinstance(node.body[0], ast.Assign)
@@ -166,7 +164,7 @@ def get_sim108(node: If) -> List[Tuple[int, int, str]]:
     return errors
 
 
-def get_sim114(node: ast.If) -> List[Tuple[int, int, str]]:
+def get_sim114(node: ast.If) -> list[tuple[int, int, str]]:
     """
     Find same bodys.
 
@@ -193,7 +191,7 @@ def get_sim114(node: ast.If) -> List[Tuple[int, int, str]]:
         ),
     """
     SIM114 = "SIM114 Use logical or (({cond1}) or ({cond2})) and a single body"
-    errors: List[Tuple[int, int, str]] = []
+    errors: list[tuple[int, int, str]] = []
     if_body_pairs = get_if_body_pairs(node)
     error_pairs = []
     for i in range(len(if_body_pairs) - 1):
@@ -217,7 +215,7 @@ def get_sim114(node: ast.If) -> List[Tuple[int, int, str]]:
     return errors
 
 
-def get_sim116(node: ast.If) -> List[Tuple[int, int, str]]:
+def get_sim116(node: ast.If) -> list[tuple[int, int, str]]:
     """
     Find places where 3 or more consecutive if-statements with direct returns.
 
@@ -230,7 +228,7 @@ def get_sim116(node: ast.If) -> List[Tuple[int, int, str]]:
         "SIM116 Use a dictionary lookup instead of 3+ if/elif-statements: "
         "return {ret}"
     )
-    errors: List[Tuple[int, int, str]] = []
+    errors: list[tuple[int, int, str]] = []
     if not (
         isinstance(node.test, ast.Compare)
         and isinstance(node.test.left, ast.Name)
@@ -248,7 +246,7 @@ def get_sim116(node: ast.If) -> List[Tuple[int, int, str]]:
     child: Optional[ast.If] = node.orelse[0]
     assert isinstance(child, ast.If), "hint for mypy"
     else_value: Optional[str] = None
-    key_value_pairs: Dict[Any, Any]
+    key_value_pairs: dict[Any, Any]
     if isinstance(node.test.comparators[0], ast.Constant) and isinstance(
         node.test.comparators[0].value, str
     ):
@@ -312,7 +310,7 @@ def get_sim116(node: ast.If) -> List[Tuple[int, int, str]]:
     return errors
 
 
-def get_sim908(node: ast.If) -> List[Tuple[int, int, str]]:
+def get_sim908(node: ast.If) -> list[tuple[int, int, str]]:
     """
     Get all if-blocks which only check if a key is in a dictionary.
     """
@@ -320,7 +318,7 @@ def get_sim908(node: ast.If) -> List[Tuple[int, int, str]]:
         "SIM908 Use '{dictname}.get({key})' instead of "
         "'if {key} in {dictname}: {dictname}[{key}]'"
     )
-    errors: List[Tuple[int, int, str]] = []
+    errors: list[tuple[int, int, str]] = []
     if not (
         isinstance(node.test, ast.Compare)
         and len(node.test.ops) == 1
@@ -358,7 +356,7 @@ def get_sim908(node: ast.If) -> List[Tuple[int, int, str]]:
     return errors
 
 
-def get_sim401(node: ast.If) -> List[Tuple[int, int, str]]:
+def get_sim401(node: ast.If) -> list[tuple[int, int, str]]:
     """
     Get all calls that should use default values for dictionary access.
 
@@ -438,7 +436,7 @@ def get_sim401(node: ast.If) -> List[Tuple[int, int, str]]:
         "SIM401 Use '{value} = {dict}.get({key}, {default_value})' "
         "instead of an if-block"
     )
-    errors: List[Tuple[int, int, str]] = []
+    errors: list[tuple[int, int, str]] = []
     is_pattern_1 = (
         len(node.body) == 1
         and isinstance(node.body[0], ast.Assign)

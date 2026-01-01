@@ -1,13 +1,10 @@
-# Core Library
 import ast
-from typing import List, Tuple
 
-# First party
 from flake8_simplify.constants import BOOL_CONST_TYPES
 from flake8_simplify.utils import to_source
 
 
-def get_sim907(node: ast.Subscript) -> List[Tuple[int, int, str]]:
+def get_sim907(node: ast.Subscript) -> list[tuple[int, int, str]]:
     """
 
     Subscript(
@@ -22,7 +19,7 @@ def get_sim907(node: ast.Subscript) -> List[Tuple[int, int, str]]:
         )
     )
     """
-    errors: List[Tuple[int, int, str]] = []
+    errors: list[tuple[int, int, str]] = []
 
     if not (isinstance(node.value, ast.Name) and node.value.id == "Union"):
         return errors

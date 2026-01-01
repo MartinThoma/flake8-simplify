@@ -1,13 +1,10 @@
-# Core Library
 import ast
-from typing import List, Tuple
 
-# First party
 from flake8_simplify.constants import STR_TYPES
 from flake8_simplify.utils import to_source
 
 
-def get_sim112(node: ast.Expr) -> List[Tuple[int, int, str]]:
+def get_sim112(node: ast.Expr) -> list[tuple[int, int, str]]:
     """
     Find non-capitalized calls to environment variables.
 
@@ -27,7 +24,7 @@ def get_sim112(node: ast.Expr) -> List[Tuple[int, int, str]]:
         ),
     """
     RULE = "SIM112 Use '{expected}' instead of '{original}'"
-    errors: List[Tuple[int, int, str]] = []
+    errors: list[tuple[int, int, str]] = []
 
     is_index_call = (
         isinstance(node.value, ast.Subscript)

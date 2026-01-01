@@ -1,13 +1,10 @@
-# Core Library
 import ast
-from typing import List, Tuple
 
-# First party
 from flake8_simplify.constants import AST_CONST_TYPES
 from flake8_simplify.utils import to_source
 
 
-def get_sim118(node: ast.Compare) -> List[Tuple[int, int, str]]:
+def get_sim118(node: ast.Compare) -> list[tuple[int, int, str]]:
     """
     Get a list of all usages of "key in dict.keys()"
 
@@ -27,7 +24,7 @@ def get_sim118(node: ast.Compare) -> List[Tuple[int, int, str]]:
         )
     """
     RULE = "SIM118 Use '{el} in {dict}' instead of '{el} in {dict}.keys()'"
-    errors: List[Tuple[int, int, str]] = []
+    errors: list[tuple[int, int, str]] = []
     if not (
         len(node.ops) == 1
         and isinstance(node.ops[0], ast.In)
@@ -59,7 +56,7 @@ def get_sim118(node: ast.Compare) -> List[Tuple[int, int, str]]:
     return errors
 
 
-def get_sim300(node: ast.Compare) -> List[Tuple[int, int, str]]:
+def get_sim300(node: ast.Compare) -> list[tuple[int, int, str]]:
     """
     Get a list of all Yoda conditions.
 
@@ -74,7 +71,7 @@ def get_sim300(node: ast.Compare) -> List[Tuple[int, int, str]]:
         "SIM300 Use '{right} == {left}' instead of "
         "'{left} == {right}' (Yoda-conditions)"
     )
-    errors: List[Tuple[int, int, str]] = []
+    errors: list[tuple[int, int, str]] = []
     if not (
         isinstance(node.left, AST_CONST_TYPES)
         and len(node.ops) == 1

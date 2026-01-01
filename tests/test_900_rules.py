@@ -1,7 +1,5 @@
-# Third party
 import pytest
 
-# First party
 from tests import _results
 
 
@@ -219,7 +217,8 @@ def test_sim910(s, msg):
         (
             "zip(d.keys(), d.values())",
             {
-                "1:0 SIM911 Use 'd.items()' instead of 'zip(d.keys(), d.values())'"
+                "1:0 SIM911 Use 'd.items()' "
+                "instead of 'zip(d.keys(), d.values())'"
             },
         ),
         (

@@ -1,12 +1,9 @@
-# Core Library
 import ast
-from typing import List, Tuple
 
-# First party
 from flake8_simplify.utils import to_source
 
 
-def get_sim117(node: ast.With) -> List[Tuple[int, int, str]]:
+def get_sim117(node: ast.With) -> list[tuple[int, int, str]]:
     """
     Find multiple with-statements with same scope.
 
@@ -49,7 +46,7 @@ def get_sim117(node: ast.With) -> List[Tuple[int, int, str]]:
         ),
     """
     SIM117 = "SIM117 Use '{merged_with}' instead of multiple with statements"
-    errors: List[Tuple[int, int, str]] = []
+    errors: list[tuple[int, int, str]] = []
     if not (len(node.body) == 1 and isinstance(node.body[0], ast.With)):
         return errors
     with_items = []

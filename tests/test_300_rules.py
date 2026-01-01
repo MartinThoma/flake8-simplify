@@ -1,4 +1,3 @@
-# First party
 from tests import _results
 
 

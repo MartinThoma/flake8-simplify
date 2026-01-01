@@ -1,12 +1,9 @@
-# Core Library
 import ast
-from typing import List, Tuple
 
-# First party
 from flake8_simplify.utils import Assign, expression_uses_variable, to_source
 
 
-def get_sim904(node: ast.Assign) -> List[Tuple[int, int, str]]:
+def get_sim904(node: ast.Assign) -> list[tuple[int, int, str]]:
     """
     Assign values to dictionary directly at initialization.
 
@@ -40,7 +37,7 @@ def get_sim904(node: ast.Assign) -> List[Tuple[int, int, str]]:
         ]
     """
     RULE = "SIM904 Initialize dictionary '{dict_name}' directly"
-    errors: List[Tuple[int, int, str]] = []
+    errors: list[tuple[int, int, str]] = []
     n2 = node.next_sibling  # type: ignore
     if not (
         isinstance(node.value, ast.Dict)
@@ -69,7 +66,7 @@ def get_sim904(node: ast.Assign) -> List[Tuple[int, int, str]]:
     return errors
 
 
-def get_sim909(node: Assign) -> List[Tuple[int, int, str]]:
+def get_sim909(node: Assign) -> list[tuple[int, int, str]]:
     """
     Avoid reflexive assignments
 
@@ -90,7 +87,7 @@ def get_sim909(node: Assign) -> List[Tuple[int, int, str]]:
         ]
     """
     RULE = "SIM909 Remove reflexive assignment '{code}'"
-    errors: List[Tuple[int, int, str]] = []
+    errors: list[tuple[int, int, str]] = []
 
     names = []
     if isinstance(node.value, (ast.Name, ast.Subscript, ast.Tuple)):

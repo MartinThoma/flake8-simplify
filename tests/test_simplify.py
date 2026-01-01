@@ -1,7 +1,5 @@
-# Core Library
 import ast
 
-# First party
 from flake8_simplify import Plugin
 from flake8_simplify.utils import get_if_body_pairs
 from tests import _results
