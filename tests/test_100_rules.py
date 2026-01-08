@@ -163,6 +163,20 @@ else:
         assert "SIM108" not in el
 
 
+def test_sim108_attribute():
+    ret = _results(
+        """if a:
+    self.b = c
+else:
+    self.b = d"""
+    )
+    exp = (
+        "1:0 SIM108 Use ternary operator "
+        "'self.b = c if a else d' instead of if-else-block"
+    )
+    assert ret == {exp}
+
+
 def test_sim109():
     ret = _results("a == b or a == c")
     assert ret == {
