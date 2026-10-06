@@ -1,8 +1,0 @@
-flit
-junit2html
-pip-tools
-pre-commit
-pytest
-pytest-cov
-pytest-timeout
-wheel

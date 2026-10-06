@@ -1,7 +1,7 @@
 [build-system]
-build-backend = "setuptools.build_meta"
+build-backend = "uv_build"
 requires = [
-  "setuptools>=61.2",
+  "uv_build>=0.9,<0.13",
 ]
 
 [project]
@@ -11,10 +11,11 @@ description = "flake8 plugin which checks for code that can be simplified"
 keywords = [
   "flake8",
 ]
-license = {text = "MIT"}
+license = "MIT"
+license-files = ["LICENSE"]
 maintainers = [{name = "Martin Thoma", email = "info@martin-thoma.de"}]
 authors = [{name = "Martin Thoma", email = "info@martin-thoma.de"}]
-requires-python = ">=3.9.0"
+requires-python = ">=3.10"
 dependencies = [
   "flake8>=3.7",
 ]
@@ -22,12 +23,10 @@ classifiers = [
     "Development Status :: 4 - Beta",
     "Environment :: Console",
     "Intended Audience :: Developers",
-    "License :: OSI Approved :: MIT License",
     "Natural Language :: English",
     "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3 :: Only",
-    "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
@@ -47,23 +46,25 @@ content-type = "text/markdown"
 [project.urls]
 Homepage = "https://github.com/MartinThoma/flake8-simplify"
 
-[tool.setuptools]
-license-files = ["LICENSE"]
-include-package-data = false
+[dependency-groups]
+dev = [
+  "mypy",
+  "pytest",
+  "pytest-cov",
+  "pytest-timeout",
+  "ruff",
+]
+mutation = [
+  "mutmut>=3",
+]
 
-[tool.setuptools.packages.find]
-exclude = ["tests"]
-namespaces = false
-
-[tool.black]
-line-length = 79
-target-version = ['py39']
+[tool.uv.build-backend]
+module-name = "flake8_simplify"
+module-root = ""
 
 [tool.mutmut]
-backup = "False"
-runner = "./mutmut-test.sh"
-tests_dir = "tests/"
-paths_to_mutate = "flake8_simplify.py"
+paths_to_mutate = ["flake8_simplify/"]
+tests_dir = ["tests/"]
 
 [tool.mypy]
 exclude = "build/lib/flake8_simplify.py"
@@ -90,9 +91,11 @@ doctest_encoding = "utf-8"
 
 [tool.ruff]
 line-length = 79
+target-version = "py310"
 
 [tool.ruff.lint]
-select = ["E", "F", "I"]
+select = ["A", "B", "C4", "E", "ERA", "F", "I", "ISC", "PT", "RSE", "UP"]
+ignore = ["PT007", "ISC004"]
 
 [tool.ruff.lint.isort]
 known-first-party = ["flake8_simplify"]

@@ -1,7 +1,6 @@
 import ast
 import itertools
 from collections import defaultdict
-from typing import DefaultDict, Union
 
 
 # The following types were created to help mypy understand that there is a
@@ -81,7 +80,7 @@ class Assign(ast.Assign):
 
 
 def to_source(
-    node: Union[None, ast.expr, ast.Expr, ast.withitem, ast.slice, ast.Assign],
+    node: None | ast.expr | ast.Expr | ast.withitem | ast.slice | ast.Assign,
 ) -> str:
     if node is None:
         return "None"
@@ -118,7 +117,7 @@ def is_body_same(body1: list[ast.stmt], body2: list[ast.stmt]) -> bool:
     """Check if two lists of expressions are equivalent."""
     if len(body1) != len(body2):
         return False
-    for a, b in zip(body1, body2):
+    for a, b in zip(body1, body2, strict=True):
         try:
             stmt_equal = is_stmt_equal(a, b)
         except RecursionError:  # maximum recursion depth
@@ -150,7 +149,7 @@ def is_stmt_equal(a: ast.stmt, b: ast.stmt) -> bool:
     elif isinstance(a, list):
         if len(a) != len(b):
             return False
-        return all(itertools.starmap(is_stmt_equal, zip(a, b)))
+        return all(itertools.starmap(is_stmt_equal, zip(a, b, strict=True)))
     else:
         return a == b
 
@@ -215,7 +214,7 @@ def _get_duplicated_isinstance_call_by_node(node: ast.BoolOp) -> list[str]:
     >> g("isinstance(a, int) or isinstance(b, float) or isinstance(b, int)
     ['b']
     """
-    counter: DefaultDict[str, int] = defaultdict(int)
+    counter: defaultdict[str, int] = defaultdict(int)
 
     for call in node.values:
         # Make sure that this function call is actually a call of the built-in

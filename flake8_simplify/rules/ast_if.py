@@ -1,5 +1,5 @@
 import ast
-from typing import Any, Optional
+from typing import Any
 
 from flake8_simplify.constants import AST_CONST_TYPES, BOOL_CONST_TYPES
 from flake8_simplify.utils import (
@@ -243,9 +243,9 @@ def get_sim116(node: ast.If) -> list[tuple[int, int, str]]:
     ):
         return errors
     variable = node.test.left
-    child: Optional[ast.If] = node.orelse[0]
+    child: ast.If | None = node.orelse[0]
     assert isinstance(child, ast.If), "hint for mypy"
-    else_value: Optional[str] = None
+    else_value: str | None = None
     key_value_pairs: dict[Any, Any]
     if isinstance(node.test.comparators[0], ast.Constant) and isinstance(
         node.test.comparators[0].value, str

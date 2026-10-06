@@ -129,6 +129,7 @@ dmypy.json
 .pyre/
 
 # mutmut
+mutants/
 .mutmut-cache
 mutmut-results.xml
 mutmut-results.html

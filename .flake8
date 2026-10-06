@@ -1,6 +1,4 @@
+# Only the SIM rules of this plugin; everything else is handled by ruff.
 [flake8]
-ignore = E203, W503, PT007
-exclude = build/*
-per-file-ignores =
-    tests/*: ASS001
-max-line-length = 88
+select = SIM
+extend-exclude = .venv,build,dist,mutants

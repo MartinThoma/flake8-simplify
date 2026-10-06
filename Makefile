@@ -1,26 +1,22 @@
 maint:
-	pre-commit autoupdate && pre-commit run --all-files
-	pip-compile -U requirements/lint.in
-	pip-compile -U requirements/dev.in
+	uv run pre-commit autoupdate && uv run pre-commit run --all-files
+	uv lock --upgrade
 
 lint:
-	mypy flake8_simplify --strict
-	flake8 .
+	uv run ruff check .
+	uv run ruff format --check .
+	uv run mypy flake8_simplify
+	uv run flake8 .
 
-upload:
-	make clean
-	flit publish
+test:
+	uv run pytest
 
 clean:
-	pyclean .
-	rm -rf *.pyc build dist tests/reports docs/build .pytest_cache .tox .coverage html/
+	rm -rf *.pyc build dist tests/reports docs/build .pytest_cache .coverage html/
 
 mutmut-run:
-	mutmut run --paths-to-mutate flake8_simplify.py
+	# mutmut has no time limit option; it resumes from mutants/ on the next run
+	timeout 30m uv run --group mutation mutmut run
 
 mutmut-results:
-	mutmut html
-
-bandit:
-	# Python3 only: B322 is save
-	bandit -r mpu -s B322
+	uv run --group mutation mutmut browse
