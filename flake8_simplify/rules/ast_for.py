@@ -1,6 +1,8 @@
 import ast
+from collections.abc import Iterator
 
 from flake8_simplify.constants import BOOL_CONST_TYPES
+from flake8_simplify.registry import Violation, rule
 from flake8_simplify.utils import (
     For,
     body_contains_continue,
@@ -9,7 +11,8 @@ from flake8_simplify.utils import (
 )
 
 
-def get_sim104(node: ast.For) -> list[tuple[int, int, str]]:
+@rule("SIM104", ast.For)
+def get_sim104(node: ast.For) -> Iterator[Violation]:
     """
     Get a list of all "iterate and yield" patterns.
 
@@ -33,8 +36,7 @@ def get_sim104(node: ast.For) -> list[tuple[int, int, str]]:
         ),
 
     """
-    RULE = "SIM104 Use 'yield from {iterable}'"
-    errors: list[tuple[int, int, str]] = []
+    RULE = "Use 'yield from {iterable}'"
     if (
         len(node.body) != 1
         or not isinstance(node.body[0], ast.Expr)
@@ -44,7 +46,7 @@ def get_sim104(node: ast.For) -> list[tuple[int, int, str]]:
         or node.target.id != node.body[0].value.value.id
         or node.orelse != []
     ):
-        return errors
+        return
 
     parent = getattr(node, "parent", None)
     while (
@@ -56,17 +58,14 @@ def get_sim104(node: ast.For) -> list[tuple[int, int, str]]:
         parent = getattr(parent, "parent", None)
 
     if isinstance(parent, ast.AsyncFunctionDef):  # type: ignore
-        return errors
+        return
     iterable = to_source(node.iter)
-    errors.append(
-        (node.lineno, node.col_offset, RULE.format(iterable=iterable))
-    )
-    return errors
+    yield Violation(node, RULE.format(iterable=iterable))
 
 
-def get_sim110_sim111(node: ast.For) -> list[tuple[int, int, str]]:
+def _get_return_in_loop(node: ast.For) -> tuple[ast.If, bool] | None:
     """
-    Check if any / all could be used.
+    Find the "for-if-return, return" pattern that any / all could replace.
 
     For(
         target=Name(id='x', ctx=Store()),
@@ -90,10 +89,9 @@ def get_sim110_sim111(node: ast.For) -> list[tuple[int, int, str]]:
         type_comment=None,
     ),
     Return(value=Constant(value=False, kind=None))
+
+    Returns the if-statement and the constant it returns inside the loop.
     """
-    SIM110 = "SIM110 Use 'return any({check} for {target} in {iterable})'"
-    SIM111 = "SIM111 Use 'return all({check} for {target} in {iterable})'"
-    errors: list[tuple[int, int, str]] = []
     if not (
         len(node.body) == 1
         and isinstance(node.body[0], ast.If)
@@ -101,43 +99,54 @@ def get_sim110_sim111(node: ast.For) -> list[tuple[int, int, str]]:
         and isinstance(node.body[0].body[0], ast.Return)
         and isinstance(node.body[0].body[0].value, BOOL_CONST_TYPES)
     ):
-        return errors
-    if not hasattr(node.body[0].body[0].value, "value"):
-        return errors
+        return None
     if not isinstance(node.next_sibling, ast.Return):  # type: ignore
-        return errors
-    check = to_source(node.body[0].test)
+        return None
+    returned = node.body[0].body[0].value.value
+    if returned is not True and returned is not False:
+        return None
+    return node.body[0], returned
+
+
+@rule("SIM110", ast.For)
+def get_sim110(node: ast.For) -> Iterator[Violation]:
+    """Check if any(...) could be used."""
+    SIM110 = "Use 'return any({check} for {target} in {iterable})'"
+    match = _get_return_in_loop(node)
+    if match is None or match[1] is not True:
+        return
+    check = to_source(match[0].test)
     target = to_source(node.target)
     iterable = to_source(node.iter)
-    if node.body[0].body[0].value.value is True:
-        errors.append(
-            (
-                node.lineno,
-                node.col_offset,
-                SIM110.format(check=check, target=target, iterable=iterable),
-            )
-        )
-    elif node.body[0].body[0].value.value is False:
-        is_compound_expression = " and " in check or " or " in check
-
-        if is_compound_expression:
-            check = f"not ({check})"
-        else:
-            if check.startswith("not "):
-                check = check[len("not ") :]
-            else:
-                check = f"not {check}"
-        errors.append(
-            (
-                node.lineno,
-                node.col_offset,
-                SIM111.format(check=check, target=target, iterable=iterable),
-            )
-        )
-    return errors
+    yield Violation(
+        node, SIM110.format(check=check, target=target, iterable=iterable)
+    )
 
 
-def get_sim113(node: For) -> list[tuple[int, int, str]]:
+@rule("SIM111", ast.For)
+def get_sim111(node: ast.For) -> Iterator[Violation]:
+    """Check if all(...) could be used."""
+    SIM111 = "Use 'return all({check} for {target} in {iterable})'"
+    match = _get_return_in_loop(node)
+    if match is None or match[1] is not False:
+        return
+    check = to_source(match[0].test)
+    is_compound_expression = " and " in check or " or " in check
+    if is_compound_expression:
+        check = f"not ({check})"
+    elif check.startswith("not "):
+        check = check[len("not ") :]
+    else:
+        check = f"not {check}"
+    target = to_source(node.target)
+    iterable = to_source(node.iter)
+    yield Violation(
+        node, SIM111.format(check=check, target=target, iterable=iterable)
+    )
+
+
+@rule("SIM113", ast.For, wrapper=For)
+def get_sim113(node: For) -> Iterator[Violation]:
     """
     Find loops in which "enumerate" should be used.
 
@@ -158,10 +167,9 @@ def get_sim113(node: For) -> list[tuple[int, int, str]]:
             type_comment=None,
         ),
     """
-    errors: list[tuple[int, int, str]] = []
     variable_candidates = []
     if body_contains_continue(node.body):
-        return errors
+        return
 
     # Find variables that might just count the iteration of the current loop
     for expression in node.body:
@@ -188,7 +196,7 @@ def get_sim113(node: For) -> list[tuple[int, int, str]]:
         and to_source(n.targets[0]) in str_candidates
     ]
     if len(matches) == 0:
-        return errors
+        return
 
     sibling = node.previous_sibling
     while sibling is not None:
@@ -196,11 +204,4 @@ def get_sim113(node: For) -> list[tuple[int, int, str]]:
 
     for match in matches:
         variable = to_source(match)
-        errors.append(
-            (
-                match.lineno,
-                match.col_offset,
-                f"SIM113 Use enumerate for '{variable}'",
-            )
-        )
-    return errors
+        yield Violation(match, f"Use enumerate for '{variable}'")

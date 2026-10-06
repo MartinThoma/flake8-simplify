@@ -2,11 +2,11 @@
 
 import importlib
 import pathlib
-import re
 from typing import Any
 
 import pytest
 
+from flake8_simplify.registry import get_rules
 from tests import _results, _rule_hits
 
 RULES_DIR = pathlib.Path(__file__).parent / "rules"
@@ -45,11 +45,7 @@ def test_false_positive(rule, code):
 
 
 def _implemented_rules() -> set[str]:
-    source_dir = pathlib.Path(__file__).parent.parent / "flake8_simplify"
-    found: set[str] = set()
-    for path in (source_dir / "rules").glob("*.py"):
-        found |= set(re.findall(r'"(SIM\d{3}) ', path.read_text()))
-    return found
+    return {rule.code for rules in get_rules().values() for rule in rules}
 
 
 @pytest.mark.parametrize("rule", sorted(_implemented_rules()))

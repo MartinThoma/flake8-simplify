@@ -1,9 +1,12 @@
 import ast
+from collections.abc import Iterator
 
+from flake8_simplify.registry import Violation, rule
 from flake8_simplify.utils import to_source
 
 
-def get_sim117(node: ast.With) -> list[tuple[int, int, str]]:
+@rule("SIM117", ast.With)
+def get_sim117(node: ast.With) -> Iterator[Violation]:
     """
     Find multiple with-statements with same scope.
 
@@ -45,15 +48,11 @@ def get_sim117(node: ast.With) -> list[tuple[int, int, str]]:
             type_comment=None,
         ),
     """
-    SIM117 = "SIM117 Use '{merged_with}' instead of multiple with statements"
-    errors: list[tuple[int, int, str]] = []
+    SIM117 = "Use '{merged_with}' instead of multiple with statements"
     if not (len(node.body) == 1 and isinstance(node.body[0], ast.With)):
-        return errors
+        return
     with_items = []
     for withitem in node.items + node.body[0].items:
         with_items.append(f"{to_source(withitem)}")
     merged_with = f"with {', '.join(with_items)}:"
-    errors.append(
-        (node.lineno, node.col_offset, SIM117.format(merged_with=merged_with))
-    )
-    return errors
+    yield Violation(node, SIM117.format(merged_with=merged_with))

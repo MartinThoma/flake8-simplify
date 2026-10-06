@@ -4,136 +4,29 @@ import logging
 from collections.abc import Generator
 from typing import Any
 
-from flake8_simplify.rules.ast_assign import get_sim904, get_sim909
-from flake8_simplify.rules.ast_bool_op import (
-    get_sim101,
-    get_sim109,
-    get_sim220,
-    get_sim221,
-    get_sim222,
-    get_sim223,
-)
-from flake8_simplify.rules.ast_call import (
-    get_sim115,
-    get_sim901,
-    get_sim905,
-    get_sim906,
-    get_sim910,
-    get_sim911,
-)
-from flake8_simplify.rules.ast_classdef import get_sim120
-from flake8_simplify.rules.ast_compare import get_sim118, get_sim300
-from flake8_simplify.rules.ast_expr import get_sim112
-from flake8_simplify.rules.ast_for import (
-    get_sim104,
-    get_sim110_sim111,
-    get_sim113,
-)
-from flake8_simplify.rules.ast_if import (
-    get_sim102,
-    get_sim103,
-    get_sim108,
-    get_sim114,
-    get_sim116,
-    get_sim401,
-    get_sim908,
-)
-from flake8_simplify.rules.ast_ifexp import get_sim210, get_sim211, get_sim212
-from flake8_simplify.rules.ast_subscript import get_sim907
-from flake8_simplify.rules.ast_try import get_sim105, get_sim107
-from flake8_simplify.rules.ast_unary_op import (
-    get_sim201,
-    get_sim202,
-    get_sim203,
-    get_sim208,
-)
-from flake8_simplify.rules.ast_with import get_sim117
-from flake8_simplify.utils import Assign, Call, For, If, UnaryOp
+from flake8_simplify.registry import get_rules
 
 logger = logging.getLogger(__name__)
 
 
 class Visitor(ast.NodeVisitor):
+    """Run every rule registered for a node type on each node of that type."""
+
     def __init__(self) -> None:
         self.errors: list[tuple[int, int, str]] = []
+        self._rules = get_rules()
 
-    def visit_Assign(self, node: ast.Assign) -> Any:
-        self.errors += get_sim904(node)
-        self.errors += get_sim909(Assign(node))
-        self.generic_visit(node)
-
-    def visit_Call(self, node: ast.Call) -> Any:
-        self.errors += get_sim115(Call(node))
-        self.errors += get_sim901(node)
-        self.errors += get_sim905(node)
-        self.errors += get_sim906(node)
-        self.errors += get_sim910(Call(node))
-        self.errors += get_sim911(node)
-        self.generic_visit(node)
-
-    def visit_With(self, node: ast.With) -> Any:
-        self.errors += get_sim117(node)
-        self.generic_visit(node)
-
-    def visit_Expr(self, node: ast.Expr) -> None:
-        self.errors += get_sim112(node)
-        self.generic_visit(node)
-
-    def visit_BoolOp(self, node: ast.BoolOp) -> None:
-        self.errors += get_sim101(node)
-        self.errors += get_sim109(node)
-        self.errors += get_sim220(node)
-        self.errors += get_sim221(node)
-        self.errors += get_sim222(node)
-        self.errors += get_sim223(node)
-        self.generic_visit(node)
-
-    def visit_If(self, node: ast.If) -> None:
-        self.errors += get_sim102(node)
-        self.errors += get_sim103(node)
-        self.errors += get_sim108(If(node))
-        self.errors += get_sim114(node)
-        self.errors += get_sim116(node)
-        self.errors += get_sim908(node)
-        self.errors += get_sim401(node)
-        self.generic_visit(node)
-
-    def visit_For(self, node: ast.For) -> None:
-        self.errors += get_sim104(node)
-        self.errors += get_sim110_sim111(node)
-        self.errors += get_sim113(For(node))
-        self.generic_visit(node)
-
-    def visit_Subscript(self, node: ast.Subscript) -> None:
-        self.errors += get_sim907(node)
-        self.generic_visit(node)
-
-    def visit_Try(self, node: ast.Try) -> None:
-        self.errors += get_sim105(node)
-        self.errors += get_sim107(node)
-        self.generic_visit(node)
-
-    def visit_UnaryOp(self, node_v: ast.UnaryOp) -> None:
-        node = UnaryOp(node_v)
-        self.errors += get_sim201(node)
-        self.errors += get_sim202(node)
-        self.errors += get_sim203(node)
-        self.errors += get_sim208(node)
-        self.generic_visit(node)
-
-    def visit_IfExp(self, node: ast.IfExp) -> None:
-        self.errors += get_sim210(node)
-        self.errors += get_sim211(node)
-        self.errors += get_sim212(node)
-        self.generic_visit(node)
-
-    def visit_Compare(self, node: ast.Compare) -> None:
-        self.errors += get_sim118(node)
-        self.errors += get_sim300(node)
-        self.generic_visit(node)
-
-    def visit_ClassDef(self, node: ast.ClassDef) -> None:
-        self.errors += get_sim120(node)
+    def visit(self, node: ast.AST) -> Any:
+        for rule in self._rules.get(type(node), ()):
+            checked_node = rule.wrapper(node) if rule.wrapper else node
+            for violation in rule.check(checked_node):
+                self.errors.append(
+                    (
+                        violation.node.lineno,
+                        violation.node.col_offset,
+                        f"{rule.code} {violation.message}",
+                    )
+                )
         self.generic_visit(node)
 
 

@@ -1,10 +1,13 @@
 import ast
+from collections.abc import Iterator
 
 from flake8_simplify.constants import STR_TYPES
+from flake8_simplify.registry import Violation, rule
 from flake8_simplify.utils import to_source
 
 
-def get_sim112(node: ast.Expr) -> list[tuple[int, int, str]]:
+@rule("SIM112", ast.Expr)
+def get_sim112(node: ast.Expr) -> Iterator[Violation]:
     """
     Find non-capitalized calls to environment variables.
 
@@ -23,8 +26,7 @@ def get_sim112(node: ast.Expr) -> list[tuple[int, int, str]]:
             ),
         ),
     """
-    RULE = "SIM112 Use '{expected}' instead of '{original}'"
-    errors: list[tuple[int, int, str]] = []
+    RULE = "Use '{expected}' instead of '{original}'"
 
     is_index_call = (
         isinstance(node.value, ast.Subscript)
@@ -76,7 +78,7 @@ def get_sim112(node: ast.Expr) -> list[tuple[int, int, str]]:
         # Check if this has a change
         has_change = env_name != env_name.upper()
     if not (is_index_call or is_get_call) or not has_change:
-        return errors
+        return
     if is_index_call:
         original = to_source(node)
         expected = f"os.environ[{env_name.upper()}]"
@@ -89,12 +91,5 @@ def get_sim112(node: ast.Expr) -> list[tuple[int, int, str]]:
             default_value = to_source(node.value.args[1])
             expected = f"os.environ.get({env_name.upper()}, {default_value})"
     else:
-        return errors
-    errors.append(
-        (
-            node.lineno,
-            node.col_offset,
-            RULE.format(original=original, expected=expected),
-        )
-    )
-    return errors
+        return
+    yield Violation(node, RULE.format(original=original, expected=expected))

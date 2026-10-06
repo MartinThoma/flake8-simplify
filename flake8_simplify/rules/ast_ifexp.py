@@ -1,42 +1,43 @@
 import ast
+from collections.abc import Iterator
 
 from flake8_simplify.constants import BOOL_CONST_TYPES
+from flake8_simplify.registry import Violation, rule
 from flake8_simplify.utils import is_same_expression, to_source
 
 
-def get_sim210(node: ast.IfExp) -> list[tuple[int, int, str]]:
+@rule("SIM210", ast.IfExp)
+def get_sim210(node: ast.IfExp) -> Iterator[Violation]:
     """Get a list of all calls of the type "True if a else False"."""
-    SIM210 = "SIM210 Use 'bool({cond})' instead of 'True if {cond} else False'"
-    errors: list[tuple[int, int, str]] = []
+    SIM210 = "Use 'bool({cond})' instead of 'True if {cond} else False'"
     if (
         not isinstance(node.body, BOOL_CONST_TYPES)
         or node.body.value is not True
         or not isinstance(node.orelse, BOOL_CONST_TYPES)
         or node.orelse.value is not False
     ):
-        return errors
+        return
     cond = to_source(node.test)
-    errors.append((node.lineno, node.col_offset, SIM210.format(cond=cond)))
-    return errors
+    yield Violation(node, SIM210.format(cond=cond))
 
 
-def get_sim211(node: ast.IfExp) -> list[tuple[int, int, str]]:
+@rule("SIM211", ast.IfExp)
+def get_sim211(node: ast.IfExp) -> Iterator[Violation]:
     """Get a list of all calls of the type "False if a else True"."""
-    SIM211 = "SIM211 Use 'not {cond}' instead of 'False if {cond} else True'"
-    errors: list[tuple[int, int, str]] = []
+    SIM211 = "Use 'not {cond}' instead of 'False if {cond} else True'"
     if (
         not isinstance(node.body, BOOL_CONST_TYPES)
         or node.body.value is not False
         or not isinstance(node.orelse, BOOL_CONST_TYPES)
         or node.orelse.value is not True
     ):
-        return errors
+        return
     cond = to_source(node.test)
-    errors.append((node.lineno, node.col_offset, SIM211.format(cond=cond)))
-    return errors
+    yield Violation(node, SIM211.format(cond=cond))
 
 
-def get_sim212(node: ast.IfExp) -> list[tuple[int, int, str]]:
+@rule("SIM212", ast.IfExp)
+def get_sim212(node: ast.IfExp) -> Iterator[Violation]:
     """
     Get a list of all calls of the type "b if not a else a".
 
@@ -49,17 +50,13 @@ def get_sim212(node: ast.IfExp) -> list[tuple[int, int, str]]:
         orelse=Name(id='a', ctx=Load()),
     )
     """
-    SIM212 = (
-        "SIM212 Use '{a} if {a} else {b}' instead of '{b} if not {a} else {a}'"
-    )
-    errors: list[tuple[int, int, str]] = []
+    SIM212 = "Use '{a} if {a} else {b}' instead of '{b} if not {a} else {a}'"
     if not (
         isinstance(node.test, ast.UnaryOp)
         and isinstance(node.test.op, ast.Not)
         and is_same_expression(node.test.operand, node.orelse)
     ):
-        return errors
+        return
     a = to_source(node.test.operand)
     b = to_source(node.body)
-    errors.append((node.lineno, node.col_offset, SIM212.format(a=a, b=b)))
-    return errors
+    yield Violation(node, SIM212.format(a=a, b=b))

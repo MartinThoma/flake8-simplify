@@ -1,7 +1,9 @@
 import ast
+from collections.abc import Iterator
 from typing import Any
 
 from flake8_simplify.constants import AST_CONST_TYPES, BOOL_CONST_TYPES
+from flake8_simplify.registry import Violation, rule
 from flake8_simplify.utils import (
     If,
     get_if_body_pairs,
@@ -10,10 +12,10 @@ from flake8_simplify.utils import (
 )
 
 
-def get_sim102(node: ast.If) -> list[tuple[int, int, str]]:
+@rule("SIM102", ast.If)
+def get_sim102(node: ast.If) -> Iterator[Violation]:
     """Get a list of all nested if-statements without else-blocks."""
-    RULE = "SIM102 Use a single if-statement instead of nested if-statements"
-    errors: list[tuple[int, int, str]] = []
+    RULE = "Use a single if-statement instead of nested if-statements"
 
     # ## Pattern 1
     # if a: <---
@@ -33,7 +35,7 @@ def get_sim102(node: ast.If) -> list[tuple[int, int, str]]:
     #         d
 
     if not is_pattern_1:
-        return errors
+        return
     is_main_check = (
         isinstance(node.test, ast.Compare)
         and isinstance(node.test.left, ast.Name)
@@ -44,12 +46,12 @@ def get_sim102(node: ast.If) -> list[tuple[int, int, str]]:
         and node.test.comparators[0].value == "__main__"
     )
     if is_main_check:
-        return errors
-    errors.append((node.lineno, node.col_offset, RULE))
-    return errors
+        return
+    yield Violation(node, RULE)
 
 
-def get_sim103(node: ast.If) -> list[tuple[int, int, str]]:
+@rule("SIM103", ast.If)
+def get_sim103(node: ast.If) -> Iterator[Violation]:
     """
     Get a list of all calls that wrap a condition to return a bool.
 
@@ -75,8 +77,7 @@ def get_sim103(node: ast.If) -> list[tuple[int, int, str]]:
         ),
 
     """
-    SIM103 = "SIM103 Return the condition {cond} directly"
-    errors: list[tuple[int, int, str]] = []
+    SIM103 = "Return the condition {cond} directly"
     if (
         len(node.body) != 1
         or not isinstance(node.body[0], ast.Return)
@@ -93,13 +94,13 @@ def get_sim103(node: ast.If) -> list[tuple[int, int, str]]:
             or node.orelse[0].value.value is False
         )
     ):
-        return errors
+        return
     cond = to_source(node.test)
-    errors.append((node.lineno, node.col_offset, SIM103.format(cond=cond)))
-    return errors
+    yield Violation(node, SIM103.format(cond=cond))
 
 
-def get_sim108(node: If) -> list[tuple[int, int, str]]:
+@rule("SIM108", ast.If, wrapper=If)
+def get_sim108(node: If) -> Iterator[Violation]:
     """
     Get a list of all if-elses which could be a ternary operator assignment.
 
@@ -122,11 +123,10 @@ def get_sim108(node: If) -> list[tuple[int, int, str]]:
         ),
     """
     RULE = (
-        "SIM108 Use ternary operator "
+        "Use ternary operator "
         "'{assign} = {body} if {cond} else {orelse}' "
         "instead of if-else-block"
     )
-    errors: list[tuple[int, int, str]] = []
     if not (
         len(node.body) == 1
         and isinstance(node.body[0], ast.Assign)
@@ -138,7 +138,7 @@ def get_sim108(node: If) -> list[tuple[int, int, str]]:
         and isinstance(node.orelse[0].targets[0], ast.Name)
         and node.body[0].targets[0].id == node.orelse[0].targets[0].id
     ):
-        return errors
+        return
 
     target_var = node.body[0].targets[0]
     assign = to_source(target_var)
@@ -152,19 +152,20 @@ def get_sim108(node: If) -> list[tuple[int, int, str]]:
                 and isinstance(n.targets[0], ast.Name)
                 and n.targets[0].id == target_var.id
             ):
-                return errors
+                return
 
     body = to_source(node.body[0].value)
     cond = to_source(node.test)
     orelse = to_source(node.orelse[0].value)
     new_code = RULE.format(assign=assign, body=body, cond=cond, orelse=orelse)
-    if len(new_code) > 79:
-        return errors
-    errors.append((node.lineno, node.col_offset, new_code))
-    return errors
+    # Only suggest the ternary if the full message fits into 79 characters
+    if len(f"SIM108 {new_code}") > 79:
+        return
+    yield Violation(node, new_code)
 
 
-def get_sim114(node: ast.If) -> list[tuple[int, int, str]]:
+@rule("SIM114", ast.If)
+def get_sim114(node: ast.If) -> Iterator[Violation]:
     """
     Find same bodys.
 
@@ -190,8 +191,7 @@ def get_sim114(node: ast.If) -> list[tuple[int, int, str]]:
             ],
         ),
     """
-    SIM114 = "SIM114 Use logical or (({cond1}) or ({cond2})) and a single body"
-    errors: list[tuple[int, int, str]] = []
+    SIM114 = "Use logical or (({cond1}) or ({cond2})) and a single body"
     if_body_pairs = get_if_body_pairs(node)
     error_pairs = []
     for i in range(len(if_body_pairs) - 1):
@@ -203,19 +203,16 @@ def get_sim114(node: ast.If) -> list[tuple[int, int, str]]:
         if is_body_same(ifbody1[1], ifbody2[1]):
             error_pairs.append((ifbody1, ifbody2))
     for ifbody1, ifbody2 in error_pairs:
-        errors.append(
-            (
-                ifbody1[0].lineno,
-                ifbody1[0].col_offset,
-                SIM114.format(
-                    cond1=to_source(ifbody1[0]), cond2=to_source(ifbody2[0])
-                ),
-            )
+        yield Violation(
+            ifbody1[0],
+            SIM114.format(
+                cond1=to_source(ifbody1[0]), cond2=to_source(ifbody2[0])
+            ),
         )
-    return errors
 
 
-def get_sim116(node: ast.If) -> list[tuple[int, int, str]]:
+@rule("SIM116", ast.If)
+def get_sim116(node: ast.If) -> Iterator[Violation]:
     """
     Find places where 3 or more consecutive if-statements with direct returns.
 
@@ -225,10 +222,9 @@ def get_sim116(node: ast.If) -> list[tuple[int, int, str]]:
     * Else must also just have a return
     """
     SIM116 = (
-        "SIM116 Use a dictionary lookup instead of 3+ if/elif-statements: "
+        "Use a dictionary lookup instead of 3+ if/elif-statements: "
         "return {ret}"
     )
-    errors: list[tuple[int, int, str]] = []
     if not (
         isinstance(node.test, ast.Compare)
         and isinstance(node.test.left, ast.Name)
@@ -241,7 +237,7 @@ def get_sim116(node: ast.If) -> list[tuple[int, int, str]]:
         and len(node.orelse) == 1
         and isinstance(node.orelse[0], ast.If)
     ):
-        return errors
+        return
     variable = node.test.left
     child: ast.If | None = node.orelse[0]
     assert isinstance(child, ast.If), "hint for mypy"
@@ -277,12 +273,12 @@ def get_sim116(node: ast.If) -> list[tuple[int, int, str]]:
             and isinstance(child.body[0], ast.Return)
             and len(child.orelse) <= 1
         ):
-            return errors
+            return
         return_call = child.body[0]
         assert isinstance(return_call, ast.Return), "hint for mypy"
         if isinstance(return_call.value, ast.Call):
             # See https://github.com/MartinThoma/flake8-simplify/issues/113
-            return errors
+            return
         key = child.test.comparators[0].value
 
         value = to_source(child.body[0].value)
@@ -297,28 +293,27 @@ def get_sim116(node: ast.If) -> list[tuple[int, int, str]]:
                 else_value = to_source(child.orelse[0].value)
                 child = None
             else:
-                return errors
+                return
         else:
             child = None
     if len(key_value_pairs) < 3:
-        return errors
+        return
     if else_value:
         ret = f"{key_value_pairs}.get({variable.id}, {else_value})"
     else:
         ret = f"{key_value_pairs}.get({variable.id})"
-    errors.append((node.lineno, node.col_offset, SIM116.format(ret=ret)))
-    return errors
+    yield Violation(node, SIM116.format(ret=ret))
 
 
-def get_sim908(node: ast.If) -> list[tuple[int, int, str]]:
+@rule("SIM908", ast.If)
+def get_sim908(node: ast.If) -> Iterator[Violation]:
     """
     Get all if-blocks which only check if a key is in a dictionary.
     """
     RULE = (
-        "SIM908 Use '{dictname}.get({key})' instead of "
+        "Use '{dictname}.get({key})' instead of "
         "'if {key} in {dictname}: {dictname}[{key}]'"
     )
-    errors: list[tuple[int, int, str]] = []
     if not (
         isinstance(node.test, ast.Compare)
         and len(node.test.ops) == 1
@@ -326,7 +321,7 @@ def get_sim908(node: ast.If) -> list[tuple[int, int, str]]:
         and len(node.body) == 1
         and len(node.orelse) == 0
     ):
-        return errors
+        return
 
     # We might still be left with a check if a value is in a list or in
     # the body the developer might remove the element from the list
@@ -337,26 +332,20 @@ def get_sim908(node: ast.If) -> list[tuple[int, int, str]]:
         and len(node.body[0].targets) == 1
         and isinstance(node.body[0].targets[0], ast.Name)
     ):
-        return errors
+        return
 
     test_var = node.test.left
     slice_var = node.body[0].value.slice
     if to_source(slice_var) != to_source(test_var):
-        return errors
+        return
 
     key = to_source(node.test.left)
     dictname = to_source(node.test.comparators[0])
-    errors.append(
-        (
-            node.lineno,
-            node.col_offset,
-            RULE.format(key=key, dictname=dictname),
-        )
-    )
-    return errors
+    yield Violation(node, RULE.format(key=key, dictname=dictname))
 
 
-def get_sim401(node: ast.If) -> list[tuple[int, int, str]]:
+@rule("SIM401", ast.If)
+def get_sim401(node: ast.If) -> Iterator[Violation]:
     """
     Get all calls that should use default values for dictionary access.
 
@@ -433,10 +422,9 @@ def get_sim401(node: ast.If) -> list[tuple[int, int, str]]:
 
     """
     SIM401 = (
-        "SIM401 Use '{value} = {dict}.get({key}, {default_value})' "
+        "Use '{value} = {dict}.get({key}, {default_value})' "
         "instead of an if-block"
     )
-    errors: list[tuple[int, int, str]] = []
     is_pattern_1 = (
         len(node.body) == 1
         and isinstance(node.body[0], ast.Assign)
@@ -468,11 +456,11 @@ def get_sim401(node: ast.If) -> list[tuple[int, int, str]]:
         assert isinstance(node.orelse[0], ast.Assign)
         key = node.test.left
         if to_source(key) != to_source(node.body[0].value.slice):
-            return errors  # second part of pattern 1
+            return  # second part of pattern 1
         assign_to_if_body = node.body[0].targets[0]
         assign_to_else = node.orelse[0].targets[0]
         if to_source(assign_to_if_body) != to_source(assign_to_else):
-            return errors
+            return
         dict_name = node.test.comparators[0]
         default_value = node.orelse[0].value
         value_node = node.body[0].targets[0]
@@ -487,7 +475,7 @@ def get_sim401(node: ast.If) -> list[tuple[int, int, str]]:
         assert isinstance(node.orelse[0].value, ast.Subscript)
         key = node.test.left
         if to_source(key) != to_source(node.orelse[0].value.slice):
-            return errors  # second part of pattern 1
+            return  # second part of pattern 1
         dict_name = node.test.comparators[0]
         default_value = node.body[0].value
         value_node = node.body[0].targets[0]
@@ -496,17 +484,13 @@ def get_sim401(node: ast.If) -> list[tuple[int, int, str]]:
         default_str = to_source(default_value)
         value_str = to_source(value_node)
     else:
-        return errors
-    errors.append(
-        (
-            node.lineno,
-            node.col_offset,
-            SIM401.format(
-                key=key_str,
-                dict=dict_str,
-                default_value=default_str,
-                value=value_str,
-            ),
-        )
+        return
+    yield Violation(
+        node,
+        SIM401.format(
+            key=key_str,
+            dict=dict_str,
+            default_value=default_str,
+            value=value_str,
+        ),
     )
-    return errors

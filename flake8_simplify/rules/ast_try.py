@@ -1,9 +1,12 @@
 import ast
+from collections.abc import Iterator
 
+from flake8_simplify.registry import Violation, rule
 from flake8_simplify.utils import to_source
 
 
-def get_sim105(node: ast.Try) -> list[tuple[int, int, str]]:
+@rule("SIM105", ast.Try)
+def get_sim105(node: ast.Try) -> Iterator[Violation]:
     """
     Get a list of all "try-except-pass" patterns.
 
@@ -37,8 +40,7 @@ def get_sim105(node: ast.Try) -> list[tuple[int, int, str]]:
 
 
     """
-    SIM105 = "SIM105 Use 'contextlib.suppress({exception})'"
-    errors: list[tuple[int, int, str]] = []
+    SIM105 = "Use 'contextlib.suppress({exception})'"
     if (
         len(node.body) != 1
         or len(node.handlers) != 1
@@ -47,23 +49,20 @@ def get_sim105(node: ast.Try) -> list[tuple[int, int, str]]:
         or not isinstance(node.handlers[0].body[0], ast.Pass)
         or node.orelse != []
     ):
-        return errors
+        return
     if node.handlers[0].type is None:
         exception = "Exception"
     else:
         exception = to_source(node.handlers[0].type)
-    errors.append(
-        (node.lineno, node.col_offset, SIM105.format(exception=exception))
-    )
-    return errors
+    yield Violation(node, SIM105.format(exception=exception))
 
 
-def get_sim107(node: ast.Try) -> list[tuple[int, int, str]]:
+@rule("SIM107", ast.Try)
+def get_sim107(node: ast.Try) -> Iterator[Violation]:
     """
     Get a list of all calls where try/except and finally have 'return'.
     """
-    SIM107 = "SIM107 Don't use return in try/except and finally"
-    errors: list[tuple[int, int, str]] = []
+    SIM107 = "Don't use return in try/except and finally"
 
     try_has_return = False
     for stmt in node.body:
@@ -87,7 +86,4 @@ def get_sim107(node: ast.Try) -> list[tuple[int, int, str]]:
 
     if (try_has_return or except_has_return) and finally_has_return:
         assert finally_return is not None, "hint for mypy"
-        errors.append(
-            (finally_return.lineno, finally_return.col_offset, SIM107)
-        )
-    return errors
+        yield Violation(finally_return, SIM107)
