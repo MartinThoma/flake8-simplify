@@ -11,6 +11,64 @@ from flake8_simplify.utils import (
 )
 
 
+def _is_main_check(test: ast.expr) -> bool:
+    """Check for ``__name__ <op> "__main__"``."""
+    return (
+        isinstance(test, ast.Compare)
+        and isinstance(test.left, ast.Name)
+        and test.left.id == "__name__"
+        and len(test.comparators) == 1
+        and isinstance(test.comparators[0], ast.Constant)
+        and test.comparators[0].value == "__main__"
+    )
+
+
+def _returns_bool(body: list[ast.stmt]) -> bool:
+    """Check if the body is just ``return True`` or ``return False``."""
+    return (
+        len(body) == 1
+        and isinstance(body[0], ast.Return)
+        and isinstance(body[0].value, ast.Constant)
+        and isinstance(body[0].value.value, bool)
+    )
+
+
+def _get_single_name_assign(
+    body: list[ast.stmt],
+) -> tuple[ast.Name, ast.expr] | None:
+    """Get target and value if the body is just ``name = value``."""
+    if not (
+        len(body) == 1
+        and isinstance(body[0], ast.Assign)
+        and len(body[0].targets) == 1
+        and isinstance(body[0].targets[0], ast.Name)
+    ):
+        return None
+    return body[0].targets[0], body[0].value
+
+
+def _get_eq_constant_check(
+    test: ast.expr,
+) -> tuple[ast.Name, ast.Constant] | None:
+    """Get the name and the constant of ``name == constant``."""
+    if (
+        isinstance(test, ast.Compare)
+        and isinstance(test.left, ast.Name)
+        and len(test.ops) == 1
+        and isinstance(test.ops[0], ast.Eq)
+        and len(test.comparators) == 1
+        and isinstance(test.comparators[0], ast.Constant)
+    ):
+        return test.left, test.comparators[0]
+    return None
+
+
+def _strip_double_quotes(source: str) -> str:
+    if source.startswith('"') and source.endswith('"'):
+        return source[1:-1]
+    return source
+
+
 @rule("SIM102", ast.If)
 def get_sim102(node: ast.If) -> Iterator[Violation]:
     """Get a list of all nested if-statements without else-blocks."""
@@ -35,16 +93,7 @@ def get_sim102(node: ast.If) -> Iterator[Violation]:
 
     if not is_pattern_1:
         return
-    is_main_check = (
-        isinstance(node.test, ast.Compare)
-        and isinstance(node.test.left, ast.Name)
-        and node.test.left.id == "__name__"
-        and len(node.test.comparators) == 1
-        and isinstance(node.test.comparators[0], ast.Constant)
-        and isinstance(node.test.comparators[0].value, str)
-        and node.test.comparators[0].value == "__main__"
-    )
-    if is_main_check:
+    if _is_main_check(node.test):
         return
     yield Violation(node, RULE)
 
@@ -77,22 +126,7 @@ def get_sim103(node: ast.If) -> Iterator[Violation]:
 
     """
     SIM103 = "Return the condition {cond} directly"
-    if (
-        len(node.body) != 1
-        or not isinstance(node.body[0], ast.Return)
-        or not isinstance(node.body[0].value, ast.Constant)
-        or not (
-            node.body[0].value.value is True
-            or node.body[0].value.value is False
-        )
-        or len(node.orelse) != 1
-        or not isinstance(node.orelse[0], ast.Return)
-        or not isinstance(node.orelse[0].value, ast.Constant)
-        or not (
-            node.orelse[0].value.value is True
-            or node.orelse[0].value.value is False
-        )
-    ):
+    if not (_returns_bool(node.body) and _returns_bool(node.orelse)):
         return
     cond = to_source(node.test)
     yield Violation(node, SIM103.format(cond=cond))
@@ -126,20 +160,16 @@ def get_sim108(node: ast.If) -> Iterator[Violation]:
         "'{assign} = {body} if {cond} else {orelse}' "
         "instead of if-else-block"
     )
+    body_assign = _get_single_name_assign(node.body)
+    orelse_assign = _get_single_name_assign(node.orelse)
     if not (
-        len(node.body) == 1
-        and isinstance(node.body[0], ast.Assign)
-        and len(node.orelse) == 1
-        and isinstance(node.orelse[0], ast.Assign)
-        and len(node.body[0].targets) == 1
-        and len(node.orelse[0].targets) == 1
-        and isinstance(node.body[0].targets[0], ast.Name)
-        and isinstance(node.orelse[0].targets[0], ast.Name)
-        and node.body[0].targets[0].id == node.orelse[0].targets[0].id
+        body_assign
+        and orelse_assign
+        and body_assign[0].id == orelse_assign[0].id
     ):
         return
 
-    target_var = node.body[0].targets[0]
+    target_var, body_value = body_assign
     assign = to_source(target_var)
 
     # It's part of a bigger if-elseif block:
@@ -154,9 +184,9 @@ def get_sim108(node: ast.If) -> Iterator[Violation]:
             ):
                 return
 
-    body = to_source(node.body[0].value)
+    body = to_source(body_value)
     cond = to_source(node.test)
-    orelse = to_source(node.orelse[0].value)
+    orelse = to_source(orelse_assign[1])
     new_code = RULE.format(assign=assign, body=body, cond=cond, orelse=orelse)
     # Only suggest the ternary if the full message fits into 79 characters
     if len(f"SIM108 {new_code}") > 79:
@@ -225,66 +255,40 @@ def get_sim116(node: ast.If) -> Iterator[Violation]:
         "Use a dictionary lookup instead of 3+ if/elif-statements: "
         "return {ret}"
     )
+    check = _get_eq_constant_check(node.test)
     if not (
-        isinstance(node.test, ast.Compare)
-        and isinstance(node.test.left, ast.Name)
-        and len(node.test.ops) == 1
-        and isinstance(node.test.ops[0], ast.Eq)
-        and len(node.test.comparators) == 1
-        and isinstance(node.test.comparators[0], ast.Constant)
+        check
         and len(node.body) == 1
         and isinstance(node.body[0], ast.Return)
         and len(node.orelse) == 1
         and isinstance(node.orelse[0], ast.If)
     ):
         return
-    variable = node.test.left
-    child: ast.If | None = node.orelse[0]
-    assert isinstance(child, ast.If), "hint for mypy"
+    variable, first_key = check
+    first_value = to_source(node.body[0].value)
+    if isinstance(first_key.value, str):
+        first_value = _strip_double_quotes(first_value)
+    key_value_pairs: dict[Any, str] = {first_key.value: first_value}
+
     else_value: str | None = None
-    key_value_pairs: dict[Any, Any]
-    if isinstance(node.test.comparators[0], ast.Constant) and isinstance(
-        node.test.comparators[0].value, str
-    ):
-        value = to_source(node.body[0].value)
-        if value[0] == '"' and value[-1] == '"':
-            value = value[1:-1]
-        key_value_pairs = {node.test.comparators[0].value: value}
-    elif isinstance(node.test.comparators[0], ast.Constant) and isinstance(
-        node.test.comparators[0].value, (int, float, complex)
-    ):
-        key_value_pairs = {
-            node.test.comparators[0].value: to_source(node.body[0].value)
-        }
-    else:
-        key_value_pairs = {
-            node.test.comparators[0].value: to_source(node.body[0].value)
-        }
+    child: ast.If | None = node.orelse[0]
     while child:
+        check = _get_eq_constant_check(child.test)
         if not (
-            isinstance(child.test, ast.Compare)
-            and isinstance(child.test.left, ast.Name)
-            and child.test.left.id == variable.id
-            and len(child.test.ops) == 1
-            and isinstance(child.test.ops[0], ast.Eq)
-            and len(child.test.comparators) == 1
-            and isinstance(child.test.comparators[0], ast.Constant)
+            check
+            and check[0].id == variable.id
             and len(child.body) == 1
             and isinstance(child.body[0], ast.Return)
             and len(child.orelse) <= 1
         ):
             return
-        return_call = child.body[0]
-        assert isinstance(return_call, ast.Return), "hint for mypy"
-        if isinstance(return_call.value, ast.Call):
+        return_value = child.body[0].value
+        if isinstance(return_value, ast.Call):
             # See https://github.com/MartinThoma/flake8-simplify/issues/113
             return
-        key = child.test.comparators[0].value
-
-        value = to_source(child.body[0].value)
-        if value[0] == '"' and value[-1] == '"':
-            value = value[1:-1]
-        key_value_pairs[key] = value
+        key_value_pairs[check[1].value] = _strip_double_quotes(
+            to_source(return_value)
+        )
 
         if len(child.orelse) == 1:
             if isinstance(child.orelse[0], ast.If):
@@ -342,6 +346,47 @@ def get_sim908(node: ast.If) -> Iterator[Violation]:
     key = to_source(node.test.left)
     dictname = to_source(node.test.comparators[0])
     yield Violation(node, RULE.format(key=key, dictname=dictname))
+
+
+def _get_dict_get_parts(
+    node: ast.If,
+) -> tuple[ast.expr, ast.expr, ast.expr, ast.expr] | None:
+    """
+    Match the if-blocks that dict.get(key, default) could replace.
+
+    Returns the key, the dictionary, the default value and the assigned
+    variable.
+    """
+    test = node.test
+    if not (
+        isinstance(test, ast.Compare)
+        and len(test.ops) == 1
+        and len(node.body) == 1
+        and isinstance(node.body[0], ast.Assign)
+        and len(node.orelse) == 1
+        and isinstance(node.orelse[0], ast.Assign)
+    ):
+        return None
+    body, orelse = node.body[0], node.orelse[0]
+
+    if isinstance(test.ops[0], ast.In):
+        # The if-branch reads the dict, the else-branch uses the default
+        if len(body.targets) != 1 or len(orelse.targets) != 1:
+            return None
+        if to_source(body.targets[0]) != to_source(orelse.targets[0]):
+            return None
+        lookup, default = body, orelse
+    elif isinstance(test.ops[0], ast.NotIn):
+        # Same, but reversed. The targets are not compared here.
+        lookup, default = orelse, body
+    else:
+        return None
+
+    if not isinstance(lookup.value, ast.Subscript):
+        return None
+    if to_source(test.left) != to_source(lookup.value.slice):
+        return None
+    return test.left, test.comparators[0], default.value, body.targets[0]
 
 
 @rule("SIM401", ast.If)
@@ -425,72 +470,16 @@ def get_sim401(node: ast.If) -> Iterator[Violation]:
         "Use '{value} = {dict}.get({key}, {default_value})' "
         "instead of an if-block"
     )
-    is_pattern_1 = (
-        len(node.body) == 1
-        and isinstance(node.body[0], ast.Assign)
-        and len(node.body[0].targets) == 1
-        and isinstance(node.body[0].value, ast.Subscript)
-        and len(node.orelse) == 1
-        and isinstance(node.orelse[0], ast.Assign)
-        and len(node.orelse[0].targets) == 1
-        and isinstance(node.test, ast.Compare)
-        and len(node.test.ops) == 1
-        and isinstance(node.test.ops[0], ast.In)
-    )
-
-    # just like pattern_1, but using NotIn and reversing if/else
-    is_pattern_2 = (
-        len(node.body) == 1
-        and isinstance(node.body[0], ast.Assign)
-        and len(node.orelse) == 1
-        and isinstance(node.orelse[0], ast.Assign)
-        and isinstance(node.orelse[0].value, ast.Subscript)
-        and isinstance(node.test, ast.Compare)
-        and len(node.test.ops) == 1
-        and isinstance(node.test.ops[0], ast.NotIn)
-    )
-    if is_pattern_1:
-        assert isinstance(node.test, ast.Compare)
-        assert isinstance(node.body[0], ast.Assign)
-        assert isinstance(node.body[0].value, ast.Subscript)
-        assert isinstance(node.orelse[0], ast.Assign)
-        key = node.test.left
-        if to_source(key) != to_source(node.body[0].value.slice):
-            return  # second part of pattern 1
-        assign_to_if_body = node.body[0].targets[0]
-        assign_to_else = node.orelse[0].targets[0]
-        if to_source(assign_to_if_body) != to_source(assign_to_else):
-            return
-        dict_name = node.test.comparators[0]
-        default_value = node.orelse[0].value
-        value_node = node.body[0].targets[0]
-        key_str = to_source(key)
-        dict_str = to_source(dict_name)
-        default_str = to_source(default_value)
-        value_str = to_source(value_node)
-    elif is_pattern_2:
-        assert isinstance(node.test, ast.Compare)
-        assert isinstance(node.body[0], ast.Assign)
-        assert isinstance(node.orelse[0], ast.Assign)
-        assert isinstance(node.orelse[0].value, ast.Subscript)
-        key = node.test.left
-        if to_source(key) != to_source(node.orelse[0].value.slice):
-            return  # second part of pattern 1
-        dict_name = node.test.comparators[0]
-        default_value = node.body[0].value
-        value_node = node.body[0].targets[0]
-        key_str = to_source(key)
-        dict_str = to_source(dict_name)
-        default_str = to_source(default_value)
-        value_str = to_source(value_node)
-    else:
+    parts = _get_dict_get_parts(node)
+    if parts is None:
         return
+    key, dict_name, default_value, value_node = parts
     yield Violation(
         node,
         SIM401.format(
-            key=key_str,
-            dict=dict_str,
-            default_value=default_str,
-            value=value_str,
+            key=to_source(key),
+            dict=to_source(dict_name),
+            default_value=to_source(default_value),
+            value=to_source(value_node),
         ),
     )
