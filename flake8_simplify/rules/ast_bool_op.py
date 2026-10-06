@@ -1,7 +1,9 @@
 import ast
 from collections import defaultdict
+from collections.abc import Iterator
 
 from flake8_simplify.constants import BOOL_CONST_TYPES
+from flake8_simplify.registry import Violation, rule
 from flake8_simplify.utils import (
     _get_duplicated_isinstance_call_by_node,
     is_same_expression,
@@ -9,24 +11,24 @@ from flake8_simplify.utils import (
 )
 
 
+@rule("SIM101", ast.BoolOp)
 def get_sim101(
     node: ast.BoolOp,
-) -> list[tuple[int, int, str]]:
+) -> Iterator[Violation]:
     """Get a positions where the duplicate isinstance problem appears."""
-    errors: list[tuple[int, int, str]] = []
     if not isinstance(node.op, ast.Or):
-        return errors
+        return
 
     RULE = (
-        "SIM101 Multiple isinstance-calls which can be merged into a single "
+        "Multiple isinstance-calls which can be merged into a single "
         "call for variable '{var}'"
     )
     for var in _get_duplicated_isinstance_call_by_node(node):
-        errors.append((node.lineno, node.col_offset, RULE.format(var=var)))
-    return errors
+        yield Violation(node, RULE.format(var=var))
 
 
-def get_sim109(node: ast.BoolOp) -> list[tuple[int, int, str]]:
+@rule("SIM109", ast.BoolOp)
+def get_sim109(node: ast.BoolOp) -> Iterator[Violation]:
     """
     Check if multiple equalities with the same value are combined via "or".
 
@@ -46,9 +48,8 @@ def get_sim109(node: ast.BoolOp) -> list[tuple[int, int, str]]:
                 ],
         )
     """
-    errors: list[tuple[int, int, str]] = []
     if not isinstance(node.op, ast.Or):
-        return errors
+        return
     equalities = [
         value
         for value in node.values
@@ -64,25 +65,22 @@ def get_sim109(node: ast.BoolOp) -> list[tuple[int, int, str]]:
             and isinstance(eq.comparators[0], ast.Name)
         ):
             id2vals[eq.left.id].append(eq.comparators[0])
-    RULE = "SIM109 Use '{value} in {values}' instead of '{or_op}'"
+    RULE = "Use '{value} in {values}' instead of '{or_op}'"
     for value, values in id2vals.items():
         if len(values) == 1:
             continue
-        errors.append(
-            (
-                node.lineno,
-                node.col_offset,
-                RULE.format(
-                    or_op=to_source(node),
-                    value=value,
-                    values=f"({to_source(ast.Tuple(elts=values))})",  # type: ignore
-                ),
-            )
+        yield Violation(
+            node,
+            RULE.format(
+                or_op=to_source(node),
+                value=value,
+                values=f"({to_source(ast.Tuple(elts=values))})",  # type: ignore
+            ),
         )
-    return errors
 
 
-def get_sim220(node: ast.BoolOp) -> list[tuple[int, int, str]]:
+@rule("SIM220", ast.BoolOp)
+def get_sim220(node: ast.BoolOp) -> Iterator[Violation]:
     """
     Get a list of all calls of the type "a and not a".
 
@@ -97,9 +95,8 @@ def get_sim220(node: ast.BoolOp) -> list[tuple[int, int, str]]:
         ],
     )
     """
-    errors: list[tuple[int, int, str]] = []
     if not (isinstance(node.op, ast.And) and len(node.values) >= 2):
-        return errors
+        return
     # We have a boolean And. Let's make sure there is two times the same
     # expression, but once with a "not"
     negated_expressions = []
@@ -110,19 +107,19 @@ def get_sim220(node: ast.BoolOp) -> list[tuple[int, int, str]]:
         else:
             non_negated_expressions.append(exp)
     if len(negated_expressions) == 0:
-        return errors
+        return
 
-    RULE = "SIM220 Use 'False' instead of '{a} and not {a}'"
+    RULE = "Use 'False' instead of '{a} and not {a}'"
     for negated_expression in negated_expressions:
         for non_negated_expression in non_negated_expressions:
             if is_same_expression(negated_expression, non_negated_expression):
                 a = to_source(negated_expression)
-                errors.append((node.lineno, node.col_offset, RULE.format(a=a)))
-                return errors
-    return errors
+                yield Violation(node, RULE.format(a=a))
+                return
 
 
-def get_sim221(node: ast.BoolOp) -> list[tuple[int, int, str]]:
+@rule("SIM221", ast.BoolOp)
+def get_sim221(node: ast.BoolOp) -> Iterator[Violation]:
     """
     Get a list of all calls of the type "a or not a".
 
@@ -137,9 +134,8 @@ def get_sim221(node: ast.BoolOp) -> list[tuple[int, int, str]]:
         ],
     )
     """
-    errors: list[tuple[int, int, str]] = []
     if not (isinstance(node.op, ast.Or) and len(node.values) >= 2):
-        return errors
+        return
     # We have a boolean OR. Let's make sure there is two times the same
     # expression, but once with a "not"
     negated_expressions = []
@@ -150,19 +146,19 @@ def get_sim221(node: ast.BoolOp) -> list[tuple[int, int, str]]:
         else:
             non_negated_expressions.append(exp)
     if len(negated_expressions) == 0:
-        return errors
+        return
 
-    RULE = "SIM221 Use 'True' instead of '{a} or not {a}'"
+    RULE = "Use 'True' instead of '{a} or not {a}'"
     for negated_expression in negated_expressions:
         for non_negated_expression in non_negated_expressions:
             if is_same_expression(negated_expression, non_negated_expression):
                 a = to_source(negated_expression)
-                errors.append((node.lineno, node.col_offset, RULE.format(a=a)))
-                return errors
-    return errors
+                yield Violation(node, RULE.format(a=a))
+                return
 
 
-def get_sim222(node: ast.BoolOp) -> list[tuple[int, int, str]]:
+@rule("SIM222", ast.BoolOp)
+def get_sim222(node: ast.BoolOp) -> Iterator[Violation]:
     """
     Get a list of all calls of the type "... or True".
 
@@ -177,19 +173,18 @@ def get_sim222(node: ast.BoolOp) -> list[tuple[int, int, str]]:
         ],
     )
     """
-    errors: list[tuple[int, int, str]] = []
     if not (isinstance(node.op, ast.Or)):
-        return errors
+        return
 
-    RULE = "SIM222 Use 'True' instead of '... or True'"
+    RULE = "Use 'True' instead of '... or True'"
     for exp in node.values:
         if isinstance(exp, BOOL_CONST_TYPES) and exp.value is True:
-            errors.append((node.lineno, node.col_offset, RULE))
-            return errors
-    return errors
+            yield Violation(node, RULE)
+            return
 
 
-def get_sim223(node: ast.BoolOp) -> list[tuple[int, int, str]]:
+@rule("SIM223", ast.BoolOp)
+def get_sim223(node: ast.BoolOp) -> Iterator[Violation]:
     """
     Get a list of all calls of the type "... and False".
 
@@ -204,13 +199,11 @@ def get_sim223(node: ast.BoolOp) -> list[tuple[int, int, str]]:
         ],
     )
     """
-    errors: list[tuple[int, int, str]] = []
     if not (isinstance(node.op, ast.And)):
-        return errors
+        return
 
-    RULE = "SIM223 Use 'False' instead of '... and False'"
+    RULE = "Use 'False' instead of '... and False'"
     for exp in node.values:
         if isinstance(exp, BOOL_CONST_TYPES) and exp.value is False:
-            errors.append((node.lineno, node.col_offset, RULE))
-            return errors
-    return errors
+            yield Violation(node, RULE)
+            return

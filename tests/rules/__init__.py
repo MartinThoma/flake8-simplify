@@ -1,10 +1,13 @@
 """
-One module per rule: ``test_simNNN.py``.
+One data-only module per rule: ``simNNN.py``. Add test cases there; the
+shared tests in ``tests/test_rules.py`` pick them up automatically.
 
-Each module defines two lists, which is where new test cases go:
+``TRUE_POSITIVES``: ``{"case-id": (code, {expected messages})}``. The code
+must produce exactly these messages and nothing else.
 
-* ``TRUE_POSITIVES``: ``pytest.param(code, expected_messages, id=...)``. The
-  code must produce exactly these messages and nothing else.
-* ``FALSE_POSITIVES``: ``pytest.param(code, id=...)``. The code is fine and
-  the rule must not flag it (other rules may).
+``FALSE_POSITIVES``: ``{"case-id": code}``. The code is fine, so the rule
+must not flag it (other rules may).
+
+Multi-line code is written as ``snippet(\"\"\"...\"\"\")`` (from ``tests``) so it
+can be indented like the surrounding code.
 """

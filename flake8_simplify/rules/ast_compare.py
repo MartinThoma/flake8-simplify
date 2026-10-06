@@ -1,10 +1,13 @@
 import ast
+from collections.abc import Iterator
 
 from flake8_simplify.constants import AST_CONST_TYPES
+from flake8_simplify.registry import Violation, rule
 from flake8_simplify.utils import to_source
 
 
-def get_sim118(node: ast.Compare) -> list[tuple[int, int, str]]:
+@rule("SIM118", ast.Compare)
+def get_sim118(node: ast.Compare) -> Iterator[Violation]:
     """
     Get a list of all usages of "key in dict.keys()"
 
@@ -23,17 +26,16 @@ def get_sim118(node: ast.Compare) -> list[tuple[int, int, str]]:
             ],
         )
     """
-    RULE = "SIM118 Use '{el} in {dict}' instead of '{el} in {dict}.keys()'"
-    errors: list[tuple[int, int, str]] = []
+    RULE = "Use '{el} in {dict}' instead of '{el} in {dict}.keys()'"
     if not (
         len(node.ops) == 1
         and isinstance(node.ops[0], ast.In)
         and len(node.comparators) == 1
     ):
-        return errors
+        return
     call_node = node.comparators[0]
     if not isinstance(call_node, ast.Call):
-        return errors
+        return
 
     attr_node = call_node.func
     if not (
@@ -41,22 +43,16 @@ def get_sim118(node: ast.Compare) -> list[tuple[int, int, str]]:
         and call_node.func.attr == "keys"
         and isinstance(call_node.func.ctx, ast.Load)
     ):
-        return errors
+        return
     assert isinstance(attr_node, ast.Attribute), "hint for mypy"  # noqa
 
     key_str = to_source(node.left)
     dict_str = to_source(attr_node.value)
-    errors.append(
-        (
-            node.lineno,
-            node.col_offset,
-            RULE.format(el=key_str, dict=dict_str),
-        )
-    )
-    return errors
+    yield Violation(node, RULE.format(el=key_str, dict=dict_str))
 
 
-def get_sim300(node: ast.Compare) -> list[tuple[int, int, str]]:
+@rule("SIM300", ast.Compare)
+def get_sim300(node: ast.Compare) -> Iterator[Violation]:
     """
     Get a list of all Yoda conditions.
 
@@ -68,20 +64,16 @@ def get_sim300(node: ast.Compare) -> list[tuple[int, int, str]]:
     """
 
     RULE = (
-        "SIM300 Use '{right} == {left}' instead of "
+        "Use '{right} == {left}' instead of "
         "'{left} == {right}' (Yoda-conditions)"
     )
-    errors: list[tuple[int, int, str]] = []
     if not (
         isinstance(node.left, AST_CONST_TYPES)
         and len(node.ops) == 1
         and isinstance(node.ops[0], ast.Eq)
     ):
-        return errors
+        return
 
     left = to_source(node.left)
     right = to_source(node.comparators[0])
-    errors.append(
-        (node.lineno, node.col_offset, RULE.format(left=left, right=right))
-    )
-    return errors
+    yield Violation(node, RULE.format(left=left, right=right))
