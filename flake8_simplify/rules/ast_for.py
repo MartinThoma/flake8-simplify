@@ -6,7 +6,10 @@ from flake8_simplify.utils import (
     body_contains_continue,
     get_next_sibling,
     get_parent,
+    get_returned_bool,
+    in_same_block,
     is_constant_increase,
+    negate_source,
     to_source,
 )
 
@@ -90,17 +93,27 @@ def _get_return_in_loop(node: ast.For) -> tuple[ast.If, bool] | None:
     if not (
         len(node.body) == 1
         and isinstance(node.body[0], ast.If)
-        and len(node.body[0].body) == 1
-        and isinstance(node.body[0].body[0], ast.Return)
-        and isinstance(node.body[0].body[0].value, ast.Constant)
+        and node.body[0].orelse == []
+        and node.orelse == []
     ):
         return None
-    if not isinstance(get_next_sibling(node), ast.Return):
+    returned_in_loop = get_returned_bool(node.body[0].body)
+
+    # The loop must be followed by returning the opposite constant
+    after_loop = get_next_sibling(node)
+    if not (
+        isinstance(after_loop, ast.Return) and in_same_block(node, after_loop)
+    ):
         return None
-    returned = node.body[0].body[0].value.value
-    if returned is not True and returned is not False:
+    returned_after_loop = get_returned_bool([after_loop])
+
+    if (
+        returned_in_loop is None
+        or returned_after_loop is None
+        or returned_in_loop == returned_after_loop
+    ):
         return None
-    return node.body[0], returned
+    return node.body[0], returned_in_loop
 
 
 @rule("SIM110", ast.For)
@@ -125,14 +138,7 @@ def get_sim111(node: ast.For) -> Iterator[Violation]:
     match = _get_return_in_loop(node)
     if match is None or match[1] is not False:
         return
-    check = to_source(match[0].test)
-    is_compound_expression = " and " in check or " or " in check
-    if is_compound_expression:
-        check = f"not ({check})"
-    elif check.startswith("not "):
-        check = check[len("not ") :]
-    else:
-        check = f"not {check}"
+    check = negate_source(match[0].test)
     target = to_source(node.target)
     iterable = to_source(node.iter)
     yield Violation(

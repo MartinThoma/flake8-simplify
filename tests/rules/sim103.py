@@ -14,6 +14,28 @@ TRUE_POSITIVES = {
             "1:0 SIM103 Return the condition a directly",
         },
     ),
+    "inverted": (
+        snippet("""
+            if a:
+                return False
+            else:
+                return True
+        """),
+        {
+            "1:0 SIM103 Return the condition not a directly",
+        },
+    ),
+    "inverted-compound": (
+        snippet("""
+            if a and b:
+                return False
+            else:
+                return True
+        """),
+        {
+            "1:0 SIM103 Return the condition not (a and b) directly",
+        },
+    ),
 }
 
 FALSE_POSITIVES = {
@@ -27,5 +49,11 @@ FALSE_POSITIVES = {
         if a:
             return True
         return 2
+    """),
+    "same-constant": snippet("""
+        if a:
+            return True
+        else:
+            return True
     """),
 }

@@ -29,4 +29,34 @@ FALSE_POSITIVES = {
                 return "foo"
         return "bar"
     """),
+    "same-return-after-loop": snippet("""
+        for x in iterable:
+            if check(x):
+                return True
+        return True
+    """),
+    "if-with-else": snippet("""
+        for x in iterable:
+            if check(x):
+                return True
+            else:
+                foo()
+        return False
+    """),
+    "for-else": snippet("""
+        for x in iterable:
+            if check(x):
+                return True
+        else:
+            foo()
+        return False
+    """),
+    "return-in-other-branch": snippet("""
+        if a:
+            for x in iterable:
+                if check(x):
+                    return True
+        else:
+            return False
+    """),
 }

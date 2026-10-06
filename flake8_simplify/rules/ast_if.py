@@ -6,7 +6,9 @@ from flake8_simplify.registry import Violation, rule
 from flake8_simplify.utils import (
     get_if_body_pairs,
     get_parent,
+    get_returned_bool,
     is_body_same,
+    negate_source,
     to_source,
 )
 
@@ -20,16 +22,6 @@ def _is_main_check(test: ast.expr) -> bool:
         and len(test.comparators) == 1
         and isinstance(test.comparators[0], ast.Constant)
         and test.comparators[0].value == "__main__"
-    )
-
-
-def _returns_bool(body: list[ast.stmt]) -> bool:
-    """Check if the body is just ``return True`` or ``return False``."""
-    return (
-        len(body) == 1
-        and isinstance(body[0], ast.Return)
-        and isinstance(body[0].value, ast.Constant)
-        and isinstance(body[0].value.value, bool)
     )
 
 
@@ -61,6 +53,15 @@ def _get_eq_constant_check(
     ):
         return test.left, test.comparators[0]
     return None
+
+
+def _is_lookup(expr: ast.expr, dict_: ast.expr, key: ast.expr) -> bool:
+    """Check if ``expr`` is ``dict_[key]``."""
+    return (
+        isinstance(expr, ast.Subscript)
+        and to_source(expr.value) == to_source(dict_)
+        and to_source(expr.slice) == to_source(key)
+    )
 
 
 def _strip_double_quotes(source: str) -> str:
@@ -126,9 +127,15 @@ def get_sim103(node: ast.If) -> Iterator[Violation]:
 
     """
     SIM103 = "Return the condition {cond} directly"
-    if not (_returns_bool(node.body) and _returns_bool(node.orelse)):
+    if_returns = get_returned_bool(node.body)
+    else_returns = get_returned_bool(node.orelse)
+    if (
+        if_returns is None
+        or else_returns is None
+        or if_returns == else_returns
+    ):
         return
-    cond = to_source(node.test)
+    cond = to_source(node.test) if if_returns else negate_source(node.test)
     yield Violation(node, SIM103.format(cond=cond))
 
 
@@ -286,8 +293,9 @@ def get_sim116(node: ast.If) -> Iterator[Violation]:
         if isinstance(return_value, ast.Call):
             # See https://github.com/MartinThoma/flake8-simplify/issues/113
             return
-        key_value_pairs[check[1].value] = _strip_double_quotes(
-            to_source(return_value)
+        # A repeated key is dead code: the first matching branch wins
+        key_value_pairs.setdefault(
+            check[1].value, _strip_double_quotes(to_source(return_value))
         )
 
         if len(child.orelse) == 1:
@@ -322,25 +330,16 @@ def get_sim908(node: ast.If) -> Iterator[Violation]:
         isinstance(node.test, ast.Compare)
         and len(node.test.ops) == 1
         and isinstance(node.test.ops[0], ast.In)
-        and len(node.body) == 1
         and len(node.orelse) == 0
     ):
         return
 
-    # We might still be left with a check if a value is in a list or in
-    # the body the developer might remove the element from the list
-    # We need to have a look at the body
-    if not (
-        isinstance(node.body[0], ast.Assign)
-        and isinstance(node.body[0].value, ast.Subscript)
-        and len(node.body[0].targets) == 1
-        and isinstance(node.body[0].targets[0], ast.Name)
+    # The body must only read that key of that dictionary. Otherwise the
+    # check might be for a list or the body might do something else.
+    assign = _get_single_name_assign(node.body)
+    if assign is None or not _is_lookup(
+        assign[1], node.test.comparators[0], node.test.left
     ):
-        return
-
-    test_var = node.test.left
-    slice_var = node.body[0].value.slice
-    if to_source(slice_var) != to_source(test_var):
         return
 
     key = to_source(node.test.left)
@@ -368,23 +367,22 @@ def _get_dict_get_parts(
     ):
         return None
     body, orelse = node.body[0], node.orelse[0]
+    if not (
+        len(body.targets) == 1
+        and len(orelse.targets) == 1
+        and to_source(body.targets[0]) == to_source(orelse.targets[0])
+    ):
+        return None
 
     if isinstance(test.ops[0], ast.In):
         # The if-branch reads the dict, the else-branch uses the default
-        if len(body.targets) != 1 or len(orelse.targets) != 1:
-            return None
-        if to_source(body.targets[0]) != to_source(orelse.targets[0]):
-            return None
         lookup, default = body, orelse
     elif isinstance(test.ops[0], ast.NotIn):
-        # Same, but reversed. The targets are not compared here.
         lookup, default = orelse, body
     else:
         return None
 
-    if not isinstance(lookup.value, ast.Subscript):
-        return None
-    if to_source(test.left) != to_source(lookup.value.slice):
+    if not _is_lookup(lookup.value, test.comparators[0], test.left):
         return None
     return test.left, test.comparators[0], default.value, body.targets[0]
 

@@ -25,6 +25,39 @@ TRUE_POSITIVES = {
             "1:0 SIM111 Use 'return all(x.is_empty() for x in iterable)'",
         },
     ),
+    "compound-condition": (
+        snippet("""
+            for x in iterable:
+                if a(x) and b(x):
+                    return False
+            return True
+        """),
+        {
+            "1:0 SIM111 Use 'return all(not (a(x) and b(x)) for x in iterable)'",
+        },
+    ),
+    "negated-compound-condition": (
+        snippet("""
+            for x in iterable:
+                if not (a(x) or b(x)):
+                    return False
+            return True
+        """),
+        {
+            "1:0 SIM111 Use 'return all(a(x) or b(x) for x in iterable)'",
+        },
+    ),
+    "negated-chained-comparison-with-strings": (
+        snippet("""
+            for letter in content:
+                if not 'a' <= letter <= 'z':
+                    return False
+            return True
+        """),
+        {
+            "1:0 SIM111 Use 'return all('a' <= letter <= 'z' for letter in content)'",
+        },
+    ),
 }
 
 FALSE_POSITIVES = {
@@ -40,5 +73,19 @@ FALSE_POSITIVES = {
             if check(x):
                 return "foo"
         return "bar"
+    """),
+    "same-return-after-loop": snippet("""
+        for x in iterable:
+            if check(x):
+                return False
+        return False
+    """),
+    "for-else": snippet("""
+        for x in iterable:
+            if check(x):
+                return False
+        else:
+            foo()
+        return True
     """),
 }

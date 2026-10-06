@@ -1,12 +1,9 @@
 import ast
 import json
-import logging
 from collections.abc import Iterator
 
 from flake8_simplify.registry import Violation, rule
 from flake8_simplify.utils import get_parent, to_source
-
-logger = logging.getLogger(__name__)
 
 
 @rule("SIM115", ast.Call)
@@ -142,14 +139,10 @@ def get_sim906(node: ast.Call) -> Iterator[Violation]:
                 and arg.func.attr == "join"
             ):
                 names = names + get_os_path_join_args(arg)
-            elif isinstance(arg, ast.Name):
-                names.append(arg.id)
             elif isinstance(arg, ast.Constant) and isinstance(arg.value, str):
-                names.append(f"'{arg.value}'")
+                names.append(repr(arg.value))
             else:
-                logger.debug(
-                    f"Unexpected os.path.join arg: {arg} -- {to_source(arg)}"
-                )
+                names.append(to_source(arg))
         return names
 
     names = get_os_path_join_args(node)

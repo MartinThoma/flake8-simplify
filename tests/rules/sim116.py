@@ -18,6 +18,21 @@ TRUE_POSITIVES = {
             "1:0 SIM116 Use a dictionary lookup instead of 3+ if/elif-statements: return {'foo': 'bar', 'bar': 'baz', 'boo': 'ooh'}.get(a, 42)",
         },
     ),
+    "repeated-key-first-wins": (
+        snippet("""
+            if x == "a":
+                return "1"
+            elif x == "b":
+                return "2"
+            elif x == "c":
+                return "3"
+            elif x == "c":
+                return "4"
+        """),
+        {
+            "1:0 SIM116 Use a dictionary lookup instead of 3+ if/elif-statements: return {'a': '1', 'b': '2', 'c': '3'}.get(x)",
+        },
+    ),
 }
 
 FALSE_POSITIVES = {

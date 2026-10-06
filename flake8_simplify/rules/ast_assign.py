@@ -6,24 +6,9 @@ from flake8_simplify.utils import (
     expression_uses_variable,
     get_next_sibling,
     get_parent,
+    in_same_block,
     to_source,
 )
-
-
-def _in_same_block(first: ast.stmt, second: ast.stmt) -> bool:
-    """
-    Check that both statements are part of the same statement list.
-
-    Siblings are linked across the fields of a node, so the last statement of
-    ``body`` has the first statement of ``orelse`` as next sibling.
-    """
-    parent = get_parent(first)
-    if parent is None:
-        return True
-    for _, value in ast.iter_fields(parent):
-        if isinstance(value, list) and first in value:
-            return second in value
-    return True
 
 
 @rule("SIM904", ast.Assign)
@@ -71,7 +56,7 @@ def get_sim904(node: ast.Assign) -> Iterator[Violation]:
         and isinstance(n2.targets[0].value, ast.Name)
         and isinstance(node.targets[0], ast.Name)
         and n2.targets[0].value.id == node.targets[0].id
-        and _in_same_block(node, n2)
+        and in_same_block(node, n2)
     ):
         return
 

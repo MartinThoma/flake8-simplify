@@ -35,14 +35,55 @@ def get_next_sibling(node: ast.AST) -> ast.AST | None:
     return getattr(node, "next_sibling", None)  # type: ignore[no-any-return]
 
 
+def in_same_block(first: ast.AST, second: ast.AST) -> bool:
+    """
+    Check that both statements are part of the same statement list.
+
+    Siblings are linked across the fields of a node, so the last statement of
+    ``body`` has the first statement of ``orelse`` as next sibling.
+    """
+    parent = get_parent(first)
+    if parent is None:
+        return True
+    for _, value in ast.iter_fields(parent):
+        if isinstance(value, list) and first in value:
+            return second in value
+    return True
+
+
+def get_returned_bool(body: list[ast.stmt]) -> bool | None:
+    """Get the value if the body is just ``return True`` / ``return False``."""
+    if (
+        len(body) == 1
+        and isinstance(body[0], ast.Return)
+        and isinstance(body[0].value, ast.Constant)
+        and isinstance(body[0].value.value, bool)
+    ):
+        return body[0].value.value
+    return None
+
+
+def negate_source(expr: ast.expr) -> str:
+    """Get the source code of ``not expr``, with parentheses if needed."""
+    if isinstance(expr, ast.UnaryOp) and isinstance(expr.op, ast.Not):
+        return to_source(expr.operand)
+    # These bind weaker than "not"
+    if isinstance(expr, (ast.BoolOp, ast.IfExp, ast.Lambda, ast.NamedExpr)):
+        return f"not ({to_source(expr)})"
+    return f"not {to_source(expr)}"
+
+
 def to_source(
     node: None | ast.expr | ast.Expr | ast.withitem | ast.slice | ast.Assign,
 ) -> str:
     if node is None:
         return "None"
     source: str = ast.unparse(node).strip()
-    source = strip_triple_quotes(source)
-    source = use_double_quotes(source)
+    # Only string literals: an expression like 'a' <= x <= 'z' also starts
+    # and ends with a quote, but must not be changed
+    if isinstance(node, ast.Constant) and isinstance(node.value, str):
+        source = strip_triple_quotes(source)
+        source = use_double_quotes(source)
     return source
 
 
