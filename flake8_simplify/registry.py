@@ -13,6 +13,7 @@ automatically, so adding a rule never requires touching any other file.
 """
 
 import ast
+import functools
 import importlib
 import pkgutil
 from collections import defaultdict
@@ -56,6 +57,7 @@ def rule(
     return register
 
 
+@functools.cache
 def get_rules() -> dict[type[ast.AST], list[Rule]]:
     """Get all rules, grouped by the type of node they check."""
     from flake8_simplify import rules

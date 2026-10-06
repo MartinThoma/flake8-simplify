@@ -25,4 +25,8 @@ FALSE_POSITIVES = {
         if "." in iterable:
             iterable = iterable[:-1]
     """),
+    "different-dict": snippet("""
+        if k in d1:
+            v = d2[k]
+    """),
 }

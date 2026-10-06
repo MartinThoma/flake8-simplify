@@ -73,4 +73,28 @@ FALSE_POSITIVES = {
         if key in a_dict:
             value = a_dict[key]
     """),
+    "different-dict": snippet("""
+        if k in d1:
+            v = d2[k]
+        else:
+            v = 0
+    """),
+    "negated-different-dict": snippet("""
+        if k not in d1:
+            v = 0
+        else:
+            v = d2[k]
+    """),
+    "negated-different-targets": snippet("""
+        if k not in d:
+            a = 0
+        else:
+            b = d[k]
+    """),
+    "negated-chained-assignment": snippet("""
+        if k not in d:
+            a = b = 0
+        else:
+            a = d[k]
+    """),
 }
