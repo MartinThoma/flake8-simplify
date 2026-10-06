@@ -1,6 +1,50 @@
 Release History
 ===============
 
+### 0.31.1
+Release on 06.10.2026
+
+False-positives fixed:
+
+* SIM103: if/else that returns the same constant in both branches
+* SIM105: try-except-pass with a `finally` block
+* SIM110 / SIM111: The return after the loop was not checked, and an
+  `else` / `elif` inside the loop or a for-else was ignored
+* SIM116: A function call in the first branch (#113). A chain of 4+
+  branches is now reported only once.
+* SIM401: The dict that is read was not compared with the dict in the
+  condition. For `not in`, the assigned variables were not compared.
+* SIM905: `str.split()` with a separator or maxsplit
+* SIM908: The dict that is read was not compared with the dict in the
+  condition
+
+False-negatives fixed (these rules can report more than before):
+
+* SIM102: `if __name__ != "__main__":` was treated like a main guard
+* SIM104: Sync generators nested in an async function
+* SIM107: Returns in `except` blocks, nested returns, and returns in the
+  `else` block of a try
+* SIM108: if/else nested in an if-block that assigns the same variable
+
+Wrong suggestions fixed:
+
+* SIM103: `if a: return False else: return True` suggests `not a`
+* SIM111: Negated conditions like `not (a or b)` no longer get a double
+  negation
+* SIM116: Values are shown as code instead of strings, e.g.
+  `{'a': 1, 'b': B}` instead of `{'a': '1', 'b': 'B'}`. For a repeated
+  key, the first branch wins.
+* SIM906: Arguments other than names and strings were dropped
+* Expressions like `'a' <= x <= 'z'` were shown with broken quotes
+
+Other changes:
+
+* Rules register themselves with the `@rule` decorator
+  (`flake8_simplify/registry.py`); the rule index is built once instead
+  of for every file
+* Tests: one data file per rule in `tests/rules/` with true- and
+  false-positive cases
+
 ### 0.31.0
 Release on 06.10.2026
 
