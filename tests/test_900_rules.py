@@ -45,8 +45,33 @@ perf["time_per_step"] = time_per_step
 perf["avg_sim_step_time"] = total_sim_step_time / total_frames""",
         """perf = {"a": 1}
 perf["b"] = perf["a"] / 10""",
+        # https://github.com/MartinThoma/flake8-simplify/issues/157
+        """def f(a=None):
+    if a is None:
+        a = {"b": "c"}
+    else:
+        a["b"] = "c"
+""",
+        """def f(a=None):
+    if a is None:
+        a = {"b": "x"}
+    else:
+        a["b"] = "c"
+""",
+        """for x in y:
+    a = {}
+else:
+    a["b"] = "c"
+""",
     ),
-    ids=["issue-99", "issue-100-1", "issue-100-2"],
+    ids=[
+        "issue-99",
+        "issue-100-1",
+        "issue-100-2",
+        "issue-157-1",
+        "issue-157-2",
+        "for-else",
+    ],
 )
 def test_sim904_false_positives(s):
     results = _results(s)
