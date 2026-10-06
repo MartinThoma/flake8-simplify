@@ -3,80 +3,36 @@ import itertools
 from collections import defaultdict
 
 
-# The following types were created to help mypy understand that there is a
-# "parent" attribute on the ast.AST nodes.
-class UnaryOp(ast.UnaryOp):
-    def __init__(self, orig: ast.UnaryOp) -> None:
-        self.op = orig.op
-        self.operand = orig.operand
-        # For all ast.*:
-        self.lineno = orig.lineno
-        self.col_offset = orig.col_offset
-        self.parent: ast.Expr = orig.parent  # type: ignore
+def add_meta(root: ast.AST) -> None:
+    """
+    Link every node to its parent and its siblings.
+
+    Siblings are linked across all fields of the parent, so the last
+    statement of ``body`` has the first statement of ``orelse`` as next
+    sibling. Use ``get_parent`` / ``get_previous_sibling`` /
+    ``get_next_sibling`` to read the links.
+    """
+    for parent in ast.walk(root):
+        previous: ast.AST | None = None
+        for child in ast.iter_child_nodes(parent):
+            setattr(child, "parent", parent)  # noqa: B010
+            setattr(child, "previous_sibling", previous)  # noqa: B010
+            setattr(child, "next_sibling", None)  # noqa: B010
+            if previous is not None:
+                setattr(previous, "next_sibling", child)  # noqa: B010
+            previous = child
 
 
-class Call(ast.Call):
-    """For mypy so that it knows that added attributes exist."""
-
-    def __init__(self, orig: ast.Call) -> None:
-        self.func = orig.func
-        self.args = orig.args
-        self.keywords = orig.keywords
-        # For all ast.*:
-        self.lineno = orig.lineno
-        self.col_offset = orig.col_offset
-
-        # Added attributes
-        self.parent: ast.Expr = orig.parent  # type: ignore
+def get_parent(node: ast.AST) -> ast.AST | None:
+    return getattr(node, "parent", None)  # type: ignore[no-any-return]
 
 
-class If(ast.If):
-    """For mypy so that it knows that added attributes exist."""
-
-    def __init__(self, orig: ast.If) -> None:
-        self.test = orig.test
-        self.body = orig.body
-        self.orelse = orig.orelse
-
-        # For all ast.*:
-        self.lineno = orig.lineno
-        self.col_offset = orig.col_offset
-
-        # Added attributes
-        self.parent: ast.Expr = orig.parent  # type: ignore
+def get_previous_sibling(node: ast.AST) -> ast.AST | None:
+    return getattr(node, "previous_sibling", None)  # type: ignore[no-any-return]
 
 
-class For(ast.For):
-    """For mypy so that it knows that added attributes exist."""
-
-    def __init__(self, orig: ast.For) -> None:
-        self.target = orig.target
-        self.iter = orig.iter
-        self.body = orig.body
-        self.orelse = orig.orelse
-        # For all ast.*:
-        self.lineno = orig.lineno
-        self.col_offset = orig.col_offset
-
-        # Added attributes
-        self.parent: ast.AST = orig.parent  # type: ignore
-        self.previous_sibling = orig.previous_sibling  # type: ignore
-
-
-class Assign(ast.Assign):
-    """For mypy so that it knows that added attributes exist."""
-
-    def __init__(self, orig: ast.Assign) -> None:
-        self.targets = orig.targets
-        self.value = orig.value
-        # For all ast.*:
-        self.orig = orig
-        self.lineno = orig.lineno
-        self.col_offset = orig.col_offset
-
-        # Added attributes
-        self.parent: ast.AST = orig.parent  # type: ignore
-        self.previous_sibling = orig.previous_sibling  # type: ignore
+def get_next_sibling(node: ast.AST) -> ast.AST | None:
+    return getattr(node, "next_sibling", None)  # type: ignore[no-any-return]
 
 
 def to_source(

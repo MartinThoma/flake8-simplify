@@ -4,8 +4,8 @@ from typing import Any
 
 from flake8_simplify.registry import Violation, rule
 from flake8_simplify.utils import (
-    If,
     get_if_body_pairs,
+    get_parent,
     is_body_same,
     to_source,
 )
@@ -98,8 +98,8 @@ def get_sim103(node: ast.If) -> Iterator[Violation]:
     yield Violation(node, SIM103.format(cond=cond))
 
 
-@rule("SIM108", ast.If, wrapper=If)
-def get_sim108(node: If) -> Iterator[Violation]:
+@rule("SIM108", ast.If)
+def get_sim108(node: ast.If) -> Iterator[Violation]:
     """
     Get a list of all if-elses which could be a ternary operator assignment.
 
@@ -144,8 +144,9 @@ def get_sim108(node: If) -> Iterator[Violation]:
 
     # It's part of a bigger if-elseif block:
     # https://github.com/MartinThoma/flake8-simplify/issues/115
-    if isinstance(node.parent, ast.If):
-        for n in node.parent.body:
+    parent = get_parent(node)
+    if isinstance(parent, ast.If):
+        for n in parent.body:
             if (
                 isinstance(n, ast.Assign)
                 and isinstance(n.targets[0], ast.Name)

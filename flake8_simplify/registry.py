@@ -33,8 +33,6 @@ class Rule:
     code: str
     node_type: type[ast.AST]
     check: Callable[[Any], Iterator[Violation]]
-    # Subclass of node_type that the check wants to receive instead
-    wrapper: Callable[[Any], Any] | None = None
 
 
 _RULES: list[Rule] = []
@@ -43,7 +41,6 @@ _RULES: list[Rule] = []
 def rule(
     code: str,
     node_type: type[ast.AST],
-    wrapper: Callable[[Any], Any] | None = None,
 ) -> Callable[
     [Callable[[Any], Iterator[Violation]]],
     Callable[[Any], Iterator[Violation]],
@@ -53,7 +50,7 @@ def rule(
     def register(
         check: Callable[[Any], Iterator[Violation]],
     ) -> Callable[[Any], Iterator[Violation]]:
-        _RULES.append(Rule(code, node_type, check, wrapper))
+        _RULES.append(Rule(code, node_type, check))
         return check
 
     return register

@@ -4,13 +4,13 @@ import logging
 from collections.abc import Iterator
 
 from flake8_simplify.registry import Violation, rule
-from flake8_simplify.utils import Call, to_source
+from flake8_simplify.utils import get_parent, to_source
 
 logger = logging.getLogger(__name__)
 
 
-@rule("SIM115", ast.Call, wrapper=Call)
-def get_sim115(node: Call) -> Iterator[Violation]:
+@rule("SIM115", ast.Call)
+def get_sim115(node: ast.Call) -> Iterator[Violation]:
     """
     Find places where open() is called without a context handler.
 
@@ -42,7 +42,7 @@ def get_sim115(node: Call) -> Iterator[Violation]:
     if not (
         isinstance(node.func, ast.Name)
         and node.func.id == "open"
-        and not isinstance(node.parent, ast.withitem)
+        and not isinstance(get_parent(node), ast.withitem)
     ):
         return
     yield Violation(node, RULE)
@@ -159,8 +159,8 @@ def get_sim906(node: ast.Call) -> Iterator[Violation]:
     yield Violation(node, RULE.format(actual=actual, expected=expected))
 
 
-@rule("SIM910", ast.Call, wrapper=Call)
-def get_sim910(node: Call) -> Iterator[Violation]:
+@rule("SIM910", ast.Call)
+def get_sim910(node: ast.Call) -> Iterator[Violation]:
     """
     Get a list of all usages of "dict.get(key, None)"
 
