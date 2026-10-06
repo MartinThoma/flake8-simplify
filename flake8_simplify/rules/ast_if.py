@@ -14,12 +14,13 @@ from flake8_simplify.utils import (
 
 
 def _is_main_check(test: ast.expr) -> bool:
-    """Check for ``__name__ <op> "__main__"``."""
+    """Check for ``__name__ == "__main__"``."""
     return (
         isinstance(test, ast.Compare)
         and isinstance(test.left, ast.Name)
         and test.left.id == "__name__"
-        and len(test.comparators) == 1
+        and len(test.ops) == 1
+        and isinstance(test.ops[0], ast.Eq)
         and isinstance(test.comparators[0], ast.Constant)
         and test.comparators[0].value == "__main__"
     )
@@ -64,10 +65,39 @@ def _is_lookup(expr: ast.expr, dict_: ast.expr, key: ast.expr) -> bool:
     )
 
 
-def _strip_double_quotes(source: str) -> str:
-    if source.startswith('"') and source.endswith('"'):
-        return source[1:-1]
-    return source
+def _get_dict_lookup_branch(
+    node: ast.If,
+) -> tuple[ast.Name, ast.Constant, ast.expr | None] | None:
+    """Get variable, key and value of ``if variable == key: return value``."""
+    check = _get_eq_constant_check(node.test)
+    if not (
+        check and len(node.body) == 1 and isinstance(node.body[0], ast.Return)
+    ):
+        return None
+    value = node.body[0].value
+    if isinstance(value, ast.Call):
+        # See https://github.com/MartinThoma/flake8-simplify/issues/113
+        return None
+    return check[0], check[1], value
+
+
+def _dict_value_source(value: ast.expr | None) -> str:
+    """Get the source of a value, with strings quoted like the dict keys."""
+    if isinstance(value, ast.Constant) and isinstance(value.value, str):
+        return repr(value.value)
+    return to_source(value)
+
+
+def _assigns_to(body: list[ast.stmt], name: str) -> bool:
+    """Check if any statement of the body assigns to the variable."""
+    return any(
+        isinstance(stmt, ast.Assign)
+        and any(
+            isinstance(target, ast.Name) and target.id == name
+            for target in stmt.targets
+        )
+        for stmt in body
+    )
 
 
 @rule("SIM102", ast.If)
@@ -179,17 +209,15 @@ def get_sim108(node: ast.If) -> Iterator[Violation]:
     target_var, body_value = body_assign
     assign = to_source(target_var)
 
-    # It's part of a bigger if-elseif block:
+    # It's the elif of an if-block which assigns the same variable:
     # https://github.com/MartinThoma/flake8-simplify/issues/115
     parent = get_parent(node)
-    if isinstance(parent, ast.If):
-        for n in parent.body:
-            if (
-                isinstance(n, ast.Assign)
-                and isinstance(n.targets[0], ast.Name)
-                and n.targets[0].id == target_var.id
-            ):
-                return
+    if (
+        isinstance(parent, ast.If)
+        and parent.orelse == [node]
+        and _assigns_to(parent.body, target_var.id)
+    ):
+        return
 
     body = to_source(body_value)
     cond = to_source(node.test)
@@ -262,41 +290,32 @@ def get_sim116(node: ast.If) -> Iterator[Violation]:
         "Use a dictionary lookup instead of 3+ if/elif-statements: "
         "return {ret}"
     )
-    check = _get_eq_constant_check(node.test)
-    if not (
-        check
-        and len(node.body) == 1
-        and isinstance(node.body[0], ast.Return)
-        and len(node.orelse) == 1
-        and isinstance(node.orelse[0], ast.If)
-    ):
+    head = _get_dict_lookup_branch(node)
+    if head is None:
         return
-    variable, first_key = check
-    first_value = to_source(node.body[0].value)
-    if isinstance(first_key.value, str):
-        first_value = _strip_double_quotes(first_value)
-    key_value_pairs: dict[Any, str] = {first_key.value: first_value}
+    variable = head[0]
 
+    # Report a chain only once, at the first branch that belongs to it
+    parent = get_parent(node)
+    if isinstance(parent, ast.If) and parent.orelse == [node]:
+        parent_branch = _get_dict_lookup_branch(parent)
+        if parent_branch is not None and parent_branch[0].id == variable.id:
+            return
+
+    key_value_pairs: dict[Any, str] = {}
     else_value: str | None = None
-    child: ast.If | None = node.orelse[0]
+    child: ast.If | None = node
     while child:
-        check = _get_eq_constant_check(child.test)
-        if not (
-            check
-            and check[0].id == variable.id
-            and len(child.body) == 1
-            and isinstance(child.body[0], ast.Return)
-            and len(child.orelse) <= 1
+        branch = _get_dict_lookup_branch(child)
+        if (
+            branch is None
+            or branch[0].id != variable.id
+            or len(child.orelse) > 1
         ):
             return
-        return_value = child.body[0].value
-        if isinstance(return_value, ast.Call):
-            # See https://github.com/MartinThoma/flake8-simplify/issues/113
-            return
+        _, key, value = branch
         # A repeated key is dead code: the first matching branch wins
-        key_value_pairs.setdefault(
-            check[1].value, _strip_double_quotes(to_source(return_value))
-        )
+        key_value_pairs.setdefault(key.value, _dict_value_source(value))
 
         if len(child.orelse) == 1:
             if isinstance(child.orelse[0], ast.If):
@@ -310,10 +329,13 @@ def get_sim116(node: ast.If) -> Iterator[Violation]:
             child = None
     if len(key_value_pairs) < 3:
         return
+    mapping = ", ".join(
+        f"{key!r}: {value}" for key, value in key_value_pairs.items()
+    )
     if else_value:
-        ret = f"{key_value_pairs}.get({variable.id}, {else_value})"
+        ret = f"{{{mapping}}}.get({variable.id}, {else_value})"
     else:
-        ret = f"{key_value_pairs}.get({variable.id})"
+        ret = f"{{{mapping}}}.get({variable.id})"
     yield Violation(node, SIM116.format(ret=ret))
 
 

@@ -25,6 +25,16 @@ TRUE_POSITIVES = {
             "3:0 SIM102 Use a single if-statement instead of nested if-statements",
         },
     ),
+    "not-main-check": (
+        snippet("""
+            if __name__ != "__main__":
+                if x:
+                    pass
+        """),
+        {
+            "1:0 SIM102 Use a single if-statement instead of nested if-statements",
+        },
+    ),
 }
 
 FALSE_POSITIVES = {

@@ -52,11 +52,13 @@ def get_sim104(node: ast.For) -> Iterator[Violation]:
         return
 
     # Async generators cannot use "yield from"
-    parent = get_parent(node)
-    while parent is not None:
-        if isinstance(parent, ast.AsyncFunctionDef):
-            return
-        parent = get_parent(parent)
+    function = get_parent(node)
+    while function is not None and not isinstance(
+        function, (ast.FunctionDef, ast.AsyncFunctionDef)
+    ):
+        function = get_parent(function)
+    if isinstance(function, ast.AsyncFunctionDef):
+        return
     iterable = to_source(node.iter)
     yield Violation(node, RULE.format(iterable=iterable))
 

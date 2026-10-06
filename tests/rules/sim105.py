@@ -42,4 +42,12 @@ FALSE_POSITIVES = {
         else:
             bar()
     """),
+    "has-finally": snippet("""
+        try:
+            foo()
+        except ValueError:
+            pass
+        finally:
+            bar()
+    """),
 }

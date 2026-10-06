@@ -14,6 +14,19 @@ TRUE_POSITIVES = {
             "1:0 SIM108 Use ternary operator 'b = c if a else d' instead of if-else-block",
         },
     ),
+    "nested-in-if-body": (
+        snippet("""
+            if a:
+                x = 1
+                if b:
+                    x = 2
+                else:
+                    x = 3
+        """),
+        {
+            "3:4 SIM108 Use ternary operator 'x = 2 if b else 3' instead of if-else-block",
+        },
+    ),
 }
 
 FALSE_POSITIVES = {

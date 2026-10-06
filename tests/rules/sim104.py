@@ -12,6 +12,17 @@ TRUE_POSITIVES = {
             "1:0 SIM104 Use 'yield from iterable'",
         },
     ),
+    "sync-generator-in-async-function": (
+        snippet("""
+            async def items():
+                def inner():
+                    for item in iterable:
+                        yield item
+        """),
+        {
+            "3:8 SIM104 Use 'yield from iterable'",
+        },
+    ),
 }
 
 FALSE_POSITIVES = {

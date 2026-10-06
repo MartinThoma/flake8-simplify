@@ -48,6 +48,7 @@ def get_sim105(node: ast.Try) -> Iterator[Violation]:
         or len(node.handlers[0].body) != 1
         or not isinstance(node.handlers[0].body[0], ast.Pass)
         or node.orelse != []
+        or node.finalbody != []
     ):
         return
     if node.handlers[0].type is None:
