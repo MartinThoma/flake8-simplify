@@ -2,7 +2,6 @@ import ast
 from collections.abc import Iterator
 from typing import Any
 
-from flake8_simplify.constants import AST_CONST_TYPES, BOOL_CONST_TYPES
 from flake8_simplify.registry import Violation, rule
 from flake8_simplify.utils import (
     If,
@@ -81,14 +80,14 @@ def get_sim103(node: ast.If) -> Iterator[Violation]:
     if (
         len(node.body) != 1
         or not isinstance(node.body[0], ast.Return)
-        or not isinstance(node.body[0].value, BOOL_CONST_TYPES)
+        or not isinstance(node.body[0].value, ast.Constant)
         or not (
             node.body[0].value.value is True
             or node.body[0].value.value is False
         )
         or len(node.orelse) != 1
         or not isinstance(node.orelse[0], ast.Return)
-        or not isinstance(node.orelse[0].value, BOOL_CONST_TYPES)
+        or not isinstance(node.orelse[0].value, ast.Constant)
         or not (
             node.orelse[0].value.value is True
             or node.orelse[0].value.value is False
@@ -231,7 +230,7 @@ def get_sim116(node: ast.If) -> Iterator[Violation]:
         and len(node.test.ops) == 1
         and isinstance(node.test.ops[0], ast.Eq)
         and len(node.test.comparators) == 1
-        and isinstance(node.test.comparators[0], AST_CONST_TYPES)
+        and isinstance(node.test.comparators[0], ast.Constant)
         and len(node.body) == 1
         and isinstance(node.body[0], ast.Return)
         and len(node.orelse) == 1
@@ -268,7 +267,7 @@ def get_sim116(node: ast.If) -> Iterator[Violation]:
             and len(child.test.ops) == 1
             and isinstance(child.test.ops[0], ast.Eq)
             and len(child.test.comparators) == 1
-            and isinstance(child.test.comparators[0], AST_CONST_TYPES)
+            and isinstance(child.test.comparators[0], ast.Constant)
             and len(child.body) == 1
             and isinstance(child.body[0], ast.Return)
             and len(child.orelse) <= 1

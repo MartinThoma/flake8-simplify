@@ -1,7 +1,6 @@
 import ast
 from collections.abc import Iterator
 
-from flake8_simplify.constants import BOOL_CONST_TYPES
 from flake8_simplify.registry import Violation, rule
 from flake8_simplify.utils import to_source
 
@@ -35,7 +34,7 @@ def get_sim907(node: ast.Subscript) -> Iterator[Violation]:
     has_none = False
     others = []
     for elt in tuple_var.elts:  # type: ignore
-        if isinstance(elt, BOOL_CONST_TYPES) and elt.value is None:
+        if isinstance(elt, ast.Constant) and elt.value is None:
             has_none = True
         else:
             others.append(elt)

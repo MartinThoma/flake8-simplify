@@ -2,7 +2,6 @@ import ast
 from collections import defaultdict
 from collections.abc import Iterator
 
-from flake8_simplify.constants import BOOL_CONST_TYPES
 from flake8_simplify.registry import Violation, rule
 from flake8_simplify.utils import (
     _get_duplicated_isinstance_call_by_node,
@@ -178,7 +177,7 @@ def get_sim222(node: ast.BoolOp) -> Iterator[Violation]:
 
     RULE = "Use 'True' instead of '... or True'"
     for exp in node.values:
-        if isinstance(exp, BOOL_CONST_TYPES) and exp.value is True:
+        if isinstance(exp, ast.Constant) and exp.value is True:
             yield Violation(node, RULE)
             return
 
@@ -204,6 +203,6 @@ def get_sim223(node: ast.BoolOp) -> Iterator[Violation]:
 
     RULE = "Use 'False' instead of '... and False'"
     for exp in node.values:
-        if isinstance(exp, BOOL_CONST_TYPES) and exp.value is False:
+        if isinstance(exp, ast.Constant) and exp.value is False:
             yield Violation(node, RULE)
             return

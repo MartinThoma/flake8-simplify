@@ -1,7 +1,6 @@
 import ast
 from collections.abc import Iterator
 
-from flake8_simplify.constants import BOOL_CONST_TYPES
 from flake8_simplify.registry import Violation, rule
 from flake8_simplify.utils import is_same_expression, to_source
 
@@ -11,9 +10,9 @@ def get_sim210(node: ast.IfExp) -> Iterator[Violation]:
     """Get a list of all calls of the type "True if a else False"."""
     SIM210 = "Use 'bool({cond})' instead of 'True if {cond} else False'"
     if (
-        not isinstance(node.body, BOOL_CONST_TYPES)
+        not isinstance(node.body, ast.Constant)
         or node.body.value is not True
-        or not isinstance(node.orelse, BOOL_CONST_TYPES)
+        or not isinstance(node.orelse, ast.Constant)
         or node.orelse.value is not False
     ):
         return
@@ -26,9 +25,9 @@ def get_sim211(node: ast.IfExp) -> Iterator[Violation]:
     """Get a list of all calls of the type "False if a else True"."""
     SIM211 = "Use 'not {cond}' instead of 'False if {cond} else True'"
     if (
-        not isinstance(node.body, BOOL_CONST_TYPES)
+        not isinstance(node.body, ast.Constant)
         or node.body.value is not False
-        or not isinstance(node.orelse, BOOL_CONST_TYPES)
+        or not isinstance(node.orelse, ast.Constant)
         or node.orelse.value is not True
     ):
         return

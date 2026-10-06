@@ -1,12 +1,9 @@
 import ast
 import importlib.metadata as importlib_metadata
-import logging
 from collections.abc import Generator
 from typing import Any
 
 from flake8_simplify.registry import get_rules
-
-logger = logging.getLogger(__name__)
 
 
 class Visitor(ast.NodeVisitor):

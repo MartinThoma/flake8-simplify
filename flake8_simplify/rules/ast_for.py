@@ -1,7 +1,6 @@
 import ast
 from collections.abc import Iterator
 
-from flake8_simplify.constants import BOOL_CONST_TYPES
 from flake8_simplify.registry import Violation, rule
 from flake8_simplify.utils import (
     For,
@@ -97,7 +96,7 @@ def _get_return_in_loop(node: ast.For) -> tuple[ast.If, bool] | None:
         and isinstance(node.body[0], ast.If)
         and len(node.body[0].body) == 1
         and isinstance(node.body[0].body[0], ast.Return)
-        and isinstance(node.body[0].body[0].value, BOOL_CONST_TYPES)
+        and isinstance(node.body[0].body[0].value, ast.Constant)
     ):
         return None
     if not isinstance(node.next_sibling, ast.Return):  # type: ignore
