@@ -97,6 +97,10 @@ target-version = "py310"
 select = ["A", "B", "C4", "E", "ERA", "F", "I", "ISC", "PT", "RSE", "UP"]
 ignore = ["PT007", "ISC004"]
 
+[tool.ruff.lint.per-file-ignores]
+# Expected plugin messages are long strings.
+"tests/rules/*" = ["E501"]
+
 [tool.ruff.lint.isort]
 known-first-party = ["flake8_simplify"]
 combine-as-imports = true
