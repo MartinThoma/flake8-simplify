@@ -2,7 +2,12 @@ import ast
 from collections.abc import Iterator
 
 from flake8_simplify.registry import Violation, rule
-from flake8_simplify.utils import Assign, expression_uses_variable, to_source
+from flake8_simplify.utils import (
+    expression_uses_variable,
+    get_next_sibling,
+    get_parent,
+    to_source,
+)
 
 
 def _in_same_block(first: ast.stmt, second: ast.stmt) -> bool:
@@ -12,7 +17,7 @@ def _in_same_block(first: ast.stmt, second: ast.stmt) -> bool:
     Siblings are linked across the fields of a node, so the last statement of
     ``body`` has the first statement of ``orelse`` as next sibling.
     """
-    parent = getattr(first, "parent", None)
+    parent = get_parent(first)
     if parent is None:
         return True
     for _, value in ast.iter_fields(parent):
@@ -56,7 +61,7 @@ def get_sim904(node: ast.Assign) -> Iterator[Violation]:
         ]
     """
     RULE = "Initialize dictionary '{dict_name}' directly"
-    n2 = node.next_sibling  # type: ignore
+    n2 = get_next_sibling(node)
     if not (
         isinstance(node.value, ast.Dict)
         and isinstance(n2, ast.Assign)
@@ -78,8 +83,8 @@ def get_sim904(node: ast.Assign) -> Iterator[Violation]:
     yield Violation(node, RULE.format(dict_name=dict_name))
 
 
-@rule("SIM909", ast.Assign, wrapper=Assign)
-def get_sim909(node: Assign) -> Iterator[Violation]:
+@rule("SIM909", ast.Assign)
+def get_sim909(node: ast.Assign) -> Iterator[Violation]:
     """
     Avoid reflexive assignments
 
@@ -110,9 +115,9 @@ def get_sim909(node: Assign) -> Iterator[Violation]:
     if len(names) == len(set(names)):
         return
 
-    if isinstance(node.parent, ast.ClassDef):
+    if isinstance(get_parent(node), ast.ClassDef):
         return
 
-    code = to_source(node.orig)
+    code = to_source(node)
 
     yield Violation(node, RULE.format(code=code))

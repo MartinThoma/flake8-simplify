@@ -4,6 +4,7 @@ from collections.abc import Generator
 from typing import Any
 
 from flake8_simplify.registry import get_rules
+from flake8_simplify.utils import add_meta
 
 
 class Visitor(ast.NodeVisitor):
@@ -15,8 +16,7 @@ class Visitor(ast.NodeVisitor):
 
     def visit(self, node: ast.AST) -> Any:
         for rule in self._rules.get(type(node), ()):
-            checked_node = rule.wrapper(node) if rule.wrapper else node
-            for violation in rule.check(checked_node):
+            for violation in rule.check(node):
                 self.errors.append(
                     (
                         violation.node.lineno,
@@ -43,18 +43,3 @@ class Plugin:
 
         for line, col, msg in visitor.errors:
             yield line, col, msg, type(self)
-
-
-def add_meta(root: ast.AST, level: int = 0) -> None:
-    previous_sibling = None
-    for node in ast.iter_child_nodes(root):
-        if level == 0:
-            node.parent = root  # type: ignore
-        node.previous_sibling = previous_sibling  # type: ignore
-        node.next_sibling = None  # type: ignore
-        if previous_sibling:
-            node.previous_sibling.next_sibling = node  # type: ignore
-        previous_sibling = node
-        for child in ast.iter_child_nodes(node):
-            child.parent = node  # type: ignore
-        add_meta(node, level=level + 1)

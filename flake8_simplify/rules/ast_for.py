@@ -3,8 +3,9 @@ from collections.abc import Iterator
 
 from flake8_simplify.registry import Violation, rule
 from flake8_simplify.utils import (
-    For,
     body_contains_continue,
+    get_next_sibling,
+    get_parent,
     is_constant_increase,
     to_source,
 )
@@ -47,17 +48,12 @@ def get_sim104(node: ast.For) -> Iterator[Violation]:
     ):
         return
 
-    parent = getattr(node, "parent", None)
-    while (
-        parent
-        and hasattr(parent, "parent")
-        and parent.parent is not parent
-        and not isinstance(parent, ast.AsyncFunctionDef)
-    ):
-        parent = getattr(parent, "parent", None)
-
-    if isinstance(parent, ast.AsyncFunctionDef):  # type: ignore
-        return
+    # Async generators cannot use "yield from"
+    parent = get_parent(node)
+    while parent is not None:
+        if isinstance(parent, ast.AsyncFunctionDef):
+            return
+        parent = get_parent(parent)
     iterable = to_source(node.iter)
     yield Violation(node, RULE.format(iterable=iterable))
 
@@ -99,7 +95,7 @@ def _get_return_in_loop(node: ast.For) -> tuple[ast.If, bool] | None:
         and isinstance(node.body[0].body[0].value, ast.Constant)
     ):
         return None
-    if not isinstance(node.next_sibling, ast.Return):  # type: ignore
+    if not isinstance(get_next_sibling(node), ast.Return):
         return None
     returned = node.body[0].body[0].value.value
     if returned is not True and returned is not False:
@@ -144,8 +140,8 @@ def get_sim111(node: ast.For) -> Iterator[Violation]:
     )
 
 
-@rule("SIM113", ast.For, wrapper=For)
-def get_sim113(node: For) -> Iterator[Violation]:
+@rule("SIM113", ast.For)
+def get_sim113(node: ast.For) -> Iterator[Violation]:
     """
     Find loops in which "enumerate" should be used.
 
@@ -181,7 +177,7 @@ def get_sim113(node: For) -> Iterator[Violation]:
     str_candidates = [to_source(x) for x in variable_candidates]
 
     older_siblings = []
-    for older_sibling in node.parent.body:  # type: ignore
+    for older_sibling in getattr(get_parent(node), "body", []):
         if older_sibling is node:
             break
         older_siblings.append(older_sibling)
@@ -196,10 +192,6 @@ def get_sim113(node: For) -> Iterator[Violation]:
     ]
     if len(matches) == 0:
         return
-
-    sibling = node.previous_sibling
-    while sibling is not None:
-        sibling = sibling.previous_sibling
 
     for match in matches:
         variable = to_source(match)
