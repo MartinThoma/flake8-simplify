@@ -1,6 +1,17 @@
 Release History
 ===============
 
+### 0.31.0
+Release on 06.10.2026
+
+BREAKING CHANGE:
+
+* Dropped support for Python 3.9
+
+Other changes:
+
+* SIM904: A false-positive was fixed
+
 ### 0.30.0
 Release on 01.01.2025
 
