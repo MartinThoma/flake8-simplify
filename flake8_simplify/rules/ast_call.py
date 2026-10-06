@@ -98,13 +98,12 @@ def get_sim905(node: ast.Call) -> list[tuple[int, int, str]]:
         and node.func.attr == "split"
         and isinstance(node.func.value, ast.Constant)
         and isinstance(node.func.value.value, str)
+        and not node.args
+        and not node.keywords
     ):
         return errors
 
-    if isinstance(node.func.value, ast.Constant):
-        value = node.func.value.value
-    else:
-        value = node.func.value.value
+    value = node.func.value.value
 
     expected = json.dumps(value.split())
     actual = to_source(node.func.value) + ".split()"
