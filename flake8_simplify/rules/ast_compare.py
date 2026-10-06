@@ -1,7 +1,6 @@
 import ast
 from collections.abc import Iterator
 
-from flake8_simplify.constants import AST_CONST_TYPES
 from flake8_simplify.registry import Violation, rule
 from flake8_simplify.utils import to_source
 
@@ -68,7 +67,7 @@ def get_sim300(node: ast.Compare) -> Iterator[Violation]:
         "'{left} == {right}' (Yoda-conditions)"
     )
     if not (
-        isinstance(node.left, AST_CONST_TYPES)
+        isinstance(node.left, ast.Constant)
         and len(node.ops) == 1
         and isinstance(node.ops[0], ast.Eq)
     ):

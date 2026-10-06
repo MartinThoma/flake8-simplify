@@ -3,7 +3,6 @@ import json
 import logging
 from collections.abc import Iterator
 
-from flake8_simplify.constants import BOOL_CONST_TYPES
 from flake8_simplify.registry import Violation, rule
 from flake8_simplify.utils import Call, to_source
 
@@ -193,7 +192,7 @@ def get_sim910(node: Call) -> Iterator[Violation]:
     # check the argument value
     if not (
         len(node.args) == 2
-        and isinstance(node.args[1], BOOL_CONST_TYPES)
+        and isinstance(node.args[1], ast.Constant)
         and node.args[1].value is None
     ):
         return

@@ -1,9 +1,17 @@
 import ast
 from collections.abc import Iterator
 
-from flake8_simplify.constants import STR_TYPES
 from flake8_simplify.registry import Violation, rule
 from flake8_simplify.utils import to_source
+
+
+def _is_os_environ(node: ast.expr) -> bool:
+    return (
+        isinstance(node, ast.Attribute)
+        and isinstance(node.value, ast.Name)
+        and node.value.id == "os"
+        and node.attr == "environ"
+    )
 
 
 @rule("SIM112", ast.Expr)
@@ -19,77 +27,38 @@ def get_sim112(node: ast.Expr) -> Iterator[Violation]:
                     attr='environ',
                     ctx=Load(),
                 ),
-                slice=Index(
-                    value=Constant(value='foo', kind=None),
-                ),
+                slice=Constant(value='foo', kind=None),
                 ctx=Load(),
             ),
         ),
     """
     RULE = "Use '{expected}' instead of '{original}'"
+    value = node.value
 
-    is_index_call = (
-        isinstance(node.value, ast.Subscript)
-        and isinstance(node.value.value, ast.Attribute)
-        and isinstance(node.value.value.value, ast.Name)
-        and node.value.value.value.id == "os"
-        and node.value.value.attr == "environ"
-        and (
-            (
-                isinstance(node.value.slice, ast.Index)
-                and isinstance(node.value.slice.value, STR_TYPES)  # type: ignore  # noqa
-            )
-            or isinstance(node.value.slice, ast.Constant)
-        )
-    )
-    if is_index_call:
-        subscript = node.value
-        assert isinstance(subscript, ast.Subscript), "hint for mypy"  # noqa
-        slice_ = subscript.slice
-        if isinstance(slice_, ast.Index):
-            # Python < 3.9
-            string_part = slice_.value  # type: ignore
-            assert isinstance(string_part, STR_TYPES), "hint for mypy"  # noqa
-            env_name = to_source(string_part)
-        elif isinstance(slice_, ast.Constant):
-            # Python 3.9
-            env_name = to_source(slice_)
-
-        # Check if this has a change
-        has_change = env_name != env_name.upper()
-
-    is_get_call = (
-        isinstance(node.value, ast.Call)
-        and isinstance(node.value.func, ast.Attribute)
-        and isinstance(node.value.func.value, ast.Attribute)
-        and isinstance(node.value.func.value.value, ast.Name)
-        and node.value.func.value.value.id == "os"
-        and node.value.func.value.attr == "environ"
-        and node.value.func.attr == "get"
-        and len(node.value.args) in [1, 2]
-        and isinstance(node.value.args[0], STR_TYPES)
-    )
-    if is_get_call:
-        call = node.value
-        assert isinstance(call, ast.Call), "hint for mypy"  # noqa
-        string_part = call.args[0]
-        assert isinstance(string_part, STR_TYPES), "hint for mypy"  # noqa
-        env_name = to_source(string_part)
-        # Check if this has a change
-        has_change = env_name != env_name.upper()
-    if not (is_index_call or is_get_call) or not has_change:
-        return
-    if is_index_call:
-        original = to_source(node)
+    if (
+        isinstance(value, ast.Subscript)
+        and _is_os_environ(value.value)
+        and isinstance(value.slice, ast.Constant)
+    ):
+        env_name = to_source(value.slice)
         expected = f"os.environ[{env_name.upper()}]"
-    elif is_get_call:
-        original = to_source(node)
-        if len(node.value.args) == 1:  # type: ignore
-            expected = f"os.environ.get({env_name.upper()})"
-        else:
-            assert isinstance(node.value, ast.Call), "hint for mypy"  # noqa
-            default_value = to_source(node.value.args[1])
-            expected = f"os.environ.get({env_name.upper()}, {default_value})"
+    elif (
+        isinstance(value, ast.Call)
+        and isinstance(value.func, ast.Attribute)
+        and value.func.attr == "get"
+        and _is_os_environ(value.func.value)
+        and len(value.args) in [1, 2]
+        and isinstance(value.args[0], ast.Constant)
+    ):
+        env_name = to_source(value.args[0])
+        arguments = [env_name.upper()]
+        arguments += [to_source(arg) for arg in value.args[1:]]
+        expected = f"os.environ.get({', '.join(arguments)})"
     else:
         return
-    yield Violation(node, RULE.format(original=original, expected=expected))
+
+    if env_name == env_name.upper():
+        return
+    yield Violation(
+        node, RULE.format(original=to_source(node), expected=expected)
+    )
