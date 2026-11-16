@@ -1,6 +1,7 @@
 """Run the test cases in tests/rules/simNNN.py."""
 
 import importlib
+import ntpath
 import pathlib
 from typing import Any
 
@@ -54,3 +55,18 @@ def test_rule_has_true_and_false_positive_cases(rule):
     module = importlib.import_module(f"tests.rules.{rule.lower()}")
     assert module.TRUE_POSITIVES, f"{rule} has no true-positive test"
     assert module.FALSE_POSITIVES, f"{rule} has no false-positive test"
+
+
+def test_sim906_preserves_windows_drive_relative_paths():
+    # Flattening a join in the second argument changes a valid Windows path.
+    assert ntpath.join("C:", ntpath.join("a", "C:")) == "C:"
+    assert ntpath.join("C:", "a", "C:") == "C:a\\"
+    assert not _rule_hits(
+        "os.path.join('C:', os.path.join('a', 'C:'))", "SIM906"
+    )
+
+    # Joining the first two components first preserves their resolution.
+    assert ntpath.join(ntpath.join("C:", "a"), "C:") == ntpath.join(
+        "C:", "a", "C:"
+    )
+    assert _rule_hits("os.path.join(os.path.join('C:', 'a'), 'C:')", "SIM906")
