@@ -120,23 +120,32 @@ def get_sim906(node: ast.Call) -> Iterator[Violation]:
                 and arg.func.value.value.id == "os"
                 and arg.func.value.attr == "path"
                 and arg.func.attr == "join"
+                and not arg.keywords
+                and any(not isinstance(part, ast.Starred) for part in arg.args)
             )
-            for arg in node.args
+            for arg in node.args[:1]
         )
     ):
         return
 
+    # join is left-associative on Windows: flattening a later argument can
+    # change how drive-relative paths are resolved. Only expand the first,
+    # and only when it has a guaranteed positional argument. Otherwise an
+    # empty expansion could turn a missing-argument TypeError into a path.
     def get_os_path_join_args(node: ast.Call) -> list[str]:
         names: list[str] = []
-        for arg in node.args:
+        for index, arg in enumerate(node.args):
             if (
-                isinstance(arg, ast.Call)
+                index == 0
+                and isinstance(arg, ast.Call)
                 and isinstance(arg.func, ast.Attribute)
                 and isinstance(arg.func.value, ast.Attribute)
                 and isinstance(arg.func.value.value, ast.Name)
                 and arg.func.value.value.id == "os"
                 and arg.func.value.attr == "path"
                 and arg.func.attr == "join"
+                and not arg.keywords
+                and any(not isinstance(part, ast.Starred) for part in arg.args)
             ):
                 names = names + get_os_path_join_args(arg)
             elif isinstance(arg, ast.Constant) and isinstance(arg.value, str):

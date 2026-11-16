@@ -548,11 +548,16 @@ The trial period starts on 20th of February and will end on 20th of September 20
 
 ```python
 # Bad
-os.path.join(a, os.path.join(b, c))
+os.path.join(os.path.join(a, b), c)
 
 # Good
 os.path.join(a, b, c)
 ```
+
+Only joins in the first argument with a guaranteed positional argument
+and no keyword arguments are flattened. This preserves errors from empty
+argument expansions. A nested join in a later
+argument can resolve drive-relative paths differently on Windows.
 
 ### SIM907
 
