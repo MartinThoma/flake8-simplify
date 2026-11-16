@@ -3,6 +3,7 @@
 import importlib
 import ntpath
 import pathlib
+import posixpath
 from typing import Any
 
 import pytest
@@ -70,3 +71,16 @@ def test_sim906_preserves_windows_drive_relative_paths():
         "C:", "a", "C:"
     )
     assert _rule_hits("os.path.join(os.path.join('C:', 'a'), 'C:')", "SIM906")
+
+
+@pytest.mark.parametrize("path_module", [ntpath, posixpath])
+def test_sim906_preserves_empty_join_errors(path_module):
+    parts = []
+    with pytest.raises(TypeError):
+        path_module.join(path_module.join(*parts), "tail")
+    assert path_module.join(*parts, "tail") == "tail"
+    assert not _rule_hits("os.path.join(os.path.join(*parts), tail)", "SIM906")
+
+    with pytest.raises(TypeError):
+        path_module.join(path_module.join(), "tail")
+    assert not _rule_hits("os.path.join(os.path.join(), tail)", "SIM906")

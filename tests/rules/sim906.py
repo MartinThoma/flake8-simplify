@@ -1,6 +1,24 @@
 """Test cases for SIM906. See tests/rules/__init__.py."""
 
 TRUE_POSITIVES = {
+    "preserve-empty-recursive-prefix": (
+        "os.path.join(os.path.join(os.path.join(), b), c)",
+        {
+            "1:0 SIM906 Use 'os.path.join(os.path.join(), b, c)' instead of 'os.path.join(os.path.join(os.path.join(), b), c)'"
+        },
+    ),
+    "preserve-starred-recursive-prefix": (
+        "os.path.join(os.path.join(os.path.join(*parts), b), c)",
+        {
+            "1:0 SIM906 Use 'os.path.join(os.path.join(*parts), b, c)' instead of 'os.path.join(os.path.join(os.path.join(*parts), b), c)'"
+        },
+    ),
+    "fixed-argument-after-star": (
+        "os.path.join(os.path.join(*parts, base), tail)",
+        {
+            "1:0 SIM906 Use 'os.path.join(*parts, base, tail)' instead of 'os.path.join(os.path.join(*parts, base), tail)'"
+        },
+    ),
     "preserve-nested-tail": (
         "os.path.join(os.path.join(a, b), os.path.join(c, d))",
         {
@@ -41,6 +59,10 @@ TRUE_POSITIVES = {
 }
 
 FALSE_POSITIVES = {
+    "empty-first-join": "os.path.join(os.path.join(), tail)",
+    "starred-first-join": "os.path.join(os.path.join(*parts), tail)",
+    "multiple-starred-first-join": "os.path.join(os.path.join(*a, *b), tail)",
+    "keyword-first-join": "os.path.join(os.path.join(a=base), tail)",
     "nested-tail": "os.path.join(a, os.path.join(b, c))",
     "windows-drive-relative": "os.path.join('C:', os.path.join('a', 'C:'))",
     "empty-starred-tail": "os.path.join(a, os.path.join(*parts))",

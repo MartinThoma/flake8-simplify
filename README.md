@@ -554,7 +554,9 @@ os.path.join(os.path.join(a, b), c)
 os.path.join(a, b, c)
 ```
 
-Only joins in the first argument are flattened. A nested join in a later
+Only joins in the first argument with a guaranteed positional argument
+and no keyword arguments are flattened. This preserves errors from empty
+argument expansions. A nested join in a later
 argument can resolve drive-relative paths differently on Windows.
 
 ### SIM907
